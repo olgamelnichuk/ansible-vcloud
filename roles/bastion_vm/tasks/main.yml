@@ -1,0 +1,45 @@
+---
+- name: upgrade all packages
+  yum: name=* state=latest
+  sudo: true
+
+- name: install SELinux-Python
+  yum: name=libselinux-python state=present
+
+- name: Create sudoers file backup
+  command: cp -f /etc/sudoers /etc/sudoers.bak
+
+- name: Create admins group
+  group: name=admin system=yes state=present
+
+- name: Make sure admin group can sudo
+  lineinfile: 
+    dest: /etc/sudoers 
+    state: present 
+    regexp: "^%admin ALL.?.?ALL.? NOPASSWD.? ALL" 
+    line: "%admin ALL=(ALL) NOPASSWD: ALL"
+
+- name: Make sure ssh-agent works via sudo
+  lineinfile: dest=/etc/sudoers state=present regexp="^Defaults env_keep\+\=SSH_AUTH_SOCK" line="Defaults env_keep+=SSH_AUTH_SOCK"
+
+- name: Create user ansible
+  user: name=ansible comment="Ansible User" group=admin home=/home/ansible state=present
+
+- name: Get path for current Files directory
+  local_action: command ls {{ lookup("pipe", "pwd") }}/id_rsa
+  register: result
+  ignore_errors: true
+
+- debug: var=result
+
+- name: Generate SSH keys
+  local_action: command ssh-keygen -t rsa  -f {{ lookup("pipe", "pwd") }}/id_rsa -P ""
+  when: result.stderr != ""
+
+- name: Authorized key upload
+  authorized_key: 
+    user: ansible 
+    key: "{{ lookup('file', 'id_rsa.pub') }}"
+    path: "/home/ansible/.ssh/authorized_keys"
+    manage_dir: no
+  sudo: true
