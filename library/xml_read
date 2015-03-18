@@ -1,0 +1,95 @@
+#!/usr/bin/python
+
+from io import BytesIO
+from lxml import etree
+from lxml.etree import tostring
+import lxml
+
+def xmlstring(value):
+    if (value):
+        if (isinstance(value, str)):
+            return value
+        if (isinstance(value, list)):
+            s = ''
+            for item in value:
+                s += xmlstring(item)
+            return s     
+        return tostring(value)
+    return ''            
+
+def abort(msg, m):
+    m.fail_json(msg=msg)
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            xmlfile=dict(required=False, default=None),
+            xmlstring=dict(required=False, default=None),
+            xpath=dict(required=False, default='/'),
+            namespaces=dict(required=False, default={}, type='dict'),
+            replace=dict(required=False, default=None, type='str'),
+            dest=dict(required=False, default=None)
+        ),
+        mutually_exclusive = [
+            ['xmlfile', 'xmlstring']
+        ]
+    )
+    xml_file = module.params['xmlfile']
+    xml_string = module.params['xmlstring']
+    xpath = module.params['xpath']
+    namespaces = module.params['namespaces']
+    replace = module.params['replace']
+    dest = module.params['dest']
+    ##################################################################
+    # Parse XML
+    if xml_string:
+        bytes = BytesIO(xml_string.encode('utf-8'))
+    elif os.path.isfile(xml_file):
+        bytes = file(xml_file, 'r')
+    else:
+        abort(msg="The target XML source does not exist: %s" % xml_file)
+
+    try:
+        tree = etree.parse(bytes)
+    except etree.XMLSyntaxError, e:
+        abort("Error while parsing xml: %s" % str(e), module)
+
+    ##################################################################
+    # XPATH lookup
+    try:
+        if (namespaces):
+            find = etree.XPath(xpath, namespaces=namespaces)
+            result = find(tree)
+        else:    
+            result = tree.xpath(xpath)
+    except Exception, e:
+        abort("XPATH lookup failed: %s (%s)" % (xpath, str(e)), module)
+
+    ##################################################################
+    # Replcae if required
+    if (replace is not None):
+        result0 = result[0]
+        parentEl = result0.getparent()
+        if (parentEl is not None):
+            if (result0.is_text):
+                parentEl.text = replace
+            elif (result0.is_attribute):
+                parentEl.set(result0.attrname, replace)
+            else:
+                abort("Can't replpace by xpath (it's neither text nor attribute): %s" % xpath, module)
+
+            if (dest is not None):
+                tree.write(dest, xml_declaration=True, encoding='UTF-8')
+            else:    
+                abort("Dest attribute is required for replace function: %s" % xpath, module)
+
+        else:    
+            abort("Can't replpace by xpath: %s" % xpath, module)
+
+
+    module.exit_json(changed=False,actions={"xpath": xpath}, msg="OK", value=xmlstring(result))
+
+    ######################################################################
+    
+from ansible.module_utils.basic import *
+main()
