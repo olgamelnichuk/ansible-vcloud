@@ -1,0 +1,22 @@
+<InstantiateVAppTemplateParams
+	xmlns="http://www.vmware.com/vcloud/v1.5"
+	name="{{ vAppName }}"
+	deploy="true"
+	powerOn="false"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1">
+    
+    <Description>{{ vAppDescription }}</Description>
+    <InstantiationParams>
+        <NetworkConfigSection>
+            <ovf:Info>Configuration parameters for logical networks</ovf:Info>
+            <NetworkConfig networkName="vAppNetwork">
+                <Configuration>
+                    <ParentNetwork href="{{ lan_href.value }}" />
+                    <FenceMode>bridged</FenceMode>
+                </Configuration>
+            </NetworkConfig>
+        </NetworkConfigSection>
+    </InstantiationParams>
+    <Source href="{{ vapp_template_href.value }}" />
+</InstantiateVAppTemplateParams>

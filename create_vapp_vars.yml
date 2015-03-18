@@ -1,0 +1,11 @@
+---
+orgName: ORG-NAME
+catalogName: CatalogNameToChooseTemplateFrom
+vdcName: VDC-NAME
+orgNetworkName: ORG-NETWORK-NAME
+vAppTmplName: vApp_template_name
+vmTmplName: name_of_vm_in_vapp_template
+vAppName: "Created vApp Name"
+vAppDescription: "Created vApp Description"
+vmComputerName: vmComputerName
+tmpDir: /tmp
