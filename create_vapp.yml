@@ -1,0 +1,194 @@
+---
+- name: Provisioning on VMware vCloud Director
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks: 
+
+  - name: Basic Auth
+    uri: 
+      url: "{{ api_host }}/api/sessions"
+      user: "{{ api_user }}"
+      password: "{{ api_password }}" 
+      HEADER_Accept: "application/*+xml;version=1.5" 
+      method: POST 
+      dest: "{{ tmpDir }}/login.xml"
+    register: login
+
+  - debug: var=login   
+
+  - name: Extract Org href
+    xml_read: xmlfile={{ tmpDir }}/login.xml xpath="/n:Session/n:Link[@name='{{ orgName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5"
+    register: org_href
+
+  - debug: var=org_href
+ 
+  - name: Get Org contents
+    uri: 
+      url: "{{ org_href.value }}"  
+      HEADER_Accept: "application/*+xml;version=1.5" 
+      HEADER_Cookie: "{{ login.set_cookie }}" 
+      method: GET 
+      dest: "{{ tmpDir }}/org.xml"
+
+  - name: Extract Catalog href
+    xml_read: xmlfile={{ tmpDir }}/org.xml xpath="/n:Org/n:Link[@name='{{ catalogName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5" 
+    register: catalog_href
+
+  - debug: var=catalog_href
+
+  - name: Extract vDC href
+    xml_read: xmlfile={{ tmpDir }}/org.xml xpath="/n:Org/n:Link[@name='{{ vdcName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5" 
+    register: vdc_href
+
+  - debug: var=vdc_href
+
+  - name: Extract Lan href
+    xml_read: xmlfile={{ tmpDir }}/org.xml xpath="/n:Org/n:Link[@name='{{ orgNetworkName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5" 
+    register: lan_href
+
+  - debug: var=lan_href
+
+  - name: Get list of Catalog Items
+    uri: 
+      url: "{{ catalog_href.value }}" 
+      HEADER_Accept: "application/*+xml;version=1.5" 
+      HEADER_Cookie: "{{ login.set_cookie }}" 
+      method: GET 
+      dest: "{{ tmpDir }}/catalog_items.xml"
+
+  - name: Extract Catalog Item href   
+    xml_read: xmlfile={{ tmpDir }}/catalog_items.xml xpath="/n:Catalog/n:CatalogItems/n:CatalogItem[@name='{{ vAppTmplName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5" 
+    register: catalog_item_href
+
+  - debug: var=catalog_item_href
+
+  - name: Get Catalog Item
+    uri: 
+      url: "{{ catalog_item_href.value }}"  
+      HEADER_Accept: "application/*+xml;version=1.5" 
+      HEADER_Cookie: "{{ login.set_cookie }}" 
+      method: GET 
+      dest: "{{ tmpDir }}/catalog_item.xml"
+
+  - name: Extract vApp Template href   
+    xml_read: xmlfile={{ tmpDir }}/catalog_item.xml xpath="/n:CatalogItem/n:Entity[@name='{{ vAppTmplName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5" 
+    register: vapp_template_href
+
+  - debug: var=vapp_template_href
+
+  - name: Get vApp template
+    uri: 
+      url: "{{ vapp_template_href.value }}" 
+      HEADER_Accept: "application/*+xml;version=1.5" 
+      HEADER_Cookie: "{{ login.set_cookie }}" 
+      method: GET 
+      dest: "{{ tmpDir }}/vapp_template.xml"
+
+  - name: Deploy vApp
+    uri: 
+      url: "{{ vdc_href.value }}/action/instantiateVAppTemplate"
+      body: "{{ lookup('template','./xml/InstantiateVAppTemplateParams.xml') }}" 
+      HEADER_Accept: "application/*+xml;version=1.5" 
+      HEADER_Cookie: "{{ login.set_cookie }}" 
+      HEADER_Content-Type: "application/vnd.vmware.vcloud.instantiateVAppTemplateParams+xml"
+      method: POST
+      status_code: 201 
+    register: response
+
+  - debug: var=response  
+
+  - name: Wait until VApp is deployed
+    uri:
+      url: "{{ response.location }}"
+      HEADER_Accept: "application/*+xml;version=1.5" 
+      HEADER_Cookie: "{{ login.set_cookie }}" 
+      method: GET
+      return_content: yes
+    register: result
+    until: result.content.find("Task status=\"running\"") == -1
+    retries: 12
+    delay: 10
+
+  - name: Get vApp details
+    uri:
+      url: "{{ response.location }}"
+      HEADER_Accept: "application/*+xml;version=1.5" 
+      HEADER_Cookie: "{{ login.set_cookie }}" 
+      method: GET
+      dest: /tmp/vapp.xml
+
+  - name: Extract VM href
+    xml_read: 
+      xmlfile: /tmp/vapp.xml 
+      xpath: "//n:Vm[@name='{{ vmTmplName }}']/@href"
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5"
+    register: vm_href
+
+  - debug: var=vm_href 
+
+  - name: Extract VM IP
+    xml_read: 
+      xmlfile: "{{ tmpDir }}/vapp.xml"
+      xpath: "//n:Vm[@name='{{ vmTmplName }}']/n:NetworkConnectionSection/n:NetworkConnection/n:IpAddress/text()"
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5"
+    register: vm_ip
+
+  - debug: var=vm_ip
+
+  - name: Get VM details
+    uri:
+      url: "{{ vm_href.value }}"
+      HEADER_Accept: "application/*+xml;version=1.5" 
+      HEADER_Cookie: "{{ login.set_cookie }}" 
+      method: GET
+      dest: "{{ tmpDir }}/vm.xml"
+
+  - name: Extract VM edit href
+    xml_read: 
+      xmlfile: "{{ tmpDir }}/vm.xml"
+      xpath: "/n:Vm/n:Link[@rel='edit']/@href"
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5"
+    register: vm_edit_href   
+
+  - debug: var=vm_edit_href
+
+  #- name: Extract admin password
+  #  xml_read: 
+  #    xmlfile: "{{ tmpDir }}/vm.xml"
+  #    xpath: "/n:Vm/n:GuestCustomizationSection/n:AdminPassword/text()"
+  #    namespaces: "n=http://www.vmware.com/vcloud/v1.5"
+  #  register: admin_password   
+
+  - name: Customize VM computer name
+    xml_read: 
+      xmlfile: "{{ tmpDir }}/vm.xml"
+      xpath: "/n:Vm/n:GuestCustomizationSection/n:ComputerName/text()"
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5"
+      replace: "{{ vmComputerName }}"
+      dest: "{{ tmpDir }}/vm1.xml"
+
+  - name: Customize VM name
+    xml_read: 
+      xmlfile: "{{ tmpDir }}/vm1.xml"
+      xpath: "/n:Vm/@name"
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5"
+      replace: "{{ vmComputerName }}"
+      dest: "{{ tmpDir }}/vm2.xml"
+
+  - name: Update VM properties
+    uri:
+      url: "{{ vm_edit_href.value }}"
+      body: "{{ lookup('file', tmpDir + '/vm2.xml') }}" 
+      HEADER_Accept: "application/*+xml;version=1.5" 
+      HEADER_Cookie: "{{ login.set_cookie }}" 
+      HEADER_Content-Type: "application/vnd.vmware.vcloud.vm+xml"
+      method: PUT
+      status_code: 202
+
+
+
+
+
+
