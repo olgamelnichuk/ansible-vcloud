@@ -25,15 +25,19 @@
 - name: Create user ansible
   user: name=ansible comment="Ansible User" group=admin home=/home/ansible state=present
 
-- name: Get path for current Files directory
-  local_action: command ls {{ lookup("pipe", "pwd") }}/id_rsa
+- name: Check if key-pair exists 
+  local_action: command ls {{ playbook_dir }}/generated/id_rsa_bastion
   register: result
   ignore_errors: true
 
 - debug: var=result
 
+- name: Create a directory to store key-pair
+  local_action: command mkdir {{ playbook_dir }}/generated
+  when: result.stderr != ""
+
 - name: Generate SSH keys
-  local_action: command ssh-keygen -t rsa  -f {{ lookup("pipe", "pwd") }}/id_rsa -P ""
+  local_action: command ssh-keygen -t rsa  -f {{ playbook_dir }}/generated/id_rsa_bastion -P ""
   when: result.stderr != ""
 
 - name: Authorized key upload
@@ -43,3 +47,6 @@
     path: "/home/ansible/.ssh/authorized_keys"
     manage_dir: no
   sudo: true
+
+- name: ssh-add the private key locally
+  local_action: command ssh-add {{ playbook_dir }}/generated/id_rsa_bastion
