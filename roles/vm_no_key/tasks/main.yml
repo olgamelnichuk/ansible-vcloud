@@ -2,9 +2,11 @@
 - name: upgrade all packages
   yum: name=* state=latest
   sudo: true
+  when: os_name == "centos"
 
 - name: install SELinux-Python
   yum: name=libselinux-python state=present
+  when: os_name == "centos"
 
 - name: Create sudoers file backup
   command: cp -f /etc/sudoers /etc/sudoers.bak
@@ -26,27 +28,27 @@
   user: name=ansible comment="Ansible User" group=admin home=/home/ansible state=present
 
 - name: Check if key-pair exists 
-  local_action: command ls {{ key_pair_dir }}
+  local_action: command ls {{ key_dir }}/{{ key_name }}
   register: result
   ignore_errors: true
 
 - debug: var=result
 
 - name: Create a directory to store key-pair
-  local_action: command mkdir {{ key_pair_dir }}
+  local_action: command mkdir -p {{ key_dir }}
   when: result.stderr != ""
 
 - name: Generate SSH keys
-  local_action: command ssh-keygen -t rsa  -f {{ key_pair_dir }}/id_rsa_bastion -P ""
+  local_action: command ssh-keygen -t rsa  -f {{ key_dir }}/{{ key_name }} -P ""
   when: result.stderr != ""
 
 - name: Authorized key upload
   authorized_key: 
     user: ansible 
-    key: "{{ lookup('file', 'id_rsa.pub') }}"
+    key: "{{ lookup('file', key_dir + '/' + key_name + '.pub') }}"
     path: "/home/ansible/.ssh/authorized_keys"
     manage_dir: no
   sudo: true
 
 - name: ssh-add the private key locally
-  local_action: command ssh-add {{ key_pair_dir }}/id_rsa_bastion
+  local_action: command ssh-add {{ key_dir }}/{{ key_name }}
