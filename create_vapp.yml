@@ -177,10 +177,18 @@
       replace: "{{ vmComputerName }}"
       dest: "{{ tmpDir }}/vm2.xml"
 
+  - name: Enable Guest Customization
+    xml_read:
+      xmlfile: "{{ tmpDir }}/vm2.xml"
+      xpath: "/n:Vm/n:GuestCustomizationSection/n:Enabled/text()"
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5"
+      replace: "true"
+      dest: "{{ tmpDir }}/vm3.xml"
+
   - name: Update VM properties
     uri:
       url: "{{ vm_edit_href.value }}"
-      body: "{{ lookup('file', tmpDir + '/vm2.xml') }}" 
+      body: "{{ lookup('file', tmpDir + '/vm3.xml') }}" 
       HEADER_Accept: "application/*+xml;version=1.5" 
       HEADER_Cookie: "{{ login.set_cookie }}" 
       HEADER_Content-Type: "application/vnd.vmware.vcloud.vm+xml"

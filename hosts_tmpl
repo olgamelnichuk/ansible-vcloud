@@ -1,0 +1,7 @@
+[local]
+localhost
+
+[bastion]
+bastion
+
+[irods_icat]
