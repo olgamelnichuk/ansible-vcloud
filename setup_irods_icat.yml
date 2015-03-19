@@ -1,0 +1,4 @@
+---
+- hosts: [irods_icat]
+  roles: [irods_icat_ubuntu]
+  sudo: true
