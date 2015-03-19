@@ -1,0 +1,43 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - expect
+  - python-psycopg2 
+  - postgresql 
+  - postgresql-contrib
+
+- name: Make sure postgres is running
+  service: name=postgresql state=started enabled=yes
+
+- name: Create postgres database
+  postgresql_db: name=ICAT state=present 
+  sudo: true
+  sudo_user: postgres
+
+- name: Create postgres user
+  postgresql_user: name=irods password=testpassword db=ICAT priv=ALL encrypted=no state=present 
+  sudo: true
+  sudo_user: postgres
+
+- name: Copy IRODS rpms
+  copy: src={{ item }} dest=/tmp
+  with_items:
+  - irods-icat-4.0.3-64bit.deb
+  - irods-database-plugin-postgres-1.4.deb
+
+- name: Install ICAT Server rpms
+  apt: deb=/tmp/irods-icat-4.0.3-64bit.deb state=installed
+
+- name: Install postgres plugin
+  apt: deb=/tmp/irods-database-plugin-postgres-1.4.deb state=installed
+
+- name: Copy expect script to setup ICAT Server
+  copy: src=setup_irods_with_expect.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
+
+- name: Setup ICAT Server
+  command: /tmp/setup_irods_with_expect
+  sudo: true
