@@ -14,12 +14,12 @@
   service: name=postgresql state=started enabled=yes
 
 - name: Create postgres database
-  postgresql_db: name=ICAT state=present 
+  postgresql_db: name={{ irods_db_name }} state=present
   sudo: true
   sudo_user: postgres
 
 - name: Create postgres user
-  postgresql_user: name=irods password=testpassword db=ICAT priv=ALL encrypted=no state=present 
+  postgresql_user: name={{ irods_db_username }} password={{ irods_db_password }} db={{ irods_db_name }} priv=ALL encrypted=no state=present
   sudo: true
   sudo_user: postgres
 
@@ -36,8 +36,11 @@
   apt: deb=/tmp/irods-database-plugin-postgres-1.4.deb state=installed
 
 - name: Copy expect script to setup ICAT Server
-  copy: src=setup_irods_with_expect.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
+  template: src=setup_irods_with_expect.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
 
 - name: Setup ICAT Server
   command: /tmp/setup_irods_with_expect
   sudo: true
+
+- name: Check that irods has started
+  service: name=irods state=started
