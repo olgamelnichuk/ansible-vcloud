@@ -1,11 +1,14 @@
 ---
-orgName: NameOfOrganisation
-catalogName: CatalogNameToChooseTemplateFrom
-vdcName: NameOfVDC
-orgNetworkName: NameOfNetwork
-vAppTmplName: vAppNameInTemplate
-vmTmplName: vmNameInTemplate
-vAppName: vAppNameToBeCreated
-vAppDescription: vAppDescriptionToBeCreated
-vmComputerName: vmComputerNameToBeCreated
-tmpDir: /tmp
+org_name: _name_of_organisation_
+catalog_name: _catalog_name_to_choose_template_from_
+vdc_name: _vdc_name_
+org_network_name: _network_name_
+vapp_tmpl_name: _vapp_template_name_
+vapp_name: _vapp_name_to_be_created_
+vapp_description: _vapp_description_to_be_created_
+vm_computer_name: _vm_computer_name_to_be_created_
+tmp_dir: /tmp
+number_of_cpus: 2
+cores_per_socket: 2
+memory_size_mb: 2024
+disk_size_mb: 8192

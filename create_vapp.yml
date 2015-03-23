@@ -13,39 +13,51 @@
       password: "{{ api_password }}" 
       HEADER_Accept: "application/*+xml;version=1.5" 
       method: POST 
-      dest: "{{ tmpDir }}/login.xml"
+      dest: "{{ tmp_dir }}/login.xml"
     register: login
 
   - debug: var=login   
 
   - name: Extract Org href
-    xml_read: xmlfile={{ tmpDir }}/login.xml xpath="/n:Session/n:Link[@name='{{ orgName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5"
+    xml_read: 
+      xmlfile: "{{ tmp_dir }}/login.xml" 
+      xpath: "/n:Session/n:Link[@name='{{ org_name }}']/@href" 
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5"
     register: org_href
 
   - debug: var=org_href
- 
+
   - name: Get Org contents
     uri: 
       url: "{{ org_href.value }}"  
       HEADER_Accept: "application/*+xml;version=1.5" 
       HEADER_Cookie: "{{ login.set_cookie }}" 
       method: GET 
-      dest: "{{ tmpDir }}/org.xml"
+      dest: "{{ tmp_dir }}/org.xml"
 
   - name: Extract Catalog href
-    xml_read: xmlfile={{ tmpDir }}/org.xml xpath="/n:Org/n:Link[@name='{{ catalogName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5" 
+    xml_read: 
+      xmlfile: "{{ tmp_dir }}/org.xml" 
+      xpath: "/n:Org/n:Link[@name='{{ catalog_name }}']/@href" 
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5" 
     register: catalog_href
 
   - debug: var=catalog_href
 
   - name: Extract vDC href
-    xml_read: xmlfile={{ tmpDir }}/org.xml xpath="/n:Org/n:Link[@name='{{ vdcName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5" 
+    xml_read: 
+      xmlfile: "{{ tmp_dir }}/org.xml" 
+      xpath: "/n:Org/n:Link[@name='{{ vdc_name }}']/@href" 
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5" 
     register: vdc_href
 
   - debug: var=vdc_href
 
   - name: Extract Lan href
-    xml_read: xmlfile={{ tmpDir }}/org.xml xpath="/n:Org/n:Link[@name='{{ orgNetworkName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5" 
+    xml_read: 
+      xmlfile: "{{ tmp_dir }}/org.xml" 
+      xpath: "/n:Org/n:Link[@name='{{ org_network_name }}']/@href" 
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5" 
     register: lan_href
 
   - debug: var=lan_href
@@ -56,10 +68,13 @@
       HEADER_Accept: "application/*+xml;version=1.5" 
       HEADER_Cookie: "{{ login.set_cookie }}" 
       method: GET 
-      dest: "{{ tmpDir }}/catalog_items.xml"
+      dest: "{{ tmp_dir }}/catalog_items.xml"
 
   - name: Extract Catalog Item href   
-    xml_read: xmlfile={{ tmpDir }}/catalog_items.xml xpath="/n:Catalog/n:CatalogItems/n:CatalogItem[@name='{{ vAppTmplName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5" 
+    xml_read: 
+      xmlfile: "{{ tmp_dir }}/catalog_items.xml" 
+      xpath: "/n:Catalog/n:CatalogItems/n:CatalogItem[@name='{{ vapp_tmpl_name }}']/@href" 
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5" 
     register: catalog_item_href
 
   - debug: var=catalog_item_href
@@ -70,10 +85,13 @@
       HEADER_Accept: "application/*+xml;version=1.5" 
       HEADER_Cookie: "{{ login.set_cookie }}" 
       method: GET 
-      dest: "{{ tmpDir }}/catalog_item.xml"
+      dest: "{{ tmp_dir }}/catalog_item.xml"
 
   - name: Extract vApp Template href   
-    xml_read: xmlfile={{ tmpDir }}/catalog_item.xml xpath="/n:CatalogItem/n:Entity[@name='{{ vAppTmplName }}']/@href" namespaces="n=http://www.vmware.com/vcloud/v1.5" 
+    xml_read: 
+      xmlfile: "{{ tmp_dir }}/catalog_item.xml" 
+      xpath: "/n:CatalogItem/n:Entity[@name='{{ vapp_tmpl_name }}']/@href" 
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5" 
     register: vapp_template_href
 
   - debug: var=vapp_template_href
@@ -84,7 +102,18 @@
       HEADER_Accept: "application/*+xml;version=1.5" 
       HEADER_Cookie: "{{ login.set_cookie }}" 
       method: GET 
-      dest: "{{ tmpDir }}/vapp_template.xml"
+      dest: "{{ tmp_dir }}/vapp_template.xml"
+
+  - name: Extract VM template href
+    xml_read: 
+      xmlfile: "{{ tmp_dir }}/vapp_template.xml" 
+      xpath: "/n:VAppTemplate/n:Children/n:Vm[1]/@href" 
+      namespaces: "n=http://www.vmware.com/vcloud/v1.5" 
+    register: vm_template_href
+
+  - debug: var=vm_template_href  
+
+  - template: src="{{ playbook_dir }}/xml/InstantiateVAppTemplateParams.xml" dest={{ tmp_dir }}/InstantiateVAppTemplateParams.xml
 
   - name: Deploy vApp
     uri: 
@@ -122,7 +151,7 @@
   - name: Extract VM href
     xml_read: 
       xmlfile: /tmp/vapp.xml 
-      xpath: "//n:Vm[@name='{{ vmTmplName }}']/@href"
+      xpath: "//n:Vm[1]/@href"
       namespaces: "n=http://www.vmware.com/vcloud/v1.5"
     register: vm_href
 
@@ -130,8 +159,8 @@
 
   - name: Extract VM IP
     xml_read: 
-      xmlfile: "{{ tmpDir }}/vapp.xml"
-      xpath: "//n:Vm[@name='{{ vmTmplName }}']/n:NetworkConnectionSection/n:NetworkConnection/n:IpAddress/text()"
+      xmlfile: "{{ tmp_dir }}/vapp.xml"
+      xpath: "//n:Vm[1]/n:NetworkConnectionSection/n:NetworkConnection/n:IpAddress/text()"
       namespaces: "n=http://www.vmware.com/vcloud/v1.5"
     register: vm_ip
 
@@ -143,11 +172,11 @@
       HEADER_Accept: "application/*+xml;version=1.5" 
       HEADER_Cookie: "{{ login.set_cookie }}" 
       method: GET
-      dest: "{{ tmpDir }}/vm.xml"
+      dest: "{{ tmp_dir }}/vm.xml"
 
   - name: Extract VM edit href
     xml_read: 
-      xmlfile: "{{ tmpDir }}/vm.xml"
+      xmlfile: "{{ tmp_dir }}/vm.xml"
       xpath: "/n:Vm/n:Link[@rel='edit']/@href"
       namespaces: "n=http://www.vmware.com/vcloud/v1.5"
     register: vm_edit_href   
@@ -156,39 +185,39 @@
 
   #- name: Extract admin password
   #  xml_read: 
-  #    xmlfile: "{{ tmpDir }}/vm.xml"
+  #    xmlfile: "{{ tmp_dir }}/vm.xml"
   #    xpath: "/n:Vm/n:GuestCustomizationSection/n:AdminPassword/text()"
   #    namespaces: "n=http://www.vmware.com/vcloud/v1.5"
   #  register: admin_password   
 
   - name: Customize VM computer name
     xml_read: 
-      xmlfile: "{{ tmpDir }}/vm.xml"
+      xmlfile: "{{ tmp_dir }}/vm.xml"
       xpath: "/n:Vm/n:GuestCustomizationSection/n:ComputerName/text()"
       namespaces: "n=http://www.vmware.com/vcloud/v1.5"
-      replace: "{{ vmComputerName }}"
-      dest: "{{ tmpDir }}/vm1.xml"
+      replace: "{{ vm_computer_name }}"
+      dest: "{{ tmp_dir }}/vm1.xml"
 
   - name: Customize VM name
     xml_read: 
-      xmlfile: "{{ tmpDir }}/vm1.xml"
+      xmlfile: "{{ tmp_dir }}/vm1.xml"
       xpath: "/n:Vm/@name"
       namespaces: "n=http://www.vmware.com/vcloud/v1.5"
-      replace: "{{ vmComputerName }}"
-      dest: "{{ tmpDir }}/vm2.xml"
+      replace: "{{ vm_computer_name }}"
+      dest: "{{ tmp_dir }}/vm2.xml"
 
   - name: Enable Guest Customization
     xml_read:
-      xmlfile: "{{ tmpDir }}/vm2.xml"
+      xmlfile: "{{ tmp_dir }}/vm2.xml"
       xpath: "/n:Vm/n:GuestCustomizationSection/n:Enabled/text()"
       namespaces: "n=http://www.vmware.com/vcloud/v1.5"
       replace: "true"
-      dest: "{{ tmpDir }}/vm3.xml"
+      dest: "{{ tmp_dir }}/vm3.xml"
 
   - name: Update VM properties
     uri:
       url: "{{ vm_edit_href.value }}"
-      body: "{{ lookup('file', tmpDir + '/vm3.xml') }}" 
+      body: "{{ lookup('file', tmp_dir + '/vm3.xml') }}" 
       HEADER_Accept: "application/*+xml;version=1.5" 
       HEADER_Cookie: "{{ login.set_cookie }}" 
       HEADER_Content-Type: "application/vnd.vmware.vcloud.vm+xml"
