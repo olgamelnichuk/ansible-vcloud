@@ -2,11 +2,15 @@
 - name: upgrade all packages
   yum: name=* state=latest
   sudo: true
-  when: os_name == "centos"
+  when: ansible_os_family == "RedHat"
 
 - name: install SELinux-Python
   yum: name=libselinux-python state=present
-  when: os_name == "centos"
+  when: ansible_os_family == "RedHat"
+
+- name: upgrade all packages
+  apt: update_cache=yes
+  when: ansible_os_family == "Debian"
 
 - name: Create sudoers file backup
   command: cp -f /etc/sudoers /etc/sudoers.bak
