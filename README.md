@@ -23,11 +23,11 @@ Host 192.168.*
     ProxyCommand ssh -A ansible@bastion -W %h:%p
 ```
 
-### setup ssh key on a vm
+### setup ssh key on a vm example
 ```shell
-ansible-playbook setup_ssh_key.yml --extra-vars "hosts=_hostname_ os=ubuntu" --ask-pass
+ansible-playbook setup_ssh_key.yml --extra-vars "hosts=_hostname_ os=ubuntu key_tag=vm" --ask-pass
 
 or
 
-ansible-playbook setup_ssh_key.yml --extra-vars "hosts=_hostname_ os=centos" --ask-pass
+ansible-playbook setup_ssh_key.yml --extra-vars "hosts=_hostname_ os=centos key_tag=bastion" --ask-pass
 ```
