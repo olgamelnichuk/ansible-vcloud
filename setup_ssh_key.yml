@@ -1,0 +1,8 @@
+---
+- hosts: {{ vm }}
+  roles: [vm_no_key]
+  vars:
+    ansible_ssh_user: root
+    key_dir: "{{ playbook_dir }}/keys"
+    key_name: id_rsa_vm
+    os_name: {{ os }}
