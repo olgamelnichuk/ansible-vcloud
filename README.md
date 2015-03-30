@@ -25,9 +25,9 @@ Host 192.168.*
 
 ### setup ssh key on a vm example
 ```shell
-ansible-playbook -i hosts setup_ssh_key.yml --extra-vars "hosts=_hostname_ key_tag=vm" --ask-pass
+ansible-playbook -i hosts setup_ssh_key.yml --extra-vars "hosts=... key_tag=vm" --ask-pass
 ```
 or
 ```shell
-ansible-playbook -i hosts setup_ssh_key.yml --extra-vars "hosts=_hostname_ key_tag=bastion" --ask-pass
+ansible-playbook -i hosts setup_ssh_key.yml --extra-vars "hosts=... key_tag=bastion" --ask-pass
 ```
