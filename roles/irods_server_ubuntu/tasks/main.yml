@@ -1,0 +1,43 @@
+---
+- name: include additional variables
+  include_vars: ../../irods_vars.yml
+
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - expect
+  - python-psycopg2 
+
+- name: download irods server package
+  get_url: url={{ irods_server_pkg_url }} dest=/tmp
+  register: server_pkg
+
+- debug: var=server_pkg.dest
+
+- name: download irods postgres plugin package
+  get_url: url={{ irods_postgres_plugin_pkg_url }} dest=/tmp
+  register: db_plugin_pkg
+
+- debug: var=db_plugin_pkg.dest
+
+- name: install irods server rpms
+  apt: deb={{ server_pkg.dest }} state=installed
+
+- name: install db plugin
+  apt: deb={{ db_plugin_pkg.dest }} state=installed
+
+- name: copy expect script to setup ICAT Server
+  template: src=setup_irods_with_expect.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
+
+- name: setup irods server
+  command: /tmp/setup_irods_with_expect
+  sudo: true
+
+- name: Check that irods has started
+  service: name=irods state=started
+
+
+
