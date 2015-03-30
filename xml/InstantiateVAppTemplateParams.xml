@@ -1,7 +1,7 @@
 <InstantiateVAppTemplateParams
 	xmlns="http://www.vmware.com/vcloud/v1.5"
 	name="{{ vapp_name }}"
-	deploy="true"
+	deploy="false"
 	powerOn="false"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1">
@@ -19,16 +19,4 @@
         </NetworkConfigSection>
     </InstantiationParams>
     <Source href="{{ vapp_template_href.value }}" />
-    <SourcedVmInstantiationParams>
-        <Source href="{{ vm_template_href.value }}" />
-        <HardwareCustomization>
-            <NumberOfCpus>{{ number_of_cpus }}</NumberOfCpus>
-            <CoresPerSocket>{{ cores_per_socket }}</CoresPerSocket>
-            <MemorySize>{{ memory_size_mb }}</MemorySize>
-            <Disk>
-                <Size>{{ disk_size_mb }}</Size>
-            </Disk>
-        </HardwareCustomization>
-    </SourcedVmInstantiationParams>
-    <AllEULAsAccepted>true</AllEULAsAccepted>    
 </InstantiateVAppTemplateParams>
