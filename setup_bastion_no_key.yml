@@ -1,9 +1,0 @@
----
-- name: Setup bastion vm
-  hosts: [bastion]
-  roles: [vm_no_key]
-  vars:
-    ansible_ssh_user: root
-    key_dir: "{{ playbook_dir }}/keys"
-    key_name: id_rsa_bastion
-    os_name: "centos"
