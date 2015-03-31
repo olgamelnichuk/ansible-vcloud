@@ -9,15 +9,47 @@
   - postgresql 
   - postgresql-contrib
 
-- name: Make sure postgres is running
+- name: make sure postgres is running
   service: name=postgresql state=started enabled=yes
 
-- name: Create postgres database
+- name: create postgres database
   postgresql_db: name={{ irods_db_name }} state=present
   sudo: true
   sudo_user: postgres
 
-- name: Create postgres user
+- name: create postgres user
   postgresql_user: name={{ irods_db_user }} password={{ irods_db_password }} db={{ irods_db_name }} priv=ALL encrypted=no state=present
   sudo: true
   sudo_user: postgres
+
+# allow remote user connections
+
+- name: find pg_hba.conf
+  command: find / -name pg_hba.conf
+  sudo: true
+  register: result
+
+- debug: var=result
+
+- name: add line to pg_hba.conf
+  lineinfile: 
+    dest: "{{ result.stdout_lines[0] }}" 
+    line: "host    all    all    192.168.1.0/24    md5"
+    state: present
+
+- name: find postgresql.conf
+  command: find / -name postgresql.conf
+  sudo: true
+  register: result
+
+- debug: var=result
+
+- name: add line to postgresql.conf
+  lineinfile: 
+    dest: "{{ result.stdout_lines[0] }}" 
+    line: "listen_addresses = '*'"
+    insertbefore: "#listen_addresses = 'localhost'"
+    state: present
+
+- name: make sure postgres is restarted
+  service: name=postgresql state=restarted
