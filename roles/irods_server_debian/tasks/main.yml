@@ -11,6 +11,15 @@
   - expect
   - python-psycopg2 
 
+- name: test remote database connection
+  postgresql_db: 
+    name: "{{ irods_db_name }}"
+    port: "{{ irods_db_port }}"
+    login_host: "{{ irods_db_hostname }}"
+    login_user: "{{ irods_db_user }}"
+    login_password: "{{ irods_db_password }}"
+    state: present
+
 - name: download irods server package
   get_url: url={{ irods_server_pkg_url }} dest=/tmp
   register: server_pkg
