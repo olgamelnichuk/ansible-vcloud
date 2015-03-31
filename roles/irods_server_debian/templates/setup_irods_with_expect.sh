@@ -42,7 +42,7 @@ expect {
     }
 
     -re "iRODS server's LocalZoneSID.*:" {
-        exp_send "{{ irods_localzone_sid }}\n"
+        exp_send "{{ irods_local_zone_sid }}\n"
         exp_continue
     }
 
