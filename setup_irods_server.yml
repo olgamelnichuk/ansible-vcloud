@@ -2,7 +2,6 @@
 - hosts: [irods_server]
   roles: [irods_server_debian]
   sudo: true
-  when: ansible_os_family == "Debian"
   vars:
     irods_service_account_name: "{{ service_account_name }}"
     irods_service_group_name: "{{ service_group_name }}"
