@@ -29,5 +29,5 @@ ansible-playbook -i hosts setup_ssh_key.yml --extra-vars "hosts=... key_tag=vm" 
 ```
 or
 ```shell
-ansible-playbook -i hosts setup_ssh_key.yml --extra-vars "hosts=... key_tag=bastion" --ask-pass
+ansible-playbook -i hosts setup_ssh_key.yml --extra-vars "hosts=... ansible_ssh_port=... key_tag=bastion" --ask-pass
 ```
