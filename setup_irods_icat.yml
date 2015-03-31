@@ -1,7 +1,7 @@
 ---
 - name: Setup iRODS ICAT database
   hosts: [irods_icat]
-  roles: [irods_icat_ubuntu]
+  roles: [irods_icat_debian]
   sudo: true
   vars:
     irods_db_name: "{{ db_name }}"
