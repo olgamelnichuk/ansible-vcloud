@@ -5,3 +5,10 @@ localhost
 bastion
 
 [irods_icat]
+irods_icat_server ansible_ssh_user=ansible
+
+[irods_server]
+irods_server ansible_ssh_user=ansible
+
+[irods_resource]
+irods_resource ansible_ssh_user=ansible

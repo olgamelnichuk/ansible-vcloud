@@ -1,0 +1,30 @@
+---
+- name: include additional variables
+  include_vars: ../../irods_vars.yml
+
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - expect
+
+- name: download irods resource server package
+  get_url: url={{ irods_resource_server_pkg_url }} dest=/tmp
+  register: resource_pkg
+
+- debug: var=resource_pkg.dest
+
+- name: install irods resource server rpms
+  apt: deb={{ resource_pkg.dest }} state=installed
+
+- name: copy expect script to setup irods resource server
+  template: src=setup_irods_with_expect.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
+
+#- name: setup irods server
+#  command: /tmp/setup_irods_with_expect
+#  sudo: true
+
+#- name: Check that irods has started
+#  service: name=irods state=started
