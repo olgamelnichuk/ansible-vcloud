@@ -38,7 +38,7 @@
 - name: install db plugin
   apt: deb={{ db_plugin_pkg.dest }} state=installed
 
-- name: copy expect script to setup ICAT Server
+- name: copy expect script to setup irods server
   template: src=setup_irods_with_expect.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
 
 - name: setup irods server
