@@ -19,3 +19,4 @@
     irods_db_name: "{{ db_name }}"
     irods_db_user: "{{ db_user }}"
     irods_db_password: "{{ db_password }}"
+    irods_icat_server: "{{ icat_server }}"

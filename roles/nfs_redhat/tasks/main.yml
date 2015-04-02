@@ -13,12 +13,12 @@
   - nfs4-acl-tools
 
 - name: create share folders
-  file: path=/nfs/irods state=directory owner=root group=root
+  file: path=/nfs/irods state=directory owner=root group=root mode=777
 
 - name: allow to mount shared folders
   lineinfile: 
     dest: /etc/exports 
-    line: "/nfs/irods 192.168.1.10(rw,sync,fsid=0) 192.168.1.0/24(ro,sync,fsid=0)" 
+    line: "/nfs/irods {{ irods_server }}(rw,sync,root_squash,fsid=0) *(ro,fsid=0)" 
     state: present
 
 - name: restart NFS server

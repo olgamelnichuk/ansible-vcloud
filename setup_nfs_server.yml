@@ -3,3 +3,5 @@
   hosts: [nfs_server]
   roles: [nfs_redhat]
   sudo: true
+  vars:
+    irods_server: {{ irods_icat_server }}

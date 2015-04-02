@@ -15,3 +15,5 @@ irods_db_port: 5432
 irods_db_name: ICAT
 irods_db_user: _db_username_
 irods_db_password: _db_password_
+icat_server: _server_hostname_
+nfs_server: _server_hostname_

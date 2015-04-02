@@ -22,9 +22,9 @@
 - name: copy expect script to setup irods resource server
   template: src=setup_irods_with_expect.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
 
-#- name: setup irods server
-#  command: /tmp/setup_irods_with_expect
-#  sudo: true
+- name: setup irods server
+  command: /tmp/setup_irods_with_expect
+  sudo: true
 
-#- name: Check that irods has started
-#  service: name=irods state=started
+- name: ensure irods has started
+  service: name=irods state=started

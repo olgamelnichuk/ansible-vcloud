@@ -9,7 +9,17 @@
   apt: pkg={{ item }} state=latest
   with_items: 
   - expect
-  - python-psycopg2 
+  - python-psycopg2
+  - nfs-common
+
+#- name: ensure rpcbind is running
+#  service: name=rpcbind state=started enabled=yes
+
+- name: ensure /nfs_irods directory exists
+  file: path=/nfs_irods state=directory
+
+- name: mount nfs folder
+  mount: name=/nfs_irods src={{ irods_nfs_server }}:/nfs/irods fstype=nfs state=mounted
 
 - name: test remote database connection
   postgresql_db: 
@@ -22,31 +32,37 @@
 
 - name: download irods server package
   get_url: url={{ irods_server_pkg_url }} dest=/tmp
-  register: server_pkg
+  register: get_server_pkg
 
-- debug: var=server_pkg.dest
+- debug: var=get_server_pkg.dest
 
 - name: download irods postgres plugin package
   get_url: url={{ irods_postgres_plugin_pkg_url }} dest=/tmp
-  register: db_plugin_pkg
+  register: get_db_plugin_pkg
 
-- debug: var=db_plugin_pkg.dest
+- debug: var=get_db_plugin_pkg.dest
 
 - name: install irods server rpms
-  apt: deb={{ server_pkg.dest }} state=installed
+  apt: deb={{ get_server_pkg.dest }} state=installed
 
 - name: install db plugin
-  apt: deb={{ db_plugin_pkg.dest }} state=installed
+  apt: deb={{ get_db_plugin_pkg.dest }} state=installed
 
 - name: copy expect script to setup irods server
   template: src=setup_irods_with_expect.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
 
+- name: test if irods is already set up and running
+  shell: ps awx | grep irodsServer
+  register: ps_awx
+
+- debug: var=ps_awx
+
 - name: setup irods server
   command: /tmp/setup_irods_with_expect
   sudo: true
+  when: ps_awx.stdout_lines | length < 3
 
 - name: Check that irods has started
   service: name=irods state=started
-
 
 
