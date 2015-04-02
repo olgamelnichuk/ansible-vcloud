@@ -18,7 +18,7 @@
 - name: allow to mount shared folders
   lineinfile: 
     dest: /etc/exports 
-    line: "/nfs/irods 192.168.1.10(rw,sync) 192.168.1.0/24(ro,sync)" 
+    line: "/nfs/irods 192.168.1.10(rw,sync,fsid=0) 192.168.1.0/24(ro,sync,fsid=0)" 
     state: present
 
 - name: restart NFS server
