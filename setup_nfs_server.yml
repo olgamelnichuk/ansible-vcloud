@@ -1,0 +1,5 @@
+---
+- name: Set up nfs server
+  hosts: [nfs_server]
+  roles: [nfs_redhat]
+  sudo: true

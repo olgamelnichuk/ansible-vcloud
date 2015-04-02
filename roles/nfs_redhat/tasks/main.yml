@@ -1,0 +1,26 @@
+---
+- name: upgrade all packages
+  yum: name=* state=latest
+  sudo: true
+
+- name: install SELinux-Python
+  yum: name=libselinux-python state=present
+
+- name: install required packages
+  yum: name={{ item }} state=latest
+  with_items: 
+  - nfs-utils
+  - nfs4-acl-tools
+
+- name: create share folders
+  file: path=/nfs/irods state=directory owner=root group=root
+
+- name: allow to mount shared folders
+  lineinfile: 
+    dest: /etc/exports 
+    line: "/nfs/irods 192.168.1.10(rw,sync) 192.168.1.0/24(ro,sync)" 
+    state: present
+
+- name: restart NFS server
+  service: name=nfs state=reloaded enabled=yes
+
