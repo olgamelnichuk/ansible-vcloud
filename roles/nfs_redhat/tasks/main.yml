@@ -18,7 +18,7 @@
 - name: allow to mount shared folders
   lineinfile: 
     dest: /etc/exports 
-    line: "/nfs/irods {{ irods_server }}(rw,sync,root_squash,fsid=0) *(ro,fsid=0)" 
+    line: "/nfs/irods {{ irods_server }}(rw,sync,root_squash) *(ro,sync,root_squash)" 
     state: present
 
 - name: restart NFS server
