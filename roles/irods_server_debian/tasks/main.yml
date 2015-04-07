@@ -17,6 +17,7 @@
 
 - name: ensure /nfs_irods directory exists
   file: path=/nfs_irods state=directory
+  ignore_errors: yes
 
 - name: mount nfs folder
   mount: name=/nfs_irods src={{ irods_nfs_server }}:/nfs/irods fstype=nfs state=mounted
@@ -64,5 +65,45 @@
 
 - name: Check that irods has started
   service: name=irods state=started
+
+#### Install dev tools and build direct access plugin
+
+- name: download runtime package
+  get_url: url={{ irods_runtime_pkg_url }} dest=/tmp
+  register: get_runtime_pkg
+
+- debug: var=get_runtime_pkg.dest
+
+- name: download dev tools package
+  get_url: url={{ irods_dev_tools_pkg_url }} dest=/tmp
+  register: get_dev_tools_pkg
+
+- debug: var=get_dev_tools_pkg.dest
+
+- name: install runtime libraries
+  apt: deb={{ get_runtime_pkg.dest }} state=installed
+
+- name: install dev tools
+  apt: deb={{ get_dev_tools_pkg.dest }} state=installed
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items:
+  - git-core
+  - make
+  - build-essential
+  - g++
+  - libssl-dev
+
+- name: clone sources for the direct access plugin 
+  git: repo=https://github.com/irods/irods_resource_plugin_directaccess.git
+       dest=/tmp/irods_resource_plugin_directaccess
+
+- name: build direct access plugin
+  command: ./packaging/build.sh chdir=/tmp/irods_resource_plugin_directaccess
+
+
+
+
 
 
