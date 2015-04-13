@@ -1,0 +1,5 @@
+---
+- name: Set up docker on a vm 
+  hosts: [docker]
+  roles: [docker_ubuntu]
+  sudo: true

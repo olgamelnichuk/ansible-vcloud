@@ -15,3 +15,6 @@ irods_resource ansible_ssh_user=ansible
 
 [nfs_server]
 nfs_server ansible_ssh_user=ansible
+
+[docker]
+docker01 ansible_ssh_user=ansible

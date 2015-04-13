@@ -1,0 +1,42 @@
+---
+- name: fail if not a new release of Ubuntu
+  fail:
+    msg: "{{ ansible_distribution_version }} is not an acceptable version of Ubuntu for this role"
+  when: "ansible_distribution_version not in ['14.04', '14.10']"
+
+- name: add Docker repository key
+  apt_key:
+    url: "https://get.docker.io/gpg"
+    state: present
+
+- name: add Docker repository and update apt cache
+  apt_repository:
+    repo: "deb https://get.docker.io/ubuntu docker main"
+    update_cache: yes
+    state: present
+
+- name: install docker package
+  apt:
+    name: "lxc-docker"
+    state: latest
+    update_cache: yes
+
+- name: enable port forwarding
+  lineinfile: 
+    dest: /etc/default/ufw
+    regexp: ^DEFAULT_FORWARD_POLICY=
+    line: DEFAULT_FORWARD_POLICY="ACCEPT"
+  notify: reload ufw
+
+- name: enable memory limitation in cgroupd
+  lineinfile: 
+    dest: /etc/default/grub
+    regexp: ^GRUB_CMDLINE_LINUX=
+    line: GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1"
+  register: grub_config
+
+- name: reload grub config
+  command: update-grub
+  when: grub_config | changed
+  notify: reboot vm
+
