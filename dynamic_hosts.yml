@@ -1,0 +1,14 @@
+---
+- name: build hosts file
+  hosts: [irods_icat, irods_server, irods_resource]
+  sudo: true
+  tasks: 
+
+  - name: add lines to /etc/hosts file 
+    lineinfile: dest=/etc/hosts regexp='.*{{ hostvars[item].ansible_hostname }}$'
+                line='{{ hostvars[item].ansible_default_ipv4.address }} {{ hostvars[item].ansible_hostname }}'
+    when: hostvars[item].ansible_default_ipv4.address is defined
+    with_items: 
+    - '{{ groups.irods_icat }}'
+    - '{{ groups.irods_server }}'
+    - '{{ groups.irods_resource }}'
