@@ -1,0 +1,32 @@
+---
+- name: configure initial iRODS resource tree
+  hosts: [irods_ies]
+  tasks: 
+
+  - name: check if demoResc is passthru
+    shell: "iadmin lr demoResc | grep resc_type_name | awk '{print $2;}'"
+    register: demoResc_type
+
+  - debug: var=demoResc_type.stdout_lines[0]
+
+  - name: delete default demoResc if its type is 'unixfilesystem' 
+    command: iadmin rmresc demoResc
+    register: demoResc_removed
+    when: demoResc_type.stdout_lines[0] == 'unixfilesystem'
+
+  - name: select all default _hostname_Resource to delete
+    shell: ilsresc | grep -e .*Resource
+    register: default_resources
+
+  - debug: var=default_resources.stdout_lines
+
+  - name: delete all default _hostname_Resource resources
+    shell: iadmin rmresc {{ item }}
+    with_items:
+    - '{{ default_resources.stdout_lines }}'
+
+  - name: create 'passthru' demoResc
+    command: iadmin mkresc demoResc 'passthru'
+    when: demoResc_removed | changed
+
+
