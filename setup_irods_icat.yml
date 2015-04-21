@@ -3,7 +3,3 @@
   hosts: [irods_icat]
   roles: [irods_icat_debian]
   sudo: true
-  vars:
-    irods_db_name: "{{ db_name }}"
-    irods_db_user: "{{ db_user }}"
-    irods_db_password: "{{ db_password }}"

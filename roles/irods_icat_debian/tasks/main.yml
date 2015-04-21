@@ -1,4 +1,7 @@
 ---
+- name: include additional variables
+  include_vars: ../../irods_vars.yml
+  
 - name: upgrade all packages
   apt: update_cache=yes
 
@@ -12,14 +15,12 @@
 - name: make sure postgres is running
   service: name=postgresql state=started enabled=yes
 
-- name: create postgres database
+- name: create icat DB
   postgresql_db: name={{ irods_db_name }} state=present
-  sudo: true
   sudo_user: postgres
 
-- name: create postgres user
+- name: create icat DB user
   postgresql_user: name={{ irods_db_user }} password={{ irods_db_password }} db={{ irods_db_name }} priv=ALL encrypted=no state=present
-  sudo: true
   sudo_user: postgres
 
 # allow remote user connections
@@ -27,29 +28,31 @@
 - name: find pg_hba.conf
   command: find / -name pg_hba.conf
   sudo: true
-  register: result
+  register: find_pg_hba
 
-- debug: var=result
+- debug: var=find_pg_hba
 
-- name: add line to pg_hba.conf
+- name: add line to pg_hba.conf to allow password auth for local subnet users users 
   lineinfile: 
-    dest: "{{ result.stdout_lines[0] }}" 
+    dest: "{{ find_pg_hba.stdout_lines[0] }}" 
     line: "host    all    all    192.168.1.0/24    md5"
     state: present
+    backup: yes
 
 - name: find postgresql.conf
   command: find / -name postgresql.conf
   sudo: true
-  register: result
+  register: find_psql_conf
 
-- debug: var=result
+- debug: var=find_psql_conf
 
-- name: add line to postgresql.conf
+- name: add line to postgresql.conf to accept incomming connections from any addresses
   lineinfile: 
-    dest: "{{ result.stdout_lines[0] }}" 
+    dest: "{{ find_psql_conf.stdout_lines[0] }}" 
     line: "listen_addresses = '*'"
     insertbefore: "#listen_addresses = 'localhost'"
     state: present
+    backup: yes
 
 - name: make sure postgres is restarted
   service: name=postgresql state=restarted

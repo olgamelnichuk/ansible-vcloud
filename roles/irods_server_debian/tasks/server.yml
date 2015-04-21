@@ -1,0 +1,12 @@
+---
+- name: download irods server package
+  get_url: url={{ irods_server_pkg_url }} dest=/tmp
+  register: get_server_pkg
+
+- debug: var=get_server_pkg.dest
+
+- name: install irods server rpms
+  apt: deb={{ get_server_pkg.dest }} state=installed
+
+- name: copy expect script to setup irods server
+  template: src=setup_irods_server.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700

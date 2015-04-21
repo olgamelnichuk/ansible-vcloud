@@ -1,6 +1,6 @@
 ---
-- hosts: [irods_server]
+- hosts: [irods_ies]
   roles: [irods_server_debian]
   sudo: true
   vars:
-    icat_is_enabled: false
+    icat_is_enabled: true

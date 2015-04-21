@@ -1,6 +1,24 @@
 ---
-irods_server_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-icat-4.0.3-64bit.deb
+irods_ies_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-icat-4.0.3-64bit.deb
 irods_postgres_plugin_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3-with-v1.4-database-plugins/irods-database-plugin-postgres-1.4.deb
-irods_resource_server_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-resource-4.0.3-64bit.deb
-irods_dev_tools_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-dev-4.0.3-64bit.deb
-irods_runtime_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-runtime-4.0.3-64bit.deb
+irods_server_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-resource-4.0.3-64bit.deb
+#irods_dev_tools_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-dev-4.0.3-64bit.deb
+#irods_runtime_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-runtime-4.0.3-64bit.deb
+irods_service_account_name: "{{ service_account_name }}"
+irods_service_group_name: "{{ service_group_name }}"
+irods_zone_name: "{{ zone_name }}"
+irods_service_port: "{{ service_port }}"
+irods_port_range_begin: "{{ port_range_begin }}"
+irods_port_range_end: "{{ port_range_end }}"
+irods_vault_dir: "{{ vault_dir }}"
+irods_vault_dir_default: "{{ vault_dir_default }}"
+irods_local_zone_sid: "{{ local_zone_sid }}"
+irods_agent_key: "{{ agent_key }}"
+irods_admin_username: "{{ admin_username }}"
+irods_admin_password: "{{ admin_password }}"
+irods_db_hostname: "{{ db_hostname }}"
+irods_db_port: "{{ db_port }}"
+irods_db_name: "{{ db_name }}"
+irods_db_user: "{{ db_user }}"
+irods_db_password: "{{ db_password }}"
+irods_icat_server: "{{ ies_hostname }}"

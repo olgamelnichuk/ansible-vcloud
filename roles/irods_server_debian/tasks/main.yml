@@ -10,49 +10,14 @@
   with_items: 
   - expect
   - python-psycopg2
-  - nfs-common
 
-#- name: ensure rpcbind is running
-#  service: name=rpcbind state=started enabled=yes
+- include: ies.yml
+  when: icat_is_enabled
 
-- name: ensure /nfs_irods directory exists
-  file: path=/nfs_irods state=directory
-  ignore_errors: yes
+- include: server.yml
+  when: not icat_is_enabled
 
-- name: mount nfs folder
-  mount: name=/nfs_irods src={{ irods_nfs_server }}:/nfs/irods fstype=nfs state=mounted
-
-- name: test remote database connection
-  postgresql_db: 
-    name: "{{ irods_db_name }}"
-    port: "{{ irods_db_port }}"
-    login_host: "{{ irods_db_hostname }}"
-    login_user: "{{ irods_db_user }}"
-    login_password: "{{ irods_db_password }}"
-    state: present
-
-- name: download irods server package
-  get_url: url={{ irods_server_pkg_url }} dest=/tmp
-  register: get_server_pkg
-
-- debug: var=get_server_pkg.dest
-
-- name: download irods postgres plugin package
-  get_url: url={{ irods_postgres_plugin_pkg_url }} dest=/tmp
-  register: get_db_plugin_pkg
-
-- debug: var=get_db_plugin_pkg.dest
-
-- name: install irods server rpms
-  apt: deb={{ get_server_pkg.dest }} state=installed
-
-- name: install db plugin
-  apt: deb={{ get_db_plugin_pkg.dest }} state=installed
-
-- name: copy expect script to setup irods server
-  template: src=setup_irods_with_expect.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
-
-- name: test if irods is already set up and running
+- name: test if irods is already installed and running
   shell: ps awx | grep irodsServer
   register: ps_awx
 
@@ -60,50 +25,32 @@
 
 - name: setup irods server
   command: /tmp/setup_irods_with_expect
-  sudo: true
+  register: setup_with_expect
   when: ps_awx.stdout_lines | length < 3
 
-- name: Check that irods has started
-  service: name=irods state=started
+- name: test if irods is already installed and running
+  shell: ps awx | grep irodsServer
+  register: ps_awx
 
-#### Install dev tools and build direct access plugin
+- fail: irods server is not up after setup command
+  when: ps_awx.stdout_lines | length < 3
 
-- name: download runtime package
-  get_url: url={{ irods_runtime_pkg_url }} dest=/tmp
-  register: get_runtime_pkg
+- name: Create irods_vault directory if it doesn't exists
+  file: path={{ irods_vault_dir }} state=directory owner={{ irods_service_account_name }}  group={{ irods_service_group_name }}
 
-- debug: var=get_runtime_pkg.dest
+- name: copy iinit expect script
+  template: src=iinit.sh dest=/tmp/iinit owner=ansible group=admin mode=0700
 
-- name: download dev tools package
-  get_url: url={{ irods_dev_tools_pkg_url }} dest=/tmp
-  register: get_dev_tools_pkg
+- name: run iinit
+  command: /tmp/iinit
+  sudo: false
 
-- debug: var=get_dev_tools_pkg.dest
+- name: check if '{{ ansible_hostname }}_resc' resource already exists
+  command: iadmin lr {{ ansible_hostname }}_resc
+  register: resource_details
+  sudo: false
 
-- name: install runtime libraries
-  apt: deb={{ get_runtime_pkg.dest }} state=installed
-
-- name: install dev tools
-  apt: deb={{ get_dev_tools_pkg.dest }} state=installed
-
-- name: install required packages
-  apt: pkg={{ item }} state=latest
-  with_items:
-  - git-core
-  - make
-  - build-essential
-  - g++
-  - libssl-dev
-
-- name: clone sources for the direct access plugin 
-  git: repo=https://github.com/irods/irods_resource_plugin_directaccess.git
-       dest=/tmp/irods_resource_plugin_directaccess
-
-- name: build direct access plugin
-  command: ./packaging/build.sh chdir=/tmp/irods_resource_plugin_directaccess
-
-
-
-
-
-
+- name: create new resource 
+  command: iadmin mkresc {{ ansible_hostname }}_resc "unixfilesystem" {{ ansible_hostname }}:{{ irods_vault_dir }}
+  sudo: false
+  when: resource_details.stdout_lines | length < 2

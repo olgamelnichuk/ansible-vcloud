@@ -7,11 +7,11 @@ bastion
 [irods_icat]
 irods_icat_server ansible_ssh_user=ansible
 
+[irods_ies]
+irods_ies ansible_ssh_user=ansible
+
 [irods_server]
 irods_server ansible_ssh_user=ansible
-
-[irods_resource]
-irods_resource ansible_ssh_user=ansible
 
 [nfs_server]
 nfs_server ansible_ssh_user=ansible

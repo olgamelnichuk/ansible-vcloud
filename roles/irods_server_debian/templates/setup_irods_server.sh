@@ -32,7 +32,7 @@ expect {
     }
 
     -re "iRODS Vault directory.*:" {
-        exp_send "{{ irods_vault_dir }}\n"
+        exp_send "{{ irods_vault_dir_default }}\n"
         exp_continue
     }
 
@@ -68,7 +68,7 @@ expect {
         exp_continue
         }
 
-    -re "iCAT server's ZoneName:.*:" {
+    -re "iCAT server's ZoneName.*:" {
         exp_send "{{ irods_zone_name }}\n"
         exp_continue
     }

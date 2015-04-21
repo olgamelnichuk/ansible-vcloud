@@ -1,6 +1,6 @@
 ---
 - name: build hosts file
-  hosts: [irods_icat, irods_server, irods_resource]
+  hosts: [irods_icat, irods_ies, irods_server]
   sudo: true
   tasks: 
 
@@ -10,5 +10,5 @@
     when: hostvars[item].ansible_default_ipv4.address is defined
     with_items: 
     - '{{ groups.irods_icat }}'
+    - '{{ groups.irods_ies }}'
     - '{{ groups.irods_server }}'
-    - '{{ groups.irods_resource }}'

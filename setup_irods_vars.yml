@@ -5,7 +5,8 @@ irods_zone_name: tempZone
 irods_service_port: 1247
 irods_port_range_begin: 20000
 irods_port_range_end: 20199
-irods_vault_dir: "/var/lib/irods/iRODS/Vault"
+irods_vault_dir: "/irods/vault/dir"
+irods_vault_dir_default: "/var/lib/irods/iRODS/Vault"
 irods_local_zone_sid: "TEMP_LOCAL_ZONE_SID"
 irods_agent_key: "temp_32_byte_key_for_agent__conn"
 irods_admin_username: _admin_username_
@@ -15,5 +16,4 @@ irods_db_port: 5432
 irods_db_name: ICAT
 irods_db_user: _db_username_
 irods_db_password: _db_password_
-icat_server: _server_hostname_
-nfs_server: _server_hostname_
+ies_hostname: _icat_enabled_server_hostname_
