@@ -11,9 +11,11 @@ irods_local_zone_sid: "TEMP_LOCAL_ZONE_SID"
 irods_agent_key: "temp_32_byte_key_for_agent__conn"
 irods_admin_username: _admin_username_
 irods_admin_password: _admin_password_
-irods_db_hostname: _db_hostname_
+irods_db_hostname: _db_hostname_or_ip
 irods_db_port: 5432
 irods_db_name: ICAT
 irods_db_user: _db_username_
 irods_db_password: _db_password_
-ies_hostname: _icat_enabled_server_hostname_
+irods_ies_hostname: _icat_enabled_server_hostname_or_ip_
+idropweb2_hostname: _hostname_or_ip_to_access_idropweb2_
+idropweb2_port: _port_to_access_idropweb2_ 

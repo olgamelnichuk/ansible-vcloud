@@ -64,7 +64,7 @@ expect {
 expect {
 
     -re "iCAT server's hostname or IP address.*:" {
-        exp_send "{{ irods_icat_server }}\n"
+        exp_send "{{ irods_ies_hostname }}\n"
         exp_continue
         }
 

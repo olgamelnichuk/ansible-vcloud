@@ -1,0 +1,74 @@
+---
+- name: include additional variables
+  include_vars: ../../irods_vars.yml
+
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - openjdk-7-jdk
+  - openssl
+  - tomcat7 
+  - nginx
+
+- name: update java alternatives
+  command: update-java-alternatives -s java-1.7.0-openjdk-amd64
+
+- name: create /etc/idrop-web directory
+  file: path=/etc/idrop-web state=directory
+
+- name: copy groovy config to /etc/idrop-web
+  template: src=idrop-web-config2.groovy dest=/etc/idrop-web/idrop-web-config2.groovy
+  notify: restart tomcat7
+
+- name: download idrop-web2 war
+  get_url: url=http://people.renci.org/~danb/FOR_DEMOS/iDrop-Web-2/idrop-web2.war dest=/tmp
+  register: get_war
+
+- name: copy war to tomcat7/webapps
+  command: cp /tmp/idrop-web2.war /var/lib/tomcat7/webapps/idrop-web2.war
+  notify: restart tomcat7
+  when: get_war | changed
+
+#- name: ensure the default site is removed
+#  file: path=/etc/nginx/sites-{{ item }}/default state=absent
+#  with_items:
+#  - enabled
+#  - available
+#  notify:
+#  - restart nginx
+
+- name: ensure nginx ssl directory is created
+  file: path=/etc/nginx/ssl state=directory
+
+- name: generate ssl key and certificate
+  command: "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/nginx/ssl/{{ idropweb2_hostname }}.key -out /etc/nginx/ssl/{{ idropweb2_hostname }}.crt -subj '/C=UK/ST=Cambridge/L=Cambridge/O=Unknown/OU=Unknown/CN={{ idropweb2_hostname }}'"
+  args: 
+    creates: "/etc/nginx/ssl/{{ idropweb2_hostname }}.key"
+  notify: reload nginx  
+
+- name: copy nginx.conf to /etc/nginx
+  template: src=nginx.conf dest=/etc/nginx/nginx.conf
+  notify: restart nginx
+
+#- name: ensure sites-available is configured
+#  template: src=nginx_sites-available.conf.j2 dest=/etc/nginx/sites-available/{{ nginx_upstream_name }} group=root owner=root
+#  notify: reload nginx
+
+#- name: ensure sites-available is symlinked to sites-enabled
+#  file: src=/etc/nginx/sites-available/{{ nginx_upstream_name }} dest=/etc/nginx/sites-enabled/{{ nginx_upstream_name }} state=link
+#  notify: restart nginx
+
+- name: ensure tomcat7 starts on a fresh reboot
+  service: name=tomcat7 state=started enabled=yes
+
+- name: ensure nginx starts on a fresh reboot
+  service: name=nginx state=started enabled=yes
+
+
+#- name: copy server.xml to /etc/tomcat7
+#  copy: src=server.xml dest=/etc/tomcat7/server.xml
+
+
