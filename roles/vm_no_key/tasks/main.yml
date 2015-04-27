@@ -1,14 +1,14 @@
 ---
-- name: upgrade all packages
+- name: upgrade all packages (RedHat)
   yum: name=* state=latest
   sudo: true
   when: ansible_os_family == "RedHat"
 
-- name: install SELinux-Python
+- name: install SELinux-Python (RedHat)
   yum: name=libselinux-python state=present
   when: ansible_os_family == "RedHat"
 
-- name: upgrade all packages
+- name: upgrade all packages (Debian)
   apt: update_cache=yes
   when: ansible_os_family == "Debian"
 
@@ -32,19 +32,18 @@
   user: name=ansible comment="Ansible User" group=admin home=/home/ansible state=present
 
 - name: Check if key-pair exists 
-  local_action: command ls {{ key_dir }}/{{ key_name }}
-  register: result
-  ignore_errors: true
+  local_action: stat path={{ key_dir }}/{{ key_name }}
+  register: key_pair
 
-- debug: var=result
+- debug: var=key_pair.stat.exists
 
 - name: Create a directory to store key-pair
   local_action: command mkdir -p {{ key_dir }}
-  when: result.stderr != ""
+  when: not key_pair.stat.exists
 
 - name: Generate SSH keys
   local_action: command ssh-keygen -t rsa  -f {{ key_dir }}/{{ key_name }} -P ""
-  when: result.stderr != ""
+  when: not key_pair.stat.exists
 
 - name: Authorized key upload
   authorized_key: 
