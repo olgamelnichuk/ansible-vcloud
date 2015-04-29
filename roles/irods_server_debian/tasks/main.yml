@@ -35,6 +35,24 @@
 - fail: irods server is not up after setup command
   when: ps_awx.stdout_lines | length < 3
 
+- name: update /etc/irods/irodsHost config (IES)
+  lineinfile:
+    dest: /etc/irods/irodsHost
+    line: "localhost {{ irods_gateway_hostname }} {{ ansible_default_ipv4.address }} {{ ansible_hostname }}"
+    state: present
+    backup: yes
+  when: icat_is_enabled
+  notify: restart irods
+
+- name: update /etc/irods/irodsHost config (Resource Server)
+  lineinfile:
+    dest: /etc/irods/irodsHost
+    line: "localhost {{ ansible_default_ipv4.address }} {{ ansible_hostname }}"
+    state: present
+    backup: yes 
+  when: not icat_is_enabled
+  notify: restart irods
+
 - name: Create irods_vault directory if it doesn't exists
   file: path={{ irods_vault_dir }} state=directory owner={{ irods_service_account_name }}  group={{ irods_service_group_name }}
 
