@@ -24,7 +24,8 @@
   notify: restart tomcat7
 
 - name: download idrop-web2 war
-  get_url: url=http://people.renci.org/~danb/FOR_DEMOS/iDrop-Web-2/idrop-web2.war dest=/tmp
+  #get_url: url=http://people.renci.org/~danb/FOR_DEMOS/iDrop-Web-2/idrop-web2.war dest=/tmp
+  get_url: url=https://code.renci.org/gf/download/frsrelease/223/2628/idrop-web2.war dest=/tmp
   register: get_war
 
 - name: copy war to tomcat7/webapps
