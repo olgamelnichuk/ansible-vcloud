@@ -1,6 +1,6 @@
 ---
 - name: build hosts file
-  hosts: [irods_icat, irods_ies, irods_server]
+  hosts: [irods_icat, irods_ies, irods_server, backup_server]
   sudo: true
   tasks: 
 
@@ -12,3 +12,4 @@
     - '{{ groups.irods_icat }}'
     - '{{ groups.irods_ies }}'
     - '{{ groups.irods_server }}'
+    - '{{ groups.backup_server }}'
