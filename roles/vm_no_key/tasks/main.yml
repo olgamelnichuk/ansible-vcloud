@@ -1,4 +1,7 @@
 ---
+- name: include additional variables
+  include_vars: ../../ssh_key_vars.yml
+
 - name: upgrade all packages (RedHat)
   yum: name=* state=latest
   sudo: true
