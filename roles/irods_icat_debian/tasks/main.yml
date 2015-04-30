@@ -1,7 +1,10 @@
 ---
 - name: include additional variables
   include_vars: ../../irods_vars.yml
-  
+
+- name: include additional variables
+  include_vars: ../../ssh_key_vars.yml  
+
 - name: upgrade all packages
   apt: update_cache=yes
 
@@ -11,6 +14,8 @@
   - python-psycopg2 
   - postgresql 
   - postgresql-contrib
+  - autopostgresqlbackup
+  - rsync
 
 - name: make sure postgres is running
   service: name=postgresql state=started enabled=yes
@@ -56,3 +61,22 @@
 
 - name: make sure postgres is restarted
   service: name=postgresql state=restarted
+
+# setup automatic database backups
+
+- name: copy private key
+  copy: src={{ key_dir }}/{{ key_name}} dest=/etc/ssh/{{ key_name }} mode=0600
+
+- name: copy post backup script
+  template:
+    src: postgresql-backup-post
+    dest: /etc/postgresql-backup-post
+    mode: 0755
+
+- name: apply autopostgresqlbackup configuration
+  template:
+    src: autopostgresqlbackup.config
+    dest: /etc/default/autopostgresqlbackup
+    mode: 0644
+
+

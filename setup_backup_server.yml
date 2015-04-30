@@ -1,0 +1,9 @@
+---
+- name: Setup backup server
+  hosts: [backup_server]
+  roles: [backup_debian]
+  sudo: true
+  vars:
+    rsync_user: rsync_user
+    rsync_key_dir: /etc/ssh/
+    key_tag: rsync

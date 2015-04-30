@@ -3,3 +3,5 @@
   hosts: [irods_icat]
   roles: [irods_icat_debian]
   sudo: true
+  vars:
+    key_tag: rsync

@@ -1,0 +1,38 @@
+---
+- name: include additional variables
+  include_vars: ../../ssh_key_vars.yml
+
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - ssh
+  - rsync
+
+- name: create rsync user
+  user: name={{ rsync_user }} createhome=yes state=present
+
+- name: generate random password for user only on creation
+  shell: echo "{{ rsync_user }}:$(/usr/bin/openssl rand -base64 32)" | chpasswd
+
+- name: Check if key-pair exists 
+  local_action: stat path={{ key_dir }}/{{ key_name }}
+  register: key_pair
+  sudo: false
+
+- debug: var=key_pair.stat.exists
+
+- name: Generate SSH keys
+  local_action: command ssh-keygen -t rsa  -f {{ key_dir }}/{{ key_name }} -P ""
+  when: not key_pair.stat.exists
+  sudo: false
+
+- name: Authorized key upload
+  authorized_key: 
+    user: "{{ rsync_user }}"
+    key: "{{ lookup('file', key_dir + '/' + key_name + '.pub') }}"
+    path: "/home/{{ rsync_user }}/.ssh/authorized_keys"
+    manage_dir: no
+  sudo: true

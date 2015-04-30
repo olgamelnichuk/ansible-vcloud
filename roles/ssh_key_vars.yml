@@ -1,0 +1,3 @@
+---
+key_dir: "{{ playbook_dir }}/keys"
+key_name: "id_rsa_{{ key_tag }}"
