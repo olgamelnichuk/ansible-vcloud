@@ -3,7 +3,7 @@
   include_vars: ../../irods_vars.yml
 
 - name: include additional variables
-  include_vars: ../../ssh_key_vars.yml  
+  include_vars: ../../backup_vars.yml
 
 - name: upgrade all packages
   apt: update_cache=yes
