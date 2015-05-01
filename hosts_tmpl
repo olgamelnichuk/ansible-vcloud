@@ -18,3 +18,6 @@ nfs_server ansible_ssh_user=ansible
 
 [docker]
 docker01 ansible_ssh_user=ansible
+
+[backup_server]
+backup_server ansible_ssh_user=ansible
