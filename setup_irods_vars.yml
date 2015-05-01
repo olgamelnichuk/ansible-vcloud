@@ -17,9 +17,8 @@ irods_db_name: ICAT
 irods_db_user: _db_username_
 irods_db_password: _db_password_
 irods_db_backup_dir: /var/lib/autopostgresqlbackup
+irods_db_backup_hostname: _backup_hostname_or_ip_
 irods_ies_hostname: _icat_enabled_server_hostname_or_ip_
 irods_gateway_hostname: _external_hostname_or_ip_to_access_irods_
 idropweb2_hostname: _external_hostname_or_ip_to_access_irods_
 idropweb2_port: _port_to_access_idropweb2_ 
-rsync_user: _rsync_user_
-rsync_host: _rsync_hostname_or_ip_
