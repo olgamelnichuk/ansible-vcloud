@@ -1,0 +1,1 @@
+zk://{{ groups['mesos_master']|join(':2181,') }}:2181/mesos

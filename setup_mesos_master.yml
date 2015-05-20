@@ -1,0 +1,7 @@
+---
+- name: Set up Mesos
+  hosts: [mesos_master]
+  roles: [mesos_ubuntu]
+  sudo: true
+  vars:
+    is_master: true
