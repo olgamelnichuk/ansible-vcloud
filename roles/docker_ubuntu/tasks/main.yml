@@ -40,3 +40,7 @@
   when: grub_config | changed
   notify: reboot vm
 
+- name: waiting 2 minutes for server to come back
+  local_action: wait_for timeout=120
+  sudo: false
+  when: grub_config | changed

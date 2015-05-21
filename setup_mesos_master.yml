@@ -1,5 +1,5 @@
 ---
-- name: Set up Mesos
+- name: set up mesos master node
   hosts: [mesos_master]
   roles: [mesos_ubuntu]
   sudo: true

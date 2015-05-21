@@ -41,65 +41,9 @@
 - name: set Zookeeper hosts
   template: src=zk dest=/etc/mesos/zk
 
-- name: set master id
-  template: src=master_id dest=/etc/zookeeper/conf/myid
+- include: master.yml
   when: is_master
 
-- name: configure master's Zookeeper
-  lineinfile: 
-    dest: /etc/zookeeper/conf/zoo.cfg
-    insertafter: "#server.3=zookeeper3:2888:3888"
-    line: "server.{{ item.0 + 1 }}={{ item.1 }}:2888:3888"
-    state: present
-    backup: yes
-  with_indexed_items: '{{ groups.mesos_master }}'
-  when: is_master
-
-- name: modify the quorum to reflect the cluster size
-  shell: 'echo $(( 2*{{ groups.mesos_master|length }}/3 > 1 ? 2*{{ groups.mesos_master|length }}/3 : 1 )) > /etc/mesos-master/quorum'
-  when: is_master
-
-- name: configure master's ip
-  shell: echo {{ ansible_default_ipv4.address }}| sudo tee /etc/mesos-master/ip
-  when: is_master
-
-- name: configure master's hostname
-  shell: cp /etc/mesos-master/ip /etc/mesos-master/hostname
-  when: is_master
-
-- name: create Marathon config directory on master
-  file: path=/etc/marathon/conf state=directory
-  when: is_master
-
-- name: copy master's hostname to marathon config directory
-  shell: cp /etc/mesos-master/hostname /etc/marathon/conf
-  when: is_master
-
-- name: define the list of zookeeper masters that Marathon will connect to
-  shell: cp /etc/mesos/zk /etc/marathon/conf/master
-  when: is_master
-
-- name: allow Marathon to store its own state information in zookeeper
-  template: src=zk_marathon dest=/etc/marathon/conf/zk
-  when: is_master
-
-- name: stop any slave-processes if running
-  service: name=mesos-slave state=stopped
-  when: is_master  
-
-- name: ensure that the server doesn't start the slave process at boot by creating an override file
-  shell: echo manual | sudo tee /etc/init/mesos-slave.override
-  when: is_master
-
-- name: restart Zookeeper
-  service: name=zookeeper state=restarted
-  when: is_master
-
-- name: start mesos
-  service: name=mesos-master state=started enabled=true
-  when: is_master
-
-- name: start marathon
-  service: name=marathon state=started enabled=true
-  when: is_master
+- include: slave.yml
+  when: not is_master
 
