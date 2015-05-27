@@ -1,0 +1,15 @@
+# openlava
+#
+ansible-playbook -vvv -i hosts -c ssh setup_openlava_cluster.yml --ask-pass
+ansible-playbook -vvv -i hosts -c ssh -e@./secret.yml -e@./setup_openlava_user_vars.yml setup_openlava_user.yml --ask-pass
+
+
+# create secret.yml
+#
+#
+# python -c 'import crypt; print crypt.crypt("password", "some dictionary")'
+openlava_hashed_password: __hashed_password__
+
+#
+# python -c 'import crypt; print crypt.crypt("password", "some dictionary")'
+rcloud_hashed_password: __hashed_password__

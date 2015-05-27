@@ -1,0 +1,82 @@
+---
+- name: prepare software and setup user
+  hosts: 127.0.0.1
+  connection: local
+  gather_facts: false
+  tasks:
+
+    - name: Check if key-pair exists 
+      local_action: stat path={{ key_dir }}/{{ key_name }}
+      register: key_pair
+
+    - debug: var=key_pair.stat.exists
+
+    - name: Create a directory to store key-pair
+      local_action: command mkdir -p {{ key_dir }}
+      when: not key_pair.stat.exists
+
+    - name: Generate SSH keys
+      local_action: command ssh-keygen -t rsa  -f {{ key_dir }}/{{ key_name }} -P ""
+      when: not key_pair.stat.exists
+
+    - name: ssh-add the private key locally
+      local_action: command ssh-add {{ key_dir }}/{{ key_name }}
+
+- name: install openlava user
+  hosts: [openlava]
+  remote_user: root
+  tasks:
+
+    # cleanup
+    #
+    - name: stop openlava service if running
+      shell: service openlava stop
+
+    - name: delete openlava user
+      user: name=openlava state=absent force=yes
+    - group: name=openlava state=absent system=true
+
+    # create user
+    #
+    - name: create openlava group
+      group: name=openlava state=present system=true
+
+        #
+        # python -c 'import crypt; print crypt.crypt("password", "some dictionary")' 
+    - name: create openlava user
+      user: name=openlava state=present group=openlava createhome=yes home=/home/openlava password={{openlava_hashed_password}}
+        groups=sudo,openlava shell=/bin/bash system=true
+
+    # add to sudoers
+    #
+    - name: add openlava to sudoers
+      shell: "adduser openlava sudo"
+
+
+    #- name: Create sudoers file backup
+    #  shell: cp -f /etc/sudoers /etc/sudoers.bak
+
+    #- name: Create admins group
+    #  group: name=admin system=yes state=present
+
+    #- name: Make sure admin group can sudo
+    #  lineinfile: 
+    #    dest: /etc/sudoers 
+    #    state: present 
+    #    regexp: "^%admin ALL.?.?ALL.? NOPASSWD.? ALL" 
+    #    line: "%admin ALL=(ALL) NOPASSWD: ALL"
+
+    #- name: Make sure ssh-agent works via sudo
+    #  lineinfile: dest=/etc/sudoers state=present regexp="^Defaults env_keep\+\=SSH_AUTH_SOCK" line="Defaults env_keep+=SSH_AUTH_SOCK"
+
+    #- name: Create user ansible
+    #  user: name=ansible comment="Ansible User" group=admin home=/home/ansible state=present
+
+    # add keys (optional, not really necessary)
+    #
+    - name: Authorized key upload
+      authorized_key: 
+        user: openlava 
+        key: "{{ lookup('file', key_dir + '/' + key_name + '.pub') }}"
+        path: "/home/openlava/.ssh/authorized_keys"
+        manage_dir: no
