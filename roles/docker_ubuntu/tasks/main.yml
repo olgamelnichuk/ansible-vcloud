@@ -17,7 +17,7 @@
 
 - name: install docker package
   apt:
-    name: "lxc-docker"
+    name: lxc-docker
     state: latest
     update_cache: yes
 
@@ -44,3 +44,6 @@
   local_action: wait_for timeout=120
   sudo: false
   when: grub_config | changed
+
+- name: test docker installation
+  shell: docker run hello-world
