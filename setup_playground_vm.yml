@@ -1,0 +1,18 @@
+---
+- name: Set up playground vm
+  hosts: [playground]
+  #roles: [docker_ubuntu, playground_ubuntu]
+  roles: [playground_ubuntu]
+  sudo: true
+  vars_prompt:
+  - name: "user_name"    
+    prompt: "name of the user to create/modify"
+    default: testuser
+    private: no    
+
+  - name: "user_password"    
+    prompt: "user password to create/modify"    
+    private: yes    
+    encrypt: "md5_crypt" #need to have python-passlib installed in local machine before we can use it: sudo pip install passlib   
+    confirm: yes    
+    salt_size: 7
