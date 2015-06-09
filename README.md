@@ -3,7 +3,7 @@ A collection of ansible scripts to setup VMs on a vcloud (VMware vCloud Director
 
 ### Create a vApp:
 ```shell
-ansible-playbook -vvvv -i hosts  -e@./secret.yml -e@./create_vapp_vars_customized.yml create_vapp.yml --ask-vault-pass
+ansible-playbook -vvvv -i hosts -c ssh -e@./secret.yml -e@./create_vapp_vars_customized.yml create_vapp.yml --ask-vault-pass
 
 ```
 ### secret.yml example
@@ -25,9 +25,9 @@ Host 192.168.*
 
 ### setup ssh key on a vm example
 ```shell
-ansible-playbook -i hosts setup_ssh_key.yml --extra-vars "hosts=... key_tag=vm" --ask-pass
+ansible-playbook -i hosts -c ssh setup_ssh_key.yml --extra-vars "hosts=... key_tag=vm" --ask-pass
 ```
 or
 ```shell
-ansible-playbook -i hosts setup_ssh_key.yml --extra-vars "hosts=... ansible_ssh_port=... key_tag=bastion" --ask-pass
+ansible-playbook -i hosts -c ssh setup_ssh_key.yml --extra-vars "hosts=... ansible_ssh_port=... key_tag=bastion" --ask-pass
 ```

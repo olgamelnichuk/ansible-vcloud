@@ -1,0 +1,128 @@
+---
+- name: update ubuntu and install necessary packages
+  hosts: [openlava]
+  remote_user: root
+  gather_facts: False
+  tasks:
+
+    - name: upgrade all packages
+      apt: update_cache=yes
+
+    - name: install required packages
+      apt: pkg={{ item }} state=latest
+      with_items: 
+      - build-essential
+      - libncurses5-dev
+      - tcl
+      - tcl-dev
+      - tcl8.6-dev
+      - sysv-rc-conf
+
+- name: download and compile
+  hosts: [openlava]
+  vars: 
+    HOME: /home/openlava
+  remote_user: root
+  become: yes
+  become_user: openlava
+  become_method: su
+  gather_facts: False
+
+  tasks:
+
+    - name: create folder
+      file: path={{HOME}}/compile state=directory
+
+    - name: download the distribution
+      get_url: url=http://www.openlava.org/tarball/openlava-3.0.tar.gz dest={{HOME}}/compile
+
+    - name: unzip it
+      command: tar zxvf openlava-3.0.tar.gz chdir={{HOME}}/compile
+
+    - name: configure it
+      shell: ./configure chdir={{HOME}}/compile/openlava-3.0
+
+    - name: make it
+      shell: make chdir={{HOME}}/compile/openlava-3.0
+
+
+- name: install the software
+  hosts: [openlava]
+  vars: 
+    HOME: /home/openlava
+  remote_user: root
+
+  tasks:
+
+    - name: install it
+      shell: sudo make install chdir={{HOME}}/compile/openlava-3.0
+
+    - name: copy scripts
+      shell: cp lsb.hosts lsb.params lsb.queues lsb.users lsf.cluster.openlava lsf.conf lsf.shared lsf.task openlava.* /opt/openlava-3.0/etc chdir={{HOME}}/compile/openlava-3.0/config
+
+    - name: change owner
+      shell: chown -R openlava:openlava /opt/openlava-3.0
+
+    - name: copy openlava service starter to init.d
+      shell: cp /opt/openlava-3.0/etc/openlava /etc/init.d
+
+    - name: copy openlava profiles
+      shell: cp /opt/openlava-3.0/etc/openlava.* /etc/profile.d
+
+    - name: update the config file
+      lineinfile: 
+        dest: "/opt/openlava-3.0/etc/lsf.cluster.openlava"
+        regexp: '.*{{ hostvars[item].ansible_hostname }}$'
+        insertbefore: "End     Host"
+        line: "{{ hostvars[item].ansible_hostname  }}      !              !     1       -    -"
+        state: present
+        backup: yes
+      when: hostvars[item].ansible_default_ipv4.address is defined
+      with_items: 
+        - '{{ groups.openlava }}'
+
+    - name: add lines to /etc/hosts file 
+      lineinfile: 
+        dest: /etc/hosts
+        regexp: '.*{{ hostvars[item].ansible_hostname }}$'
+        #regexp: '.*{{ item }}$'
+        line: '{{ hostvars[item].ansible_default_ipv4.address }} {{ hostvars[item].ansible_hostname }}'
+      when: hostvars[item].ansible_default_ipv4.address is defined
+      with_items: 
+        - '{{ groups.openlava }}'
+
+    - name: add it to the boot list
+      shell: sysv-rc-conf openlava on
+
+
+- name: start the service using openlava user
+  hosts: [openlava]
+  vars: 
+    HOME: /home/openlava
+  remote_user: root
+  become: yes
+  become_user: openlava
+  become_method: su
+  gather_facts: False
+
+  tasks:
+
+    - name: stop the service
+      shell: service openlava stop
+
+    - name: start the service
+      shell: service openlava start
+
+    - name: add lines to .bashrc
+      lineinfile: 
+        dest: /home/openlava/.bashrc
+        regexp: '. /etc/profile.d/openlava.sh'
+        insertbefore: "EOF"
+        line: '. /etc/profile.d/openlava.sh'
+
+    - name: check openlava works
+      shell: sleep ; . /etc/profile.d/openlava.sh && lsid
+
+    - name: check openlava works
+      shell: . /etc/profile.d/openlava.sh && bhosts
+
