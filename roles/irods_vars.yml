@@ -2,5 +2,6 @@
 irods_ies_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-icat-4.0.3-64bit.deb
 irods_postgres_plugin_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3-with-v1.4-database-plugins/irods-database-plugin-postgres-1.4.deb
 irods_server_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-resource-4.0.3-64bit.deb
+irods_icommands_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-icommands-4.0.3-64bit.deb
 #irods_dev_tools_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-dev-4.0.3-64bit.deb
 #irods_runtime_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.0.3/irods-runtime-4.0.3-64bit.deb
