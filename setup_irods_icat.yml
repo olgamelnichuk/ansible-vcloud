@@ -1,7 +1,6 @@
 ---
-- name: Setup iRODS ICAT database
-  hosts: [irods_icat]
-  roles: [irods_icat_debian]
+- hosts: [irods_ies]
+  roles: [irods_server_debian, irods_idropweb2_debian]
   sudo: true
   vars:
-    key_tag: rsync
+    icat_is_enabled: true
