@@ -14,17 +14,17 @@
 
 - debug: var=get_db_plugin_pkg.dest
 
-- name: download irods IES package
-  get_url: url={{ irods_ies_pkg_url }} dest=/tmp
-  register: get_ies_pkg
+- name: download irods ICAT package
+  get_url: url={{ irods_icat_pkg_url }} dest=/tmp
+  register: get_icat_pkg
 
-- debug: var=get_ies_pkg.dest
+- debug: var=get_icat_pkg.dest
 
-- name: install irods server rpms
-  apt: deb={{ get_ies_pkg.dest }} state=installed
+- name: install irods icat rpms
+  apt: deb={{ get_icat_pkg.dest }} state=installed
 
 - name: install db plugin
   apt: deb={{ get_db_plugin_pkg.dest }} state=installed
 
 - name: copy expect script to setup irods server
-  template: src=setup_irods_ies.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
+  template: src=setup_irods_icat.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700

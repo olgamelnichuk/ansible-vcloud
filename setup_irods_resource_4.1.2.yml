@@ -1,4 +1,4 @@
 ---
 - hosts: [irods_resource]
-  roles: [irods_debian]
+  roles: [irods_4.1.2_ubuntu]
   sudo: true

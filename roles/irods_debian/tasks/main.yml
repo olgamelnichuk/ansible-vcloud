@@ -2,6 +2,10 @@
 - name: include additional variables
   include_vars: ../../irods_vars.yml
 
+- name: set icat_enabled to false if it isn't defined
+  set_fact: icat_enabled=false
+  when: icat_enabled is not defined
+
 - name: upgrade all packages
   apt: update_cache=yes
 
@@ -11,11 +15,11 @@
   - expect
   - python-psycopg2
 
-- include: ies.yml
-  when: icat_is_enabled
+- include: icat.yml
+  when: icat_enabled
 
-- include: server.yml
-  when: not icat_is_enabled
+- include: resource.yml
+  when: not icat_enabled
 
 - name: test if irods is already installed and running
   shell: ps awx | grep irodsServer
@@ -41,7 +45,7 @@
     line: "localhost {{ irods_gateway_hostname }} {{ ansible_default_ipv4.address }} {{ ansible_hostname }}"
     state: present
     backup: yes
-  when: icat_is_enabled
+  when: icat_enabled
   notify: restart irods
 
 - name: update /etc/irods/irodsHost config (Resource Server)
@@ -50,7 +54,7 @@
     line: "localhost {{ ansible_default_ipv4.address }} {{ ansible_hostname }}"
     state: present
     backup: yes 
-  when: not icat_is_enabled
+  when: not icat_enabled
   notify: restart irods
 
 - name: Create irods_vault directory if it doesn't exists

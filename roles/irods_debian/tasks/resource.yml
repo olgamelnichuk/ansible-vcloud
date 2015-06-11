@@ -1,0 +1,12 @@
+---
+- name: download irods resource package
+  get_url: url={{ irods_resource_pkg_url }} dest=/tmp
+  register: get_resource_pkg
+
+- debug: var=get_resource_pkg.dest
+
+- name: install irods resource rpms
+  apt: deb={{ get_resource_pkg.dest }} state=installed
+
+- name: copy expect script to setup irods resource
+  template: src=setup_irods_resource.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700

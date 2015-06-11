@@ -1,0 +1,40 @@
+---
+- name: include additional variables
+  include_vars: ../../irods_vars_4.1.2.yml
+
+- name: set icat_enabled to false if it isn't defined
+  set_fact: icat_enabled=false
+  when: icat_enabled is not defined
+
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - expect
+  - python-psycopg2
+
+- include: icat.yml
+  when: icat_enabled
+
+- include: resource.yml
+  when: not icat_enabled
+
+- name: test if irods is already installed and running
+  shell: ps awx | grep irodsServer
+  register: ps_awx
+
+- debug: var=ps_awx
+
+- name: setup irods server
+  command: /tmp/setup_irods_with_expect
+  register: setup_with_expect
+  when: ps_awx.stdout_lines | length < 3
+
+- name: test if irods is already installed and running
+  shell: ps awx | grep irodsServer
+  register: ps_awx
+
+- fail: irods server is not up after setup command
+  when: ps_awx.stdout_lines | length < 3
