@@ -1,0 +1,32 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - zip
+  - openssl
+
+- name: download docker registry sources
+  get_url: url=https://github.com/docker/distribution/archive/v2.0.0.zip dest=/tmp
+  register: sources_zip
+
+- debug: var=sources_zip.dest
+
+- name: Unpack the the downloaded package into a local directory
+  unarchive: src={{ sources_zip.dest }} dest=/tmp copy=no
+
+- name: create certs directory
+  file: path=/tmp/distribution/certs state=directory
+
+- name: generate self-signed certificates
+  shell: openssl req -newkey rsa:2048 -nodes -keyout certs/domain.key -x509 -days 365 -out certs/domain.crt -subj "/C={{ cert_country }}/ST={{ cert_province }}/L={{ cert_city }}/O={{ cert_org }}/CN={{ cert_cn }}"
+  args: 
+    chdir: /tmp/distribution
+    creates: /tmp/distribution/certs/domain.crt
+
+
+
+
+
