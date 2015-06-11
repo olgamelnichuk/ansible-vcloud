@@ -38,3 +38,23 @@
 
 - fail: irods server is not up after setup command
   when: ps_awx.stdout_lines | length < 3
+
+- name: Create irods_vault directory if it doesn't exists
+  file: path={{ irods_vault_dir }} state=directory owner={{ irods_service_account_name }}  group={{ irods_service_group_name }}
+
+- name: copy iinit expect script
+  template: src=iinit.sh dest=/tmp/iinit owner=ansible group=admin mode=0700
+
+- name: run iinit
+  command: /tmp/iinit
+  sudo: false
+
+- name: check if '{{ ansible_hostname }}_resc' resource already exists
+  command: iadmin lr {{ ansible_hostname }}_resc
+  register: resource_details
+  sudo: false
+
+- name: create new resource 
+  command: iadmin mkresc {{ ansible_hostname }}_resc "unixfilesystem" {{ ansible_hostname }}:{{ irods_vault_dir }}
+  sudo: false
+  when: resource_details.stdout_lines | length < 2

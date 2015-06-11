@@ -78,10 +78,10 @@ expect {
 
 expect {
 
-    -re "iCAT server's hostname or IP address.*:" {
+    -re "iCAT server's hostname.*:" {
         exp_send "{{ irods_ies_hostname }}\n"
         exp_continue
-        }
+    }
 
     -re "iCAT server's ZoneName.*:" {
         exp_send "{{ irods_zone_name }}\n"
@@ -107,7 +107,7 @@ expect {
     -re "iCAT server's admin password.*:" {
         exp_send "{{ irods_admin_password }}\n"
         exp_continue
-        }
+    }
 
     timeout {
         send_user "\n(B) No match found.\n"

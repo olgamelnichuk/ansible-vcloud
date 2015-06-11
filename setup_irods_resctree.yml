@@ -9,7 +9,7 @@
 #
 #
 - name: configure initial iRODS resource tree
-  hosts: [irods_ies]
+  hosts: [irods_icat]
   tasks: 
 
   - name: check if demoResc is passthru
