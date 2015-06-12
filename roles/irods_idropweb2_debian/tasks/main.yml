@@ -1,7 +1,4 @@
 ---
-- name: include additional variables
-  include_vars: ../../irods_vars.yml
-
 - name: upgrade all packages
   apt: update_cache=yes
 

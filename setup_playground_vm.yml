@@ -2,8 +2,10 @@
 - name: Set up playground vm
   hosts: [playground]
   #roles: [docker_ubuntu, playground_ubuntu]
-  roles: [playground_ubuntu]
+  roles: [playground_ubuntu, irods_icommands_ubuntu]
   sudo: true
+  vars:
+    icommands_version: 4.1.2
   vars_prompt:
   - name: "user_name"    
     prompt: "name of the user to create/modify"

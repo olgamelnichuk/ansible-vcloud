@@ -1,0 +1,16 @@
+---
+- name: set icommands version to 4.0.3 if it isn't defined
+  set_fact: icommands_version=4.0.3
+  when: icommands_version is not defined
+
+- name: include additional variables
+  include_vars: "../../irods_vars_{{ icommands_version }}.yml"
+
+- name: download irods client package
+  get_url: url={{ irods_icommands_pkg_url }} dest=/tmp
+  register: get_client_pkg
+
+- debug: var=get_client_pkg.dest
+
+- name: install irods client rpms
+  apt: deb={{ get_client_pkg.dest }} state=installed

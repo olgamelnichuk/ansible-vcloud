@@ -1,6 +1,6 @@
 ---
 - name: include additional variables
-  include_vars: ../../irods_vars.yml
+  include_vars: ../../irods_vars_4.0.3.yml
 
 - name: set icat_enabled to false if it isn't defined
   set_fact: icat_enabled=false

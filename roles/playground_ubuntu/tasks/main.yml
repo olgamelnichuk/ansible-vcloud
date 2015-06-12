@@ -18,18 +18,3 @@
 
 - name: mount users nfs folder
   mount: name=/mnt/users src={{ groups.nfs_server[0] }}:/nfs/users  fstype=nfs  opts="rw,bg,hard" state=mounted
-
-# irods client
-
-- name: include additional variables
-  include_vars: ../../irods_vars.yml
-
-- name: download irods client package
-  get_url: url={{ irods_icommands_pkg_url }} dest=/tmp
-  register: get_client_pkg
-
-- debug: var=get_client_pkg.dest
-
-- name: install irods client rpms
-  apt: deb={{ get_client_pkg.dest }} state=installed
-
