@@ -1,0 +1,5 @@
+---
+- name: Set up ldap server
+  hosts: [ldap_server]
+  roles: [ldap_ubuntu]
+  sudo: true

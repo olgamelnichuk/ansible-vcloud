@@ -1,6 +1,6 @@
 ---
 - hosts: [irods_icat]
-  roles: [irods_4.1.2_ubuntu] #, irods_idropweb2_debian]
+  roles: [irods_4.1.2_ubuntu, irods_idropweb2_debian]
   sudo: true
   vars:
     icat_enabled: true

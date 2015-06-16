@@ -1,0 +1,6 @@
+---
+ldap_domain: example.com
+ldap_base: dc=example,dc=com
+ldap_url: ldap://example.com
+ldap_password: _secure_password_
+ldap_org: _organisation_

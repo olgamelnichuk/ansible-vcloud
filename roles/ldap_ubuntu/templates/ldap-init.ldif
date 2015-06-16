@@ -1,0 +1,12 @@
+
+dn: ou=People,{{ ldap_base }}
+ou: People
+description: All people in {{ ldap_org }}
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Group,{{ ldap_base }}
+ou: Group
+description: All groups in {{ ldap_org }}
+objectClass: top
+objectClass: organizationalUnit
