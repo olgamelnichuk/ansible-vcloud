@@ -1,0 +1,95 @@
+---
+##### find next uid
+
+- name: find max uid number 
+  shell:  "ldapsearch -D 'cn=admin,{{ ldap_base }}' -w {{ ldap_password }} 'ou=People,{{ ldap_base }}', 'uidNumber=*' | awk '/uidNumber: / {print $2}' | sort | tail -n 1"
+  register: max_uid_search
+
+- debug: var=max_uid_search
+
+- set_fact: next_uid=10001
+  when: max_uid_search.stdout_lines | length == 0
+
+- set_fact: next_uid={{ max_uid_search.stdout_lines[0] + 1 }}
+  when: max_uid_search.stdout_lines | length > 0
+
+- debug: var=next_uid
+
+##### find next gid
+
+- name: find max gid number 
+  shell:  "ldapsearch -D 'cn=admin,{{ ldap_base }}' -w {{ ldap_password }} 'ou=Group,{{ ldap_base }}', 'gidNumber=*' | awk '/gidNumber: / {print $2}' | sort | tail -n 1"
+  register: max_gid_search
+
+- debug: var=max_gid_search
+
+- set_fact: next_gid=10001
+  when: max_gid_search.stdout_lines | length == 0
+
+- set_fact: next_gid={{ max_gid_search.stdout_lines[0] + 1 }}
+  when: max_gid_search.stdout_lines | length > 0
+
+- debug: var=next_gid
+
+##### check if user exists
+
+- name: find user by name
+  shell: "ldapsearch -D 'cn=admin,{{ ldap_base }}' -w {{ ldap_password }} 'ou=People,{{ ldap_base }}', 'uid={{ user_name }}' | awk '/uidNumber: / {print $2}'" 
+  register: user_search
+
+- debug: var=user_search
+
+- set_fact: user_exists={{ user_search.stdout_lines | length > 0 }}
+
+##### check if group exists
+
+- name: find group by name
+  shell: "ldapsearch -D 'cn=admin,{{ ldap_base }}' -w {{ ldap_password }} -b 'ou=Group,{{ ldap_base }}' 'cn={{ group_name }}' | awk '/gidNumber: / {print $2}'"
+  register: group_search
+
+- debug: var=group_search
+
+- set_fact: group_exists={{ group_search.stdout_lines | length > 0 }}
+
+###### create the group if it doesn't exists
+
+- set_fact: gid_number={{ next_gid }}
+  when: not group_exists
+
+- set_fact: gid_number={{ group_search.stdout_lines[0] }}
+  when: group_exists
+
+- debug: var=gid_number 
+
+- name: copy group.ldif
+  template: src=group.ldif dest=/tmp/group.ldif
+  when: not group_exists
+
+- name: create group 
+  shell: ldapadd -D 'cn=admin,{{ ldap_base }}' -w {{ ldap_password }} -f /tmp/group.ldif
+  when: not group_exists 
+
+###### create the user if it doesn't exists
+
+- set_fact: uid_number={{ next_gid }}
+  when: not user_exists
+
+- name: encrypt password
+  shell: slappasswd  -h "{SSHA}" -s {{ user_password }}
+  register: encrypted_password
+  when: not user_exists
+
+- debug: var=encrypted_password
+  when: not user_exists
+
+- set_fact: user_encrypted_password={{ encrypted_password.stdout_lines[0] }}
+  when: not user_exists
+
+- name: copy user.ldif
+  template: src=user.ldif dest=/tmp/user.ldif
+  when: not user_exists
+
+- name: create user
+  shell: ldapadd -D 'cn=admin,{{ ldap_base }}' -w {{ ldap_password }} -f /tmp/user.ldif
+  when: not user_exists 
+

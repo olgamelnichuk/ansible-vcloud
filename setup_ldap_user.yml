@@ -1,0 +1,11 @@
+---
+- name: Create ldap user
+  hosts: [ldap_server]
+  roles: [ldap_ubuntu]
+  sudo: true
+  vars:
+    ldap_mode: create_user
+    user_name: testuser
+    user_password: testpassword
+    group_name: testgroup
+    user_info: "Test User"

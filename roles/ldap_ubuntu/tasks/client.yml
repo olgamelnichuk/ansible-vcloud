@@ -1,0 +1,10 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - ldap-utils
+  - libpam-ldap 
+  - libnss-ldap 

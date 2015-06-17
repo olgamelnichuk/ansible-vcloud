@@ -3,3 +3,5 @@
   hosts: [ldap_server]
   roles: [ldap_ubuntu]
   sudo: true
+  vars:
+    ldap_mode: server

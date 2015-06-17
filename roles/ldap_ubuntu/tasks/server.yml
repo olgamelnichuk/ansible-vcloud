@@ -1,0 +1,60 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - slapd 
+  - ldap-utils
+
+- name: copy client ldap config
+  template: src=ldap.conf dest=/etc/ldap/ldap.conf
+
+- name: check if we need to do initial configuration
+  stat: path=/etc/ldap/initialized
+  register: init
+
+- set_fact: not_yet_initialized={{ not init.stat.exists }}
+
+- debug: var=not_yet_initialized
+
+- name: copy debconf-selections
+  template: src=debconf-selections dest=/tmp/debconf-selections
+  when: not_yet_initialized  
+
+- name: set debconf selections
+  shell: debconf-set-selections -v /tmp/debconf-selections
+  when: not_yet_initialized
+
+- name: reconfigure slapd
+  command: dpkg-reconfigure -f noninteractive slapd
+  when: not_yet_initialized
+  register: dpkg_reconfigure
+
+- name: remove debconf-selections file
+  file: path=/tmp/debconf-selections state=absent
+
+- name: set initialization finished
+  shell: touch /etc/ldap/initialized
+  args:
+    creates: /etc/ldap/initialized
+
+- name: restart ldap service
+  service: name=slapd state=restarted enabled=true 
+
+- name: copy ldap-base.ldif
+  template: src=ldap-base.ldif dest=/tmp/ldap-base.ldif
+
+- name: import ldap-base.ldif
+  shell: ldapmodify -ac -x -D "cn=admin,{{ ldap_base }}" -w {{ ldap_password }} -f /tmp/ldap-base.ldif
+  ignore_errors: yes
+
+- name: download migration tools
+  get_url: url=http://www.padl.com/download/MigrationTools.tgz dest=/tmp
+  register: migration_tools_tar
+
+- debug: var=migration_tools_tar
+
+- name: untar migration tools
+  shell: tar xzf {{ migration_tools_tar.dest }}

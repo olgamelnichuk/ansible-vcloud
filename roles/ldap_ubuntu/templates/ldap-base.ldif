@@ -10,3 +10,8 @@ ou: Group
 description: All groups in {{ ldap_org }}
 objectClass: top
 objectClass: organizationalUnit
+
+dn: ou=Hosts,{{ ldap_base }}
+ou: Hosts
+objectClass: top
+objectClass: organizationalUnit
