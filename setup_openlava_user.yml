@@ -29,12 +29,12 @@
 
     # cleanup
     #
-    - name: stop openlava service if running
-      shell: service openlava stop
+    #- name: stop openlava service if running
+    #  shell: service openlava stop
 
-    - name: delete openlava user
-      user: name=openlava state=absent force=yes
-    - group: name=openlava state=absent system=true
+    #- name: delete openlava user
+    #  user: name=openlava state=absent force=yes
+    #- group: name=openlava state=absent system=true
 
     # create user
     #
