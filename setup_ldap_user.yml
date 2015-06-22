@@ -5,7 +5,16 @@
   sudo: true
   vars:
     ldap_mode: create_user
-    user_name: testuser
-    user_password: testpassword
-    group_name: testgroup
-    user_info: "Test User"
+    user_info: "Ldap user"
+  vars_propmpt:
+  - name: "group_name"
+    propmpt: "User group"
+    default: "testgroup" 
+
+  - name: "user_name"
+    prompt: "User name"
+    default: "testuser"
+
+  - name: "user_password"
+    prompt: "User password"
+    private: yes
