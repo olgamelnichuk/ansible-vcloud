@@ -1,0 +1,7 @@
+---
+- name: Set up ldap client
+  hosts: [ldap_client]
+  roles: [ldap_ubuntu]
+  sudo: true
+  vars:
+    ldap_mode: client

@@ -5,6 +5,38 @@
 - name: install required packages
   apt: pkg={{ item }} state=latest
   with_items: 
-  - ldap-utils
-  - libpam-ldap 
-  - libnss-ldap 
+  - ldap-auth-client
+  - nscd
+
+- name: Set up /etc/nsswitch.conf to use ldap lookups
+  shell: auth-client-config -t nss -p lac_ldap
+
+#- name: add lines to /etc/hosts file 
+#  lineinfile: dest=/etc/hosts regexp='.*{{ ldap_server_hostname }}$'
+#                line='{{ ldap_server_ip }} {{ ldap_server_hostname }}'
+
+- name: copy my_mkhomedir config
+  template: src=client/my_mkhomedir dest=/usr/share/pam-configs/my_mkhomedir
+
+- name: copy my_mkhomedir config
+  template: src=client/my_groups dest=/usr/share/pam-configs/my_groups
+
+- name: copy debconf-selections
+  template: src=client/debconf-selections-ldap-auth-config dest=/tmp/debconf-selections
+
+- name: set debconf selections
+  shell: debconf-set-selections -v /tmp/debconf-selections
+
+- name: reconfigure ldap-auth-config
+  command: dpkg-reconfigure -f noninteractive ldap-auth-config
+
+- name: pam-auth-update
+  shell: pam-auth-update
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: restart nscd
+  service: name=nscd state=restarted enabled=yes
+
+- name: cleanup | remove debconf-selections file
+  file: path=/tmp/debconf-selections state=absent

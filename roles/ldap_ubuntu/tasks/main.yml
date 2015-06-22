@@ -1,4 +1,7 @@
 ---
+- fail: ldap_mode is undefined
+  when: ldap_mode is undefined
+
 - include: server.yml
   when: ldap_mode == "server"
 
