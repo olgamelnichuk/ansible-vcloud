@@ -15,38 +15,67 @@
   stat: path=/etc/ldap/initialized
   register: init
 
-- set_fact: not_yet_initialized={{ not init.stat.exists }}
+- set_fact: initialized={{ init.stat.exists }}
 
-- debug: var=not_yet_initialized
+- debug: var=initialized
 
-- name: copy debconf-selections
-  template: src=sever/debconf-selections-slapd dest=/tmp/debconf-selections
-  when: not_yet_initialized  
-
-- name: set debconf selections
-  shell: debconf-set-selections -v /tmp/debconf-selections
-  when: not_yet_initialized
+- name: set debconf variables
+  debconf: >
+    name=slapd
+    question="{{ item.key }}"
+    vtype="{{ item.type }}"
+    value="{{ item.value }}"
+  with_items:
+  - { key: "slapd/internal/generated_adminpw", type: "password", value: "{{ ldap_password }}" }
+  - { key: "slapd/internal/adminpw", type: "password",  value: "{{ ldap_password }}" }
+  - { key: "slapd/password2", type: "password", value: "{{ ldap_password }}" }
+  - { key: "slapd/password1", type: "password", value: "{{ ldap_password }}" }
+  - { key: "slapd/allow_ldap_v2", type: "boolean", value: false }
+  - { key: "slapd/password_mismatch", type: "note", value: "" }
+  - { key: "slapd/invalid_config", type: "boolean", value: true }
+  - { key: "shared/organization", type: "string", value: "{{ ldap_domain }}" }
+  - { key: "slapd/upgrade_slapcat_failure", type: "error", value: "" }
+  - { key: "slapd/no_configuration", type: "boolean", value: false }
+  - { key: "slapd/move_old_database", type: "boolean", value:  true }
+  - { key: "slapd/dump_database_destdir", type: "string", value: "/var/backups/slapd-VERSION" }
+  - { key: "slapd/purge_database", type: "boolean", value: true }
+  - { key: "slapd/domain", type: "string", value: "{{ ldap_domain }}" }
+  - { key: "slapd/backend", type: "select", value: HDB }
+  - { key: "slapd/organization", type: "string", value: "{{ ldap_domain }}" }
+  - { key: "slapd/dump_database", type: "select", value: "when needed" }
+  register: slapd_debconf
+  when: not initialized
 
 - name: reconfigure slapd
   command: dpkg-reconfigure -f noninteractive slapd
-  when: not_yet_initialized
-
-- name: remove debconf-selections file
-  file: path=/tmp/debconf-selections state=absent
+  when: not initialized
 
 - name: set initialization finished
-  shell: touch /etc/ldap/initialized
-  args:
-    creates: /etc/ldap/initialized
+  file: path=/etc/ldap/initialized state=touched
+  when: not initialized
 
 - name: restart ldap service
-  service: name=slapd state=restarted enabled=true 
+  service: name=slapd state=restarted enabled=true
+  when: not initialized 
+
+- name: generate root password 
+  shell: slappasswd  -s {{ ldap_password }}
+  register: slappasswd_cmd
+
+- set_fact: encrypted_password="{{ slappasswd_cmd.stdout_lines[0] }}"
+
+- name: copy configroot.ldif
+  template: src=server/configroot.ldif dest=/tmp/configroot.ldif
+
+- name: import configroot.ldif
+  shell: ldapadd -Y EXTERNAL -H ldapi:/// -f /tmp/configroot.ldif
+  ignore_errors: yes
 
 - name: copy ldap-base.ldif
   template: src=server/ldap-base.ldif dest=/tmp/ldap-base.ldif
 
 - name: import ldap-base.ldif
-  shell: ldapmodify -ac -x -D "cn=admin,{{ ldap_base }}" -w {{ ldap_password }} -f /tmp/ldap-base.ldif
+  shell: ldapmodify -ac -Y EXTERNAL -H ldapi:///  -f /tmp/ldap-base.ldif
   ignore_errors: yes
 
 - name: download migration tools

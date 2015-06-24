@@ -1,4 +1,4 @@
-Name: activate /etc/security/group.conf
+Name: groups
 Default: yes
 Priority: 900
 Auth-Type: Primary

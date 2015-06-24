@@ -6,7 +6,7 @@
   vars:
     ldap_mode: create_user
     user_info: "Ldap user"
-  vars_propmpt:
+  vars_prompt:
   - name: "group_name"
     propmpt: "User group"
     default: "testgroup" 

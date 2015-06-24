@@ -4,7 +4,7 @@ cn: {{ user_info }}
 objectClass: top
 objectClass: account
 objectClass: posixAccount
-userPassword: {SSHA}{{ user_encrypted_password }}
+userPassword: {{ user_encrypted_password }}
 uidNumber: {{ uid_number }}
 gidNumber: {{ gid_number }}
 homeDirectory: /home/{{ user_name }}
