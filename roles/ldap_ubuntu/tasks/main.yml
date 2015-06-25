@@ -5,9 +5,6 @@
 - include: server.yml
   when: ldap_mode == "server"
 
-- include: client.yml
-  when: ldap_mode == "client"
-
 - include: create_user.yml
   when: ldap_mode == "create_user"
 

@@ -1,7 +1,7 @@
 ---
-- name: Set up nfs server
+- name: Set up nfs server with LDAP-based authentication
   hosts: [nfs_server]
-  roles: [nfs_redhat]
+  roles: [ldap_client, nfs_server]
   sudo: true
   vars:
-    irods_server: {{ irods_icat_server }}
+    nfs_with_ldap: yes

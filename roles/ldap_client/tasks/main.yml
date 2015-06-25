@@ -1,0 +1,103 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - ldap-auth-client
+  - nscd
+
+- name: Set up /etc/nsswitch.conf to use ldap lookups
+  shell: auth-client-config -t nss -p lac_ldap
+
+- name: copy my_mkhomedir config
+  template: src=my_mkhomedir dest=/usr/share/pam-configs/my_mkhomedir
+
+- name: copy my_mkhomedir config
+  template: src=my_groups dest=/usr/share/pam-configs/my_groups
+
+- name: update /etc/ldap.conf
+  lineinfile:
+    dest: /etc/ldap.conf 
+    line: "{{ item.line }}"
+    regexp: "{{ item.regexp }}" 
+    state: "{{ item.state }}"
+    backup: yes
+  with_items:
+  - { regexp: "^[#]?base dc=.*", line: "base {{ ldap_base }}", state: present }
+  - { regexp: "^uri.*", line: "uri  ldap://{{ ldap_server_ip }}", state: present }
+  - { regexp: "^[#]?ldap_version.*", line: "ldap_version 3", state: present }
+  - { regexp: "^[#]?pam_filter.*", line: "pam_filter objectclass=posixAccount", state: present }
+  - { regexp: "^[#]?pam_login_attribute.*", line: "pam_login_attribute uid", state: present }
+  - { regexp: "^[#]?pam_password.*", line: "pam_password crypt", state: present }
+  - { regexp: "^[#]?nss_base_passwd.*", line: "nss_base_passwd ou=People,{{ ldap_base }}", state: present }
+  - { regexp: "^[#]?nss_base_shadow.*", line: "nss_base_shadow ou=People,{{ ldap_base }}", state: present }
+  - { regexp: "^[#]?nss_base_group.*", line: "nss_base_group  ou=Group,{{ ldap_base }}", state: present }
+  - { regexp: "^[#]?nss_base_hosts.*", line: "nss_base_hosts  ou=Hosts,{{ ldap_base }}", state: present }
+  notify: restart nscd
+
+- name: set selections for libpam-runtime package
+  debconf: >
+    name=libpam-runtime 
+    question="libpam-runtime/profiles"
+    vtype=multiselect
+    value="unix,ldap,mkhomedir,groups"
+  register: libpam_runtime_debconf
+
+- name: pam-auth-update
+  #shell: dpkg-reconfigure --frontend noninteractive libpam-runtime
+  shell: DEBIAN_FRONTEND=noninteractive pam-auth-update
+
+
+#
+# !!! debconf doesn't always work !!!
+
+
+#- name: set debconf variables
+#  debconf: >
+#    name=ldap-auth-config
+#    question="ldap-auth-config/{{item.key}}"
+#    vtype={{item.value.type}}
+#    value="{{item.value.value}}"
+#  with_dict: ldap_auth_config
+#  register: ldap_debconf
+
+#- debug: var=ldap_debconf
+
+#- shell: debconf-show ldap-auth-config 
+#  register: out
+
+#- debug:var=out
+
+#- name: reconfigure ldap-auth-config
+#  shell: dpkg-reconfigure --frontend noninteractive ldap-auth-config
+#  notify: restart nscd
+
+#- name: set debconf variables
+#  debconf: >
+#    name=libpam-runtime 
+#    question="libpam-runtime/profiles"
+#    vtype=multiselect
+#    value="unix,ldap,mkhomedir,groups"
+#  register: libpam_runtime_debconf
+
+#- debug: var=libpam_runtime_debconf
+
+#- name: reconfigure libpam-runtime
+#  shell: dpkg-reconfigure --frontend noninteractive libpam-runtime
+
+#
+#- name: copy debconf-selections
+#  template: src=client/debconf-selections-ldap-auth-config dest=/tmp/debconf-selections
+
+#- name: set debconf selections
+#  shell: debconf-set-selections -v /tmp/debconf-selections
+
+#- name: reconfigure ldap-auth-config
+#  command: dpkg-reconfigure -f noninteractive ldap-auth-config
+
+#- name: pam-auth-update
+#  shell: pam-auth-update
+#  environment:
+#    DEBIAN_FRONTEND: noninteractive

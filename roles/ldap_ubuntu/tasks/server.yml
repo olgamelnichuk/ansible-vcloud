@@ -71,12 +71,17 @@
   shell: ldapadd -Y EXTERNAL -H ldapi:/// -f /tmp/configroot.ldif
   ignore_errors: yes
 
-- name: copy ldap-base.ldif
-  template: src=server/ldap-base.ldif dest=/tmp/ldap-base.ldif
+- name: copy base.ldif
+  template: src=server/base.ldif dest=/tmp/base.ldif
 
-- name: import ldap-base.ldif
-  shell: ldapmodify -ac -Y EXTERNAL -H ldapi:///  -f /tmp/ldap-base.ldif
-  ignore_errors: yes
+- name: import base.ldif
+  shell: ldapmodify -ac -Y EXTERNAL -H ldapi:///  -f /tmp/base.ldif
+
+#- name: copy logging.ldif
+#  template: src=server/logging.ldif dest=/tmp/logging.ldif
+
+#- name: import logging.ldif
+#  shell: sudo ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f logging.ldif
 
 - name: download migration tools
   get_url: url=http://www.padl.com/download/MigrationTools.tgz dest=/tmp

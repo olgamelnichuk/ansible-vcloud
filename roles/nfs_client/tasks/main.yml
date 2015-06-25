@@ -1,0 +1,32 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - nfs-common
+
+- name: update idmapd.conf | [ Translation ]
+  lineinfile:
+    dest: /etc/idmapd.conf
+    line: "[Translation]"
+    state: present
+  register: imapd_conf
+  when: nfs_with_ldap
+
+- name: update idmapd.conf | Mathod == nsswitch
+  lineinfile:
+    dest: /etc/idmapd.conf
+    line: "Method = nsswitch"
+    insertafter: "^\\[Translation\\]"
+    state: present
+  when: nfs_with_ldap
+  
+- debug: var={{ groups.nfs_server[0] }}
+
+- name: create mount directory if it doesn't exist
+  file: path=/mnt/home state=directory mode=777
+
+- name: mount users nfs folder
+  mount: name=/mnt/home src={{ groups.nfs_server[0] }}:/export/home  fstype=nfs  opts="rw,bg,hard,intr,lock,ac,tcp,nfsvers=4,timeo=1800" state=mounted
