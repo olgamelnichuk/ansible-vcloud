@@ -1,10 +1,10 @@
 ---
 - name: Create ldap user
   hosts: [ldap_server]
-  roles: [ldap_ubuntu]
+  roles: [ldap_util]
   sudo: true
   vars:
-    ldap_mode: create_user
+    ldap_util: create_user
     user_info: "Ldap user"
   vars_prompt:
   - name: "group_name"

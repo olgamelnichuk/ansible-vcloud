@@ -1,33 +1,9 @@
 ---
-- name: upgrade all packages
-  apt: update_cache=yes
-
-- name: install required packages
-  apt: pkg={{ item }} state=latest
-  with_items: 
-  - nfs-kernel-server
-
 - name: create /export folder
   file: path=/export state=directory owner=root group=root mode=777
 
 - name: create /export/home folder
   file: path=/export/home state=directory owner=root group=root mode=777
-
-- name: update idmapd.conf | [ Translation ]
-  lineinfile:
-    dest: /etc/idmapd.conf
-    line: "[Translation]"
-    state: present
-  register: imapd_conf
-  when: nfs_with_ldap
-
-- name: update idmapd.conf | Mathod == nsswitch
-  lineinfile:
-    dest: /etc/idmapd.conf
-    line: "Method = nsswitch"
-    insertafter: "^\\[Translation\\]"
-    state: present
-  when: nfs_with_ldap
 
 - name: update /etc/exports
   lineinfile:

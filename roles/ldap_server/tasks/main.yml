@@ -9,7 +9,7 @@
   - ldap-utils
 
 - name: copy client ldap config
-  template: src=server/ldap.conf dest=/etc/ldap/ldap.conf
+  template: src=ldap.conf dest=/etc/ldap/ldap.conf
 
 - name: check if we need to do initial configuration
   stat: path=/etc/ldap/initialized
@@ -65,20 +65,20 @@
 - set_fact: encrypted_password="{{ slappasswd_cmd.stdout_lines[0] }}"
 
 - name: copy configroot.ldif
-  template: src=server/configroot.ldif dest=/tmp/configroot.ldif
+  template: src=configroot.ldif dest=/tmp/configroot.ldif
 
 - name: import configroot.ldif
   shell: ldapadd -Y EXTERNAL -H ldapi:/// -f /tmp/configroot.ldif
   ignore_errors: yes
 
 - name: copy base.ldif
-  template: src=server/base.ldif dest=/tmp/base.ldif
+  template: src=base.ldif dest=/tmp/base.ldif
 
 - name: import base.ldif
   shell: ldapmodify -ac -Y EXTERNAL -H ldapi:///  -f /tmp/base.ldif
 
 #- name: copy logging.ldif
-#  template: src=server/logging.ldif dest=/tmp/logging.ldif
+#  template: src=logging.ldif dest=/tmp/logging.ldif
 
 #- name: import logging.ldif
 #  shell: sudo ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f logging.ldif

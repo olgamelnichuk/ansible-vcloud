@@ -1,0 +1,12 @@
+---
+- fail: ldap_util is undefined
+  when: ldap_util is undefined
+
+- include: create_user.yml
+  when: ldap_util == "create_user"
+
+- include: create_host.yml
+  when: ldap_util == "create_host"
+
+
+

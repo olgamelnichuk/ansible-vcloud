@@ -1,0 +1,3 @@
+---
+dependencies:
+  - { role: nfs_common, required_packages: ["nfs-common"] }

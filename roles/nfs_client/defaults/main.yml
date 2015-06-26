@@ -1,0 +1,2 @@
+---
+nfs_server_ip: {{ groups.nfs_server[0] }}
