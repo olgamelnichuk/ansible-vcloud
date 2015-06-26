@@ -1,0 +1,4 @@
+---
+nfs_exports:
+- { path: /export, regexp: "^/export\\s.*", permissions: "*(rw,fsid=0,insecure,root_squash,no_subtree_check)" }
+- { path: /export/users, regexp: "^/export/users\\s.*", permissions: "*(rw,nohide,sync,insecure,root_squash,no_subtree_check)" }

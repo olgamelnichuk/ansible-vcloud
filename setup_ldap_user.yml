@@ -5,16 +5,11 @@
   sudo: true
   vars:
     ldap_util: create_user
-    user_info: "Ldap user"
-  vars_prompt:
-  - name: "group_name"
-    propmpt: "User group"
-    default: "testgroup" 
 
-  - name: "user_name"
-    prompt: "User name"
-    default: "testuser"
+- name: Create NFS folder for ldap user
+  hosts: [nfs_server]
+  sudo: true
+  tasks:
 
-  - name: "user_password"
-    prompt: "User password"
-    private: yes
+  - name: mkdir nfs user folder 
+    file: path=/export/users/{{ user_name }} state=directory owner={{ user_name }} group={{ group_name }}

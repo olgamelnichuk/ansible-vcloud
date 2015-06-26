@@ -5,16 +5,16 @@
   - makepasswd
   - nfs-common 
 
-- name: create docker user group
-  group: name=docker state=present
+#- name: create docker user group
+#  group: name=docker state=present
 
-- name: Create/modify a user
-  user: name={{ user_name }} comment="Just a user" group=docker home=/home/{{ user_name }} state=present groups=docker password={{ user_password }}
+#- name: Create/modify a user
+#  user: name={{ user_name }} comment="Just a user" group=docker home=/home/{{ user_name }} state=present groups=docker password={{ user_password }}
 
-- debug: var={{ groups.nfs_server[0] }}
+#- debug: var={{ groups.nfs_server[0] }}
 
-- name: create mount directory if it doesn't exist
-  file: path=/mnt/users state=directory mode=777
+#- name: create mount directory if it doesn't exist
+#  file: path=/mnt/users state=directory mode=777
 
-- name: mount users nfs folder
-  mount: name=/mnt/users src={{ groups.nfs_server[0] }}:/nfs/users  fstype=nfs  opts="rw,bg,hard" state=mounted
+#- name: mount users nfs folder
+#  mount: name=/mnt/users src={{ groups.nfs_server[0] }}:/nfs/users  fstype=nfs  opts="rw,bg,hard" state=mounted

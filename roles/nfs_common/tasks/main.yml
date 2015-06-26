@@ -7,6 +7,15 @@
   with_items: 
   - "{{ required_packages }}"
 
+- name: update idmapd.conf | Domain
+  lineinfile:
+    dest: /etc/idmapd.conf
+    line: "Domain = {{ nfs_domain }}"
+    insertafter: "^#\\s?Domain.*"
+    regexp: "^Domain.*"
+    state: present
+  when: nfs_with_ldap
+
 - name: update idmapd.conf | [ Translation ]
   lineinfile:
     dest: /etc/idmapd.conf
