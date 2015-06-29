@@ -1,4 +1,10 @@
 ---
+- set_fact:
+     user_name: "{{ ldap_user_name }}"
+     group_name: "{{ ldap_user_name }}"
+     user_info: "{{ ldap_user_info }}"
+     user_password: "{{ ldap_user_password }}"
+
 ##### find next uid
 
 - name: find max uid number 

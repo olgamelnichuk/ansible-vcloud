@@ -12,4 +12,4 @@
   tasks:
 
   - name: mkdir nfs user folder 
-    file: path=/export/users/{{ user_name }} state=directory owner={{ user_name }} group={{ group_name }}
+    file: path="{{ nfs_users_path }}/{{ ldap_user_name }}" state=directory owner={{ ldap_user_name }} group={{ ldap_user_name }}
