@@ -68,7 +68,7 @@
   template: src=configroot.ldif dest=/tmp/configroot.ldif
 
 - name: import configroot.ldif
-  shell: ldapadd -Y EXTERNAL -H ldapi:/// -f /tmp/configroot.ldif
+  shell: ldapmodify -ac -Y EXTERNAL -H ldapi:/// -f /tmp/configroot.ldif
   ignore_errors: yes
 
 - name: copy base.ldif
@@ -76,6 +76,14 @@
 
 - name: import base.ldif
   shell: ldapmodify -ac -Y EXTERNAL -H ldapi:///  -f /tmp/base.ldif
+  ignore_errors: yes
+
+- name: copy dbindices.ldif
+  template: src=dbindices.ldif dest=/tmp/dbindices.ldif
+
+- name: import dbindices.ldif
+  shell: ldapmodify -ac -Y EXTERNAL -H ldapi:/// -f /tmp/dbindices.ldif
+  ignore_errors: yes
 
 #- name: copy logging.ldif
 #  template: src=logging.ldif dest=/tmp/logging.ldif
