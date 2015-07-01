@@ -1,10 +1,20 @@
 ---
 - name: Create ldap user
   hosts: [ldap_server]
-  roles: [ldap_util]
   sudo: true
-  vars:
-    ldap_util: create_user
+  tasks:
+
+  - name: create LDAP user
+    ldap_user:
+        user_name: testuser1
+        user_password: testpassword1
+        user_info: Test LDAP user
+        ldap_base: '{{ ldap_base }}'
+        groups: 'testgroup1,testgroup2'
+        state: present
+    register: out
+
+  - debug: var=out
 
 - name: Create NFS folder for ldap user
   hosts: [nfs_server]

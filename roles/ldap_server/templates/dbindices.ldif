@@ -1,0 +1,19 @@
+dn: olcDatabase={1}hdb,cn=config
+changetype: modify
+add: olcDbIndex
+olcDbIndex: uidNumber pres,eq
+-
+add: olcDbIndex
+olcDbIndex: gidNumber pres,eq
+-
+add: olcDbIndex
+olcDbIndex: memberUid pres,eq,sub
+-
+add: olcDbIndex
+olcDbIndex: uid pres,eq,sub
+-
+add: olcDbCacheSize
+olcDbCacheSize: 1000
+-
+add: olcDbIDLCacheSize
+olcDbIDLCacheSize: 3000

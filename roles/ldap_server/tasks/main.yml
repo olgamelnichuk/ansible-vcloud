@@ -78,18 +78,21 @@
   shell: ldapmodify -ac -Y EXTERNAL -H ldapi:///  -f /tmp/base.ldif
   ignore_errors: yes
 
-- name: copy dbindices.ldif
-  template: src=dbindices.ldif dest=/tmp/dbindices.ldif
+#- name: copy dbindices.ldif
+#  template: src=dbindices.ldif dest=/tmp/dbindices.ldif
 
-- name: import dbindices.ldif
-  shell: ldapmodify -ac -Y EXTERNAL -H ldapi:/// -f /tmp/dbindices.ldif
-  ignore_errors: yes
+#- name: import dbindices.ldif
+#  shell: ldapmodify -ac -Y EXTERNAL -H ldapi:/// -f /tmp/dbindices.ldif
+#  ignore_errors: yes
 
 #- name: copy logging.ldif
 #  template: src=logging.ldif dest=/tmp/logging.ldif
 
 #- name: import logging.ldif
 #  shell: sudo ldapmodify -Q -Y EXTERNAL -H ldapi:/// -f logging.ldif
+
+- name: restart slapd
+  service: name=slapd state=restarted enabled=true
 
 - name: download migration tools
   get_url: url=http://www.padl.com/download/MigrationTools.tgz dest=/tmp
