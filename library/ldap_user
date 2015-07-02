@@ -16,7 +16,7 @@ class User(object):
         self.groups = module.params['groups']
         self.state = module.params['state']
         self.ldap_base = module.params['ldap_base']
-        self.debug = False
+        self.debug = True
     
     def user_exists(self):
         return self.search_user_by_name() is not None
@@ -28,67 +28,65 @@ class User(object):
         if (not self.group_exists(self.name)):
             rc, out, err = self.create_group(self.name)
             self.check_rc(rc, err)
-
-        with tempfile.NamedTemporaryFile() as temp:
-            temp.write(self.user_ldif())
-            temp.flush()
-            rc, out, err = self.execute_ldap_command('ldapadd', ['-f', temp.name])
-            self.check_rc(rc, err)
-            self.modify_group_members();
-            return rc, out, err 
+        
+        rc, out, err = self.execute_ldap_add(self.user_ldif())
+        self.check_rc(rc, err)
+        
+        self.modify_groups(self.groups)
+        return rc, out, err 
 
     def create_group(self, group_name):
-    	with tempfile.NamedTemporaryFile() as temp:
-            temp.write(self.group_ldif(group_name))
-            temp.flush()
-    	    return self.execute_ldap_command('ldapadd', ['-f', temp.name])
+        return self.execute_ldap_add(self.group_ldif(group_name))
 
     def modify_user(self):
-    	with tempfile.NamedTemporaryFile() as temp:
-            temp.write(self.user_modify_ldif())
-            temp.flush()
-    	    rc, out, err = self.execute_ldap_command('ldapmodify', ['-f', temp.name])
-    	    self.check_rc(rc, err)
-            self.modify_group_members();
-            return (rc, out, err)
+        rc, out, err = self.execute_ldap_modify(self.user_modify_ldif())
+        self.check_rc(rc, err)
+        
+        self.modify_groups(self.groups);
+        return rc, out, err
 
-    def modify_group_members(self):
-    	if (self.groups == ''):
-    		return
+    def modify_groups(self, groups):
+        current_groups = self.get_groups()
+        new_groups = []
+        
+        if (groups != ''):
+            new_groups = map(lambda x: x.strip(), groups.split(','))
 
-    	for group in self.groups.split(','):
+        groups_to_join = [group for group in new_groups if group not in current_groups]
+        groups_to_leave = [group for group in current_groups if group not in new_groups]
+
+        ldif = []
+    	for group in groups_to_join:
             if (not self.group_exists(group)):
                 rc1, out1, err1 = self.create_group(group)
                 self.check_rc(rc1, err1)
-            self.modify_group(group)
+            ldif += self.group_modify_ldif(group, join_a_group=True)
+            ldif += ['\n']
 
-    def modify_group(self, group_name):
-    	group_info = self.search_group_by_name(group_name)
-    	
-    	uids = []
-    	
-    	if (hasattr(group_info, 'memberUid')):
-    	    uids = group_info['memberUid']
+        for group in groups_to_leave:
+            if (not self.group_exists(group)):
+                rc1, out1, err1 = self.create_group(group)
+                self.check_rc(rc1, err1)
+            ldif += self.group_modify_ldif(group, join_a_group=False)
+            ldif += ['\n']
 
-    	if (not isinstance(uids, list)):
-    		uids = [uids]
-    	
-    	for uid in uids:
-    		if (uid == self.name):
-    			return (0, '', None)
-
-    	with tempfile.NamedTemporaryFile() as temp:
-            temp.write(self.group_modify_ldif(group_name))
-            temp.flush()
-    	    return self.execute_ldap_command('ldapmodify', ['-f', temp.name])
-    	
+        rc, out, err = self.execute_ldap_modify(ldif)
+        self.check_rc(rc, err)
+ 	
     def user_info(self):
     	if not self.user_exists():
             return None
         return self.search_user_by_name()
 
     def remove_user(self):
-        return self.execute_ldap_command('ldapdelete', [self.ldap_user_dn()])
+        self.modify_groups('')
+        return self.execute_ldap_command('ldapdelete', [self.ldap_user_dn(), self.ldap_group_dn(self.name)])
+
+
+    def get_groups(self):
+        rc, out, err = self.execute_ldap_command('ldapsearch', ['-b', self.ldap_group_base(), 'memberUid=' + self.name ])
+        self.check_rc(rc, err)
+        return map(lambda x: x['cn'], self.parse_ldap_output(out))
 
     def search_user_by_name(self):
     	rc, out, err = self.execute_ldap_command('ldapsearch', ['-b', self.ldap_user_base(), self.ldap_user_id()])
@@ -107,45 +105,51 @@ class User(object):
         return entries[0]
 
     def user_ldif(self):
-    	return '\n'.join([
-    	    ''.join(['dn: ', self.ldap_user_dn()]),
-    	    ''.join(['uid: ', self.name]),
-    	    ''.join(['cn: ', self.info]),
+    	return [
+    	    'dn: ' + self.ldap_user_dn(),
+    	    'uid: ' + self.name,
+    	    'cn: ' + self.info,
             'objectClass: top',
             'objectClass: account',
             'objectClass: posixAccount',
-            ''.join(['userPassword: ', self.get_encripted_password()]),
-            ''.join(['uidNumber: ', self.get_next_uid_number()]),
-            ''.join(['gidNumber: ', self.get_gid_number(self.name)]),
-            ''.join(['homeDirectory: /home/', self.name]),
+            'userPassword: ' + self.get_encripted_password(),
+            'uidNumber: ' + self.get_next_uid_number(),
+            'gidNumber: ' + self.get_gid_number(self.name),
+            'homeDirectory: /home/' + self.name,
             'loginShell: /bin/bash',
-            ''.join(['gecos: ', self.name])
-            ])
-
-    def user_modify_ldif(self):
-    	return '\n'.join([
-    	    ''.join(['dn: ', self.ldap_user_dn()]),
-    	    'changetype: modify',
-    	    'replace: userPassword',
-            ''.join(['userPassword: ', self.get_encripted_password()])
-            ])
+            'gecos: ' + self.name
+            ]
 
     def group_ldif(self, group_name):
-    	return '\n'.join([
-    	    ''.join(['dn: ', self.ldap_group_dn(group_name)]),
+    	return [
+    	    'dn: ' + self.ldap_group_dn(group_name),
             'objectClass: posixGroup',
             'objectClass: top',
-            ''.join(['cn: ', group_name]),
-            ''.join(['gidNumber: ', self.get_next_gid_number()])
-            ])
+            'cn: ' + group_name,
+            'gidNumber: ' + self.get_next_gid_number()
+            ]
 
-    def group_modify_ldif(self, group_name):
-    	return '\n'.join([
-    	    ''.join(['dn: ', self.ldap_group_dn(group_name)]),
+    def user_modify_ldif(self):
+        return [
+            'dn: ' + self.ldap_user_dn(),
             'changetype: modify',
-            'add: memberUid',
-            ''.join(['memberUid: ', self.name])
-            ])
+            'replace: userPassword',
+            'userPassword: ' + self.get_encripted_password()
+            ]
+    
+    def group_modify_ldif(self, group_name, join_a_group):
+    	ldif = [ 
+            'dn: ' + self.ldap_group_dn(group_name),
+            'changetype: modify']
+
+        if (join_a_group):
+            ldif.append('add: memberUid')
+            ldif.append('memberUid: ' + self.name)
+        else:
+            ldif.append('delete: memberUid')
+            ldif.append('memberUid: ' + self.name)    
+
+        return ldif
 
     def get_encripted_password(self):
     	cmd = ' '.join(['slappasswd', '-s', self.password])
@@ -160,42 +164,35 @@ class User(object):
         return group_info['gidNumber']
 
     def	get_next_uid_number(self):
-        max = 10000
         rc, out, err = self.execute_ldap_command('ldapsearch', ['-b', self.ldap_user_base(), 'uid=*'])
-        self.check_rc(rc, err)
-        for entry in self.parse_ldap_output(out):
-        	uid_number = int(entry['uidNumber']);
-        	if (max < uid_number):
-        		max = uid_number
-    	return str(max + 1);
+        self.check_rc(rc, err)        
+    	return self.next_id(map(lambda x: int(x['uidNumber']), self.parse_ldap_output(out)))
     
     def get_next_gid_number(self):
-        max = 10000
         rc, out, err = self.execute_ldap_command('ldapsearch', ['-b', self.ldap_group_base(), 'cn=*'])
         self.check_rc(rc, err)
-        for entry in self.parse_ldap_output(out):
-        	gid_number = int(entry['gidNumber'])
-        	if (max < gid_number):
-        		max = gid_number
-    	return str(max + 1);
+        return self.next_id(map(lambda x: int(x['gidNumber']), self.parse_ldap_output(out)))
     
-    def ldap_user_dn(self):
-    	return ','.join([self.ldap_user_id(), self.ldap_user_base()])
-    
-    def ldap_user_base(self):
-        return ','.join(['ou=People', self.ldap_base])
+    def next_id(self, ids):
+        return str(max(ids + [10000]) + 1)
 
-    def ldap_user_id(self):
-        return ''.join(['uid=', self.name])
+    def ldap_user_dn(self):
+    	return self.ldap_user_id() + ',' + self.ldap_user_base()
 
     def ldap_group_dn(self, group_name):
-    	return ','.join([self.ldap_cn(group_name), self.ldap_group_base()])
+        return self.ldap_cn(group_name) + ',' + self.ldap_group_base()
     
+    def ldap_user_base(self):
+        return 'ou=People,' +  self.ldap_base
+
     def ldap_group_base(self):
-        return ','.join(['ou=Group', self.ldap_base])
+        return 'ou=Group,' + self.ldap_base
+
+    def ldap_user_id(self):
+        return 'uid=' + self.name    
     
     def ldap_cn(self, cn):
-        return ''.join(['cn=', cn])
+        return 'cn=' + cn
 
     def parse_ldap_output(self, out):
         entries = []
@@ -230,6 +227,18 @@ class User(object):
     def check_rc(self, rc, err):
     	if rc is not None and rc != 0:
             self.module.fail_json(name=self.name, msg=err, rc=rc)
+    
+    def execute_ldap_add(self, ldif):
+        with tempfile.NamedTemporaryFile() as temp:
+            temp.write('\n'.join(ldif))
+            temp.flush()
+            return self.execute_ldap_command('ldapadd', ['-f', temp.name])
+    
+    def execute_ldap_modify(self, ldif):
+        with tempfile.NamedTemporaryFile() as temp:
+            temp.write('\n'.join(ldif))
+            temp.flush()
+            return self.execute_ldap_command('ldapmodify', ['-f', temp.name])
 
     def execute_ldap_command(self, ldapcmd, ldapparams):
         cmd = ' '.join([ldapcmd, '-Y EXTERNAL -H ldapi:///'] + ldapparams)
@@ -282,13 +291,12 @@ def main():
                 module.exit_json(changed=True)
             (rc, out, err) = user.create_user()
         else:
-            # modify user (note: this function is check mode aware)
             (rc, out, err) = user.modify_user()
 
         if rc is not None and rc != 0:
             module.fail_json(name=user.name, msg=err, rc=rc)
         if user.password is not None:
-            result['password'] = 'NOT_LOGGING_PASSWORD'
+            result['user_password'] = 'NOT_LOGGING_PASSWORD'
 
     if rc is None:
         result['changed'] = False
