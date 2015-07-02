@@ -6,13 +6,15 @@
 
   - name: create LDAP user
     ldap_user:
-        user_name: testuser1
-        user_password: testpassword1
-        user_info: Test LDAP user
+        user_name: '{{ item.user_name }}'
+        user_password: '{{ item.user_password }}'
+        user_info: '{{ item.user_info }}'
         ldap_base: '{{ ldap_base }}'
-        groups: 'testgroup1,testgroup2'
+        groups: '{{ item.groups }}'
         state: present
     register: out
+    with_items:
+    - "{{ ldap_users }}"
 
   - debug: var=out
 

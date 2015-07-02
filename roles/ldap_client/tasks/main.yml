@@ -7,6 +7,7 @@
   with_items: 
   - ldap-auth-client
   - nscd
+  - ldap-utils
 
 - name: Set up /etc/nsswitch.conf to use ldap lookups
   shell: auth-client-config -t nss -p lac_ldap
