@@ -1,6 +1,0 @@
-dn: cn={{ host_name }},ou=Hosts,{{ ldap_base }}
-objectClass: top
-objectClass: ipHost
-objectClass: device
-ipHostNumber: {{ host_ip_address }}
-cn: {{ host_name }}

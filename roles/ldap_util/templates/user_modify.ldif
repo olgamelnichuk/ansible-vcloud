@@ -1,4 +1,0 @@
-dn: uid={{ user_name }},ou=People,{{ ldap_base }}
-changetype:modify
-replace: userPassword
-userPassword: {{ user_encrypted_password }}
