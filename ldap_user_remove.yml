@@ -1,0 +1,13 @@
+---
+- name: Create ldap user
+  hosts: [ldap_server]
+  sudo: true
+  tasks:
+
+  - name: remove LDAP user
+    ldap_user:
+      user_name: '{{ item.user_name }}'
+      ldap_base: '{{ ldap_base }}'
+      state: absent
+    with_items:
+    - '{{ ldap_users }}'
