@@ -1,3 +1,0 @@
----
-- name: restart irods
-  service: name=irods state=restarted
