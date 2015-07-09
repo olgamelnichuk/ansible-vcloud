@@ -1,0 +1,18 @@
+---
+- name: install required packages
+  apt: pkg=autopostgresqlbackup state=latest
+
+- name: copy private key
+  copy: src={{ key_dir }}/{{ key_name}} dest=/etc/ssh/{{ key_name }} mode=0600
+
+- name: copy post backup script
+  template:
+    src: postgresql-backup-post
+    dest: /etc/postgresql-backup-post
+    mode: 0755
+
+- name: apply autopostgresqlbackup configuration
+  template:
+    src: autopostgresqlbackup.config
+    dest: /etc/default/autopostgresqlbackup
+    mode: 0644

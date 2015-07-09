@@ -1,7 +1,6 @@
 ---
-- name: Setup iRODS database
+- name: Settin up iRODS database
   hosts: [irods_db]
-  roles: [irods_db_debian]
   sudo: true
-  vars:
-    key_tag: rsync
+  roles: 
+  - { role: 'irods_db' }

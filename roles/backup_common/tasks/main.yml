@@ -1,0 +1,20 @@
+---
+- name: setting up the common variables
+  set_fact: 
+    backup_user: rsync_user
+    key_tag: rsync
+    key_dir: '{{ playbook_dir }}/keys'
+    key_name: 'id_rsa_{{ key_tag }}'
+
+- debug: var={{ item }}
+  with_items:
+  - 'backup_user'
+  - 'key_tag'
+  - 'key_dir'
+  - 'key_name'
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - ssh
+  - rsync

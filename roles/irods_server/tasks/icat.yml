@@ -20,11 +20,11 @@
 
 - debug: var=get_icat_pkg.dest
 
-- name: install irods icat rpms
-  apt: deb={{ get_icat_pkg.dest }} state=installed
-
-- name: install db plugin
+- name: install db plugin first
   apt: deb={{ get_db_plugin_pkg.dest }} state=installed
+
+- name: install irods icat package
+  apt: deb={{ get_icat_pkg.dest }} state=installed
 
 - name: copy expect script to setup irods server
   template: src=setup_irods_icat.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700

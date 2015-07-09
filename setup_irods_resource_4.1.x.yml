@@ -1,4 +1,4 @@
 ---
 - hosts: [irods_resource]
-  roles: [irods_debian]
+  roles: [ldap_client, irods_server]
   sudo: true

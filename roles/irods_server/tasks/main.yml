@@ -1,7 +1,4 @@
 ---
-- name: include additional variables
-  include_vars: ../../irods_vars_4.1.2.yml
-
 - name: set icat_enabled to false if it isn't defined
   set_fact: icat_enabled=false
   when: icat_enabled is not defined
@@ -58,3 +55,6 @@
   command: iadmin mkresc {{ ansible_hostname }}_resc "unixfilesystem" {{ ansible_hostname }}:{{ irods_vault_dir }}
   sudo: false
   when: resource_details.stdout_lines | length < 2
+
+- include: pam_authentication.yml
+  when: irods_pam_auth_enabled

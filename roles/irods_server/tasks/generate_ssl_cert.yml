@@ -1,0 +1,18 @@
+- name: generate server key
+  shell: 'openssl genrsa -out /tmp/server.key'
+
+- name: generate self signed certificate
+  shell: 'openssl req -new -x509 -key /tmp/server.key -out /tmp/server.crt -days 365 -subj "{{ irods_ssl_self_signed_cert_subj }}"'
+
+- name: generate chain certificate
+  shell: cat /tmp/server.crt > /tmp/chain.pem
+
+- name: generate some Diffie-Hellman parameters for OpenSSL
+  shell: 'openssl dhparam -2 -out /tmp/dhparams.pem 2048'
+
+- name: fetch generated files to local temporary directory
+  fetch: src='/tmp/{{ item. src }}' dest='{{ local_tmp }}/{{ item.dest }}' flat=true
+  with_items:
+  - { src: 'server.key', dest: 'irods_server.key' }
+  - { src: 'chain.pem', dest: 'irods_chain.pem' }
+  - { src: 'dhparams.pem', dest: 'irods_dhparams.pem' }

@@ -1,0 +1,57 @@
+---
+- name: install required for pam authentication packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - openssl
+
+- set_fact: local_tmp={{ playbook_dir }}/tmp
+
+- name: check if temporary folder on the local machine exists
+  local_action: file path={{ local_tmp }} state=directory
+  sudo: false
+
+- name: check if SSL key is already exist locally
+  local_action: stat path={{ local_tmp }}/irods_server.key
+  sudo: false
+  register: irods_server_key
+
+- debug: var=irods_server_key
+
+- name: copy keys if they have been already generated
+  copy: src='{{ local_tmp }}/{{ item.src }}' dest='/tmp/{{ item.dest }}'
+  when: irods_server_key.stat.exists
+  with_items:
+  - { src: 'irods_server.key', dest: 'server.key' }
+  - { src: 'irods_chain.pem', dest: 'chain.pem' }
+  - { src: 'irods_dhparams.pem', dest: 'dhparams.pem' }
+
+- include: generate_ssl_cert.yml
+  when: not irods_server_key.stat.exists
+
+- name: copy keys and certificates to the /etc/irods/ dir
+  shell: 'cp -u  /tmp/{{ item }} /etc/irods/{{ item }}'
+  with_items:
+  - 'server.key'
+  - 'chain.pem'
+  - 'dhparams.pem'
+
+- name: change key and cert ownership
+  shell: 'chown {{ irods_service_account_name }}:{{ irods_service_account_name }} /etc/irods/{{ item }}'
+  with_items:
+  - 'server.key'
+  - 'chain.pem'
+  - 'dhparams.pem'
+
+- name: Set the iRODS SSL environment
+  lineinfile:
+    dest: '/var/lib/irods/.irods/irods_environment.json'
+    line: '"{{ item.property }}": "{{ item.value }}",'
+    regexp: '.*{{ item.property }}.*'
+    insertafter: '^\{.*'
+    state: present
+  with_items:
+  - { property: 'irods_ssl_certificate_chain_file', value: '/etc/irods/chain.pem' }
+  - { property: 'irods_ssl_certificate_key_file', value: '/etc/irods/server.key' }
+  - { property: 'irods_ssl_dh_params_file', value: '/etc/irods/dhparams.pem' }
+  notify: server restart
+

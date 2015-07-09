@@ -1,7 +1,4 @@
 ---
-- name: include additional variables
-  include_vars: "../../irods_vars_4.1.2.yml"
-
 - name: download irods client package
   get_url: url={{ irods_icommands_pkg_url }} dest=/tmp
   register: get_client_pkg
