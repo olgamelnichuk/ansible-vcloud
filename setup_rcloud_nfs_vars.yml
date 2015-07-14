@@ -1,0 +1,4 @@
+---
+exported_folder_name: /export/rcloud
+mounted_folder_name: /mnt/nfs/rcloud
+

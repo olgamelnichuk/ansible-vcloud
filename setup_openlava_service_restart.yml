@@ -1,0 +1,20 @@
+- name: start the service using openlava user
+  hosts: [openlava]
+  vars: 
+    HOME: /home/{{openlava_owner_username}}
+  remote_user: root
+  become: yes
+  become_user: "{{openlava_owner_username}}"
+  become_method: su
+  gather_facts: False
+
+  tasks:
+
+    - name: stop the service
+      shell: service openlava restart
+
+    - name: check openlava works
+      shell: sleep 15; . /etc/profile.d/openlava.sh && lsid
+
+    - name: check openlava works
+      shell: . /etc/profile.d/openlava.sh && bhosts

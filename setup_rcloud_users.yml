@@ -1,0 +1,89 @@
+---
+- name: software and setup user
+  hosts: 127.0.0.1
+  connection: local
+  gather_facts: false
+
+  tasks:
+
+  - name: Check if key-pair exists 
+    local_action: stat path={{ key_dir }}/{{ key_name }}
+    register: key_pair
+
+  - debug: var=key_pair.stat.exists
+
+  - name: Create a directory to store key-pair
+    local_action: command mkdir -p {{ key_dir }}
+    when: not key_pair.stat.exists
+
+  - name: Generate SSH keys
+    local_action: command ssh-keygen -t rsa  -f {{ key_dir }}/{{ key_name }} -P ""
+    when: not key_pair.stat.exists
+
+  - name: ssh-add the private key locally
+    local_action: command ssh-add {{ key_dir }}/{{ key_name }}
+
+- name: install rcloud users
+  hosts: [rcloud]
+  remote_user: root
+  tasks:
+
+    - name: upgrade all packages
+      apt: update_cache=yes
+
+
+
+    - name: delete rcloud-user
+      user: name=rcloud-user state=absent force=yes
+
+    - name: delete rcloud-svc
+      user: name=rcloud-svc state=absent force=yes
+
+    - group: name=rcloud state=absent system=true
+
+
+
+    - name: create rcloud group
+      group: name=rcloud state=present system=true gid=997
+
+        #
+        # python -c 'import crypt; print crypt.crypt("password", "some dictionary")' 
+    - name: create rcloud-user user
+      user: name=rcloud-user state=present group=rcloud createhome=yes home=/home/rcloud-user password={{rcloud_hashed_password}} shell=/bin/bash system=true uid=998
+
+        #
+        # python -c 'import crypt; print crypt.crypt("password", "some dictionary")' 
+    - name: create rcloud-svc user
+      user: name=rcloud-svc state=present group=rcloud createhome=yes home=/home/rcloud-svc password={{rcloud_hashed_password}} shell=/bin/bash system=true uid=997
+
+    - name: Make sure rcloud-svc can become rcloud-user
+      lineinfile:
+        dest: /etc/sudoers 
+        state: present 
+        regexp: "^rcloud-svc ALL=(ALL) NOPASSWD: ALL" 
+        line: "rcloud-svc ALL=(ALL) NOPASSWD: ALL"
+
+    - name: upgrade all packages
+      apt: update_cache=yes
+
+    - name: install required packages
+      apt: pkg={{ item }} state=latest
+      with_items: 
+      - openjdk-7-jdk
+
+    #- name: add openlava to sudoers
+    #  shell: "adduser openlava sudo"
+
+    #- name: Authorized key upload
+    #  authorized_key: 
+    #    user: rcloud-user 
+    #    key: "{{ lookup('file', key_dir + '/' + key_name + '.pub') }}"
+    #    path: "/home/rcloud-user/.ssh/authorized_keys"
+    #    manage_dir: no
+
+    #- name: Authorized key upload
+    #  authorized_key: 
+    #    user: rcloud-svc 
+    #    key: "{{ lookup('file', key_dir + '/' + key_name + '.pub') }}"
+    #    path: "/home/rcloud-user/.ssh/authorized_keys"
+    #    manage_dir: no

@@ -1,0 +1,11 @@
+---
+- name: install the software
+  hosts: [openlava]
+  vars: 
+    HOME: /home/{{openlava_owner_username}}
+  remote_user: root
+
+  tasks:
+
+    - name: change owner
+      shell: chown -R {{openlava_owner_username}}:{{openlava_owner_group}} /opt/openlava-3.0

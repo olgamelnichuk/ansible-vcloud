@@ -1,0 +1,11 @@
+---
+- name: chown rcloud user home folders
+  hosts: [rcloud]
+  remote_user: root
+  tasks:
+
+    - name: change owner
+      shell: chown -R rcloud-user:rcloud /home/rcloud-user
+
+    - name: change owner
+      shell: chown -R rcloud-svc:rcloud /home/rcloud-svc

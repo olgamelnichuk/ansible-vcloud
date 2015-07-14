@@ -1,0 +1,15 @@
+---
+- name: install rcloud users
+  hosts: [rcloud]
+  remote_user: root
+  tasks:
+
+    - shell: sudo -u rcloud-user service openlava stop | true
+
+    - name: delete rcloud-user
+      user: name=rcloud-user state=absent force=yes
+
+    - name: delete rcloud-svc
+      user: name=rcloud-svc state=absent force=yes
+
+    - group: name=rcloud state=absent system=true

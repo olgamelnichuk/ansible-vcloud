@@ -1,0 +1,13 @@
+---
+- name: install rcloud software
+  hosts: [rcloud]
+  remote_user: root
+  tasks:
+
+    - name: upgrade all packages
+      apt: update_cache=yes
+
+    - name: install required packages
+      apt: pkg={{ item }} state=latest
+      with_items: 
+      - openjdk-7-jdk

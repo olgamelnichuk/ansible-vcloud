@@ -1,0 +1,50 @@
+---
+- name: setup nfs folder
+  hosts: [nfsserver]
+  remote_user: root
+  tasks:
+
+    # service is already installed, 
+    # otherwise uncomment the lines
+    #
+    #
+    #- name: upgrade all packages
+    #  apt: update_cache=yes
+
+    #- name: install required packages
+    #  apt: pkg={{ item }} state=latest
+    #  with_items: 
+    #    - nfs-kernel-server
+
+    # create nobody user
+    #
+    - name: create nogroup group
+      group: name=nogroup state=present system=true
+
+    - name: create nobody user
+      user: name=nobody state=present group=nogroup shell=/bin/bash system=true
+
+    # create folder
+    #
+    - name: create share folders
+      file: path={{exported_folder_name}} state=directory owner=root group=root mode=777
+
+    # change ownership
+    #
+    - name: chnage ownership
+      shell: chown nobody:nogroup {{exported_folder_name}}
+
+    - name: allow to mount shared folders
+      lineinfile: 
+        dest: /etc/exports 
+        line: "{{exported_folder_name}} 192.168.1.*(rw,sync,root_squash,no_subtree_check)" 
+        regexp: '^{{exported_folder_name}}.*'
+        state: present
+
+    #- name: export the exports
+    #  shell: sudo exportfs -a
+
+    # sudo service nfs-kernel-server start
+    - name: restart NFS server
+      service: name=nfs state=reloaded enabled=yes
+

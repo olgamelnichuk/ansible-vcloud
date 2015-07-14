@@ -1,0 +1,46 @@
+---
+- name: mount nfs
+  hosts: [rcloud]
+  remote_user: root
+  tasks:
+
+    # create nobody user
+    #
+
+    #- name: create nogroup group
+    #  group: name=nogroup state=present system=true
+
+    #- name: create nobody user
+    #  user: name=nobody state=present group=nogroup shell=/bin/bash system=true
+
+    # update packages
+    #
+    #- name: upgrade all packages
+    #  apt: update_cache=yes
+
+    # install nfs-common
+    #
+    #- name: install required packages
+    #  apt: pkg={{ item }} state=latest
+    #  with_items: 
+    #  - nfs-common
+
+    #- name: create mounted folder
+    #  file: path={{mounted_folder_name}} state=directory
+
+    #- name: unmount the folder
+    #  shell: "umount {{mounted_folder_name}} 2> /dev/null"
+
+    - name: mount the folder
+      shell: "mount {{item}}:{{exported_folder_name}} {{mounted_folder_name}}"
+      #shell: "mount {{ hostvars[item].ansible_default_ipv4.address }}:{{exported_folder_name}} {{mounted_folder_name}}"
+      #when: hostvars[item].ansible_default_ipv4.address is defined
+      with_items: 
+        - '{{ groups.nfsserver }}'
+
+    - name: create test file
+      file: path={{mounted_folder_name}}/mount.test.txt state=touch mode="u=rw,g=r,o=r"
+
+    - name: delete test file
+      file: path={{mounted_folder_name}}/mount.test.txt state=absent
+
