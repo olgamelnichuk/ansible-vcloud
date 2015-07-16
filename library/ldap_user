@@ -12,7 +12,9 @@ class User(object):
     	self.module = module
     	self.name = module.params['user_name']
         self.password = module.params['user_password']
-        self.info = module.params['user_info']
+        self.email = module.params['user_email']
+        self.givenname = module.params['user_givenname']
+        self.surname = module.params['user_surname']
         self.groups = module.params['groups']
         self.state = module.params['state']
         self.ldap_base = module.params['ldap_base']
@@ -82,7 +84,6 @@ class User(object):
         self.modify_groups('')
         return self.execute_ldap_command('ldapdelete', [self.ldap_user_dn(), self.ldap_group_dn(self.name)])
 
-
     def get_groups(self):
         rc, out, err = self.execute_ldap_command('ldapsearch', ['-b', self.ldap_group_base(), 'memberUid=' + self.name ])
         self.check_rc(rc, err)
@@ -105,13 +106,20 @@ class User(object):
         return entries[0]
 
     def user_ldif(self):
+        fullname = (self.givenname + ' ' + self.surname).strip()
+        if (fullname == ''):
+            self.module.fail_json(name=self.name, msg='Fullname should not be empty', rc=1)
+
     	return [
     	    'dn: ' + self.ldap_user_dn(),
     	    'uid: ' + self.name,
-    	    'cn: ' + self.info,
+    	    'cn: ' + fullname,
             'objectClass: top',
-            'objectClass: account',
+            'objectClass: inetOrgPerson',
             'objectClass: posixAccount',
+            'mail: ' + self.email,
+            'givenName: ' + self.givenname,
+            'surname: ' + self.surname,
             'userPassword: ' + self.get_encripted_password(),
             'uidNumber: ' + self.get_next_uid_number(),
             'gidNumber: ' + self.get_gid_number(self.name),
@@ -260,7 +268,9 @@ def main():
         argument_spec=dict(
             user_name=dict(required=True, default=None, type='str'),
             user_password=dict(required=False, default=None, type='str'),
-            user_info=dict(required=False, default=None, type='str'),
+            user_givenname=dict(required=False, default='', type='str'),
+            user_surname=dict(required=False, default='', type='str'),
+            user_email=dict(required=False, default='', type='str'),
             groups=dict(required=False, default='', type='str'),
             state = dict(default='present', choices=['present', 'absent']),
             ldap_base = dict(required=True, default=None, type='str')

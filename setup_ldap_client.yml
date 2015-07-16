@@ -1,5 +1,0 @@
----
-- name: Set up ldap client
-  hosts: [ldap_client]
-  roles: [ldap_client]
-  sudo: true

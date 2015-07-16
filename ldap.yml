@@ -1,0 +1,59 @@
+---
+- name: Set up ldap server
+  hosts: [ldap_server]
+  roles: [ldap_server]
+  sudo: true
+  tags: [ldap_server]
+
+- name: Set up ldap client
+  hosts: [ldap_client]
+  roles: [ldap_client]
+  sudo: true
+  tags: [ldap_client]
+
+- name: Create ldap user
+  hosts: [ldap_server]
+  sudo: true
+  tags: [ldap_user_create]
+  tasks:
+
+  - name: Create ldap user
+    ldap_user:
+      user_name: '{{ item.user_name }}'
+      user_password: '{{ item.user_password }}'
+      user_surname: '{{ item.user_surname }}'
+      user_givenname: '{{ item.user_givenname }}'
+      user_email: '{{ item.user_email }}'
+      ldap_base: '{{ ldap_base }}'
+      groups: '{{ item.groups }}'
+      state: present
+    register: out
+    with_items:
+    - "{{ ldap_users }}"
+
+  - debug: var=out
+
+- name: Create NFS folder for ldap user
+  hosts: [nfs_server]
+  sudo: true
+  tags: [ldap_user_create]
+  tasks:
+
+  - name: mkdir nfs user folder 
+    file: path='{{ nfs_users_path }}/{{ item.user_name }}' state=directory owner={{ item.user_name }} group={{ item.user_name }}
+    with_items:
+    - '{{ ldap_users }}'
+
+- name: Delete ldap user
+  hosts: [ldap_server]
+  sudo: true
+  tags: [ldap_user_delete]
+  tasks:
+
+  - name: Delete LDAP user
+    ldap_user:
+      user_name: '{{ item.user_name }}'
+      ldap_base: '{{ ldap_base }}'
+      state: absent
+    with_items:
+    - '{{ ldap_users }}'

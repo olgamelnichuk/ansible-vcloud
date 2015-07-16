@@ -1,0 +1,9 @@
+---
+ldap_domain: example.com
+ldap_base: dc=example,dc=com
+ldap_url: ldap://ldap.example.com
+ldap_password: _secure_password_
+ldap_org: _organisation_
+
+ldap_users:
+- { user_name: testuser, user_password: testpassword, user_surname: "Surname", user_givenname: "givenName", user_email: "testuser@mail.com", groups: "testgroup1,testgroup2" }
