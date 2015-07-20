@@ -1,0 +1,3 @@
+---
+dns_master_ip: "{{ groups.dns_master[0] }}"
+dns_table: []

@@ -1,0 +1,12 @@
+---
+- name: Set up DNS server
+  hosts: [dns_master]
+  roles: [dns]
+  sudo: true
+  tags: [dns_master]
+
+- name: Fix DNS settings
+  hosts: [all]
+  roles: [dns_fix]
+  sudo: true
+  tags: [dns_fix]
