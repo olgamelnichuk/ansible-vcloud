@@ -1,2 +1,2 @@
 ---
-ldap_server_ip: "{{ groups.ldap_server[0] }}"
+ldap_host: "{{ groups.ldap_server[0] }}"

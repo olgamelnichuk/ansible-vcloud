@@ -27,7 +27,7 @@
     backup: yes
   with_items:
   - { regexp: "^[#]?base dc=.*", line: "base {{ ldap_base }}", state: present }
-  - { regexp: "^uri.*", line: "uri  ldap://{{ ldap_server_ip }}", state: present }
+  - { regexp: "^uri.*", line: "uri  ldap://{{ ldap_host }}", state: present }
   - { regexp: "^[#]?ldap_version.*", line: "ldap_version 3", state: present }
   - { regexp: "^[#]?pam_filter.*", line: "pam_filter objectclass=posixAccount", state: present }
   - { regexp: "^[#]?pam_login_attribute.*", line: "pam_login_attribute uid", state: present }
