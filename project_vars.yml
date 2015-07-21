@@ -1,0 +1,79 @@
+---
+# DNS
+
+dns_zone: example.com
+dns_forward_master: 8.8.8.8
+dns_forward_secondary: 8.8.4.4
+dns_table:
+  - { name: ldap, ip: "{{ groups.ldap_server[0] }}" }
+  - { name: nfs, ip: "{{ groups.nfs_server[0] }}" }
+  - { name: irods-db, ip: "{{ groups.irods_db[0] }}" }
+  - { name: irods-01, ip: "{{ groups.irods_icat[0] }}" }
+  - { name: irods-02, ip: "{{ groups.irods_resource[0] }}" }
+  - { name: backup, ip: "{{ groups.backup_server[0] }}" }
+
+# LDAP
+
+ldap_domain: example.com
+ldap_host: ldap.example.com
+ldap_base: dc=example,dc=com
+ldap_url: ldap://ldap.example.com
+ldap_password: _secure_password_
+ldap_org: _organisation_
+ldap_users:
+- { user_name: testuser, user_password: testpassword, user_surname: "Surname", user_givenname: "givenName", user_email: "testuser@mail.com", groups: "testgroup1,testgroup2" }
+
+# NFS
+
+nfs_domain: example.com
+nfs_host: nfs.example.com
+nfs_exports:
+- { path: "/nfs_export", regexp: "^/nfs_export\\s.*", permissions: "*(rw,fsid=0,insecure,root_squash,no_subtree_check)" }
+- { path: "/nfs_export/homes", regexp: "^/nfs_export/homes\\s.*", permissions: "*(rw,nohide,sync,insecure,root_squash,no_subtree_check)" }
+nfs_mounts:
+- { name: "/nfs/homes", src: "/homes", fstype: nfs4, opts: "rw,bg,soft,intr,lock,ac,tcp,nfsvers=4,timeo=1800" }
+nfs_users_path: "/nfs_export/homes"
+
+# iRODS
+
+irods_domain: example.com
+irods_service_account_name: irods
+irods_service_group_name: irods
+irods_zone_name: testZone
+irods_service_port: 1247
+irods_port_range_begin: 20100
+irods_port_range_end: 20299
+irods_vault_dir: "/irods_vault"
+irods_vault_dir_default: "/var/lib/irods/iRODS/Vault"
+irods_local_zone_sid: "TEST_ZONE_SID"
+irods_agent_key: "test_32_byte_key_for_agent__conn"
+irods_admin_username: _irods_admin_user_
+irods_admin_password: _secure_admin_password_
+irods_db_hostname: irods-db.example.com
+irods_db_port: 5432
+irods_db_name: ICAT
+irods_db_user: _irods_db_user_
+irods_db_password: _secure_db_password
+irods_db_backup_dir: /var/lib/autopostgresqlbackup
+irods_db_backup_hostname: backup.example.com
+irods_db_backaup_enabled: true
+irods_ies_hostname: irods-01.example.com
+irods_gateway_hostname: irods.example.com
+
+irods_pam_auth_enabled: true
+irods_ssl_self_signed_cert_subj: "/C=UK/ST=Cambridge/L=Cambridge/O=EMBL/OU=EMBL-EBI/CN={{ irods_ies_hostname }}"
+
+idropweb2_hostname: irods.example.com
+idropweb2_port: 8551
+
+irods_zone_key: test_zone_key
+irods_negotiation_key: "test__32__byte__negotiation__key"
+irods_control_plane_port: 1248
+irods_control_plane_key: "test__32__byte__ctrl__plane__key"
+
+irods_upgrade_only: false
+#irods_upgrade_only: true
+#irods_icat_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-icat-4.1.3-ubuntu14-x86_64.deb
+#irods_postgres_plugin_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-database-plugin-postgres-1.5-ubuntu14-x86_64.deb
+#irods_resource_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-resource-4.1.3-ubuntu14-x86_64.deb
+#irods_icommands_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-icommands-4.1.3-ubuntu14-x86_64.deb
