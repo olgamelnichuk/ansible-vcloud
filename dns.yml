@@ -6,7 +6,7 @@
   tags: [dns_master]
 
 - name: Fix DNS settings
-  hosts: [all]
+  hosts: all:!local:!bastion
   roles: [dns_fix]
   sudo: true
   tags: [dns_fix]
