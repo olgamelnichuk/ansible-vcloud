@@ -1,4 +1,4 @@
 ---
-nfs_server_ip: "{{ groups.nfs_server[0] }}"
+nfs_host: "{{ groups.nfs_server[0] }}"
 nfs_mounts:
 - { name: "/nfs/users", src: "/users", fstype: nfs4, opts: "rw,bg,soft,intr,lock,ac,tcp,nfsvers=4,timeo=1800" }
