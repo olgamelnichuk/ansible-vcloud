@@ -1,9 +1,0 @@
----
-- name: Set up playground vm
-  hosts: [playground]
-  #roles: [docker_ubuntu, playground_ubuntu]
-  roles: [ldap_client, nfs_client]
-  sudo: true
-  vars:
-    icommands_version: 4.1.2
-    nfs_with_ldap: true
