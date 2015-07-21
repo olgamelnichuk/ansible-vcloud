@@ -1,5 +1,6 @@
 ---
 ldap_domain: example.com
+ldap_host: ldap.example.com
 ldap_base: dc=example,dc=com
 ldap_url: ldap://ldap.example.com
 ldap_password: _secure_password_
