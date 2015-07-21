@@ -1,0 +1,31 @@
+---
+- name: iRODS database (iCAT) setup
+  hosts: irods_db
+  sudo: true
+  roles: 
+    - irods_db
+  tags: irods_db
+
+- name: iRODS iCAT-enabled server setup
+  hosts: irods_icat
+  sudo: true
+  roles: 
+    - { role: ldap_client }
+    - { role: irods_server, icat_enabled: true }
+    - { role: irods_idropweb2 }
+  tags: irods_icat
+
+- name: iRODS resource server setup
+  hosts: irods_resource
+  sudo: true
+  roles: 
+    - ldap_client
+    - irods_server
+  tags: irods_resource
+
+- name: iRODS resource tree setup
+  hosts: irods_icat
+  roles: 
+    - irods_resctree
+  tags: irods_resctree
+

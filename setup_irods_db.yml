@@ -1,6 +1,0 @@
----
-- name: Settin up iRODS database
-  hosts: [irods_db]
-  sudo: true
-  roles: 
-  - { role: 'irods_db' }

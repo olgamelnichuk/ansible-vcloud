@@ -9,58 +9,58 @@
 #
 #
 - name: check if demoResc is passthru
-    shell: "iadmin lr demoResc | grep resc_type_name | awk '{print $2;}'"
-    register: demoResc_type
+  shell: "iadmin lr demoResc | grep resc_type_name | awk '{print $2;}'"
+  register: demoResc_type
 
-  - debug: var=demoResc_type.stdout_lines[0]
+- debug: var=demoResc_type.stdout_lines[0]
 
-  - name: delete default demoResc if its type is 'unixfilesystem' 
-    command: iadmin rmresc demoResc
-    register: demoResc_removed
-    when: demoResc_type.stdout_lines[0] == 'unixfilesystem'
+- name: delete default demoResc if its type is 'unixfilesystem' 
+  command: iadmin rmresc demoResc
+  register: demoResc_removed
+  when: demoResc_type.stdout_lines[0] == 'unixfilesystem'
 
-  - name: find all default _hostname_Resource to delete
-    shell: ilsresc | grep -e .*.0Resource
-    register: find_default_resources
-    # grep will exit with 1 when no results found. 
-    # This causes the task not to halt play.
-    ignore_errors: true
+- name: find all default _hostname_Resource to delete
+  shell: "ilsresc -l | grep 'resource name' | awk '{print $3}' | grep -e .*Resource"
+  register: find_default_resources
+  # grep will exit with 1 when no results found. 
+  # This causes the task not to halt play.
+  ignore_errors: true
 
-  - debug: var=default_resources
+- debug: var=default_resources
 
-  - name: delete all default _hostname_Resource resources
-    shell: iadmin rmresc {{ item }}
-    with_items:
-    - '{{ find_default_resources.stdout_lines }}'
-    when: not find_default_resources | failed
+- name: delete all default _hostname_Resource resources
+  shell: iadmin rmresc {{ item }}
+  with_items:
+  - '{{ find_default_resources.stdout_lines }}'
+  when: not find_default_resources | failed
 
-  - name: create 'passthru' demoResc
-    command: iadmin mkresc demoResc 'passthru'
-    when: demoResc_removed | changed
+- name: create 'passthru' demoResc
+  command: iadmin mkresc demoResc 'passthru'
+  when: demoResc_removed | changed
 
-  - name: find 'replResc' 
-    shell: ilsresc | grep replResc 
-    register: find_replResc
-    # grep will exit with 1 when no results found. 
-    # This causes the task not to halt play.
-    ignore_errors: true
+- name: find 'replResc' 
+  shell: ilsresc | grep replResc 
+  register: find_replResc
+  # grep will exit with 1 when no results found. 
+  # This causes the task not to halt play.
+  ignore_errors: true
 
-  - debug: var=find_replResc
+- debug: var=find_replResc
 
-  - name: create 'replResc' if it doesn't exist
-    command: "{{ item }}"
-    with_items:
-    - "iadmin mkresc replResc 'replication'"
-    - "iadmin addchildtoresc demoResc replResc"
-    when: find_replResc | failed
+- name: create 'replResc' if it doesn't exist
+  command: "{{ item }}"
+  with_items:
+  - "iadmin mkresc replResc 'replication'"
+  - "iadmin addchildtoresc demoResc replResc"
+  when: find_replResc | failed
 
-  - name: find all _hostname__resc resources to add them to the 'replResc'
-    shell: ilsresc | grep -e .*_resc
-    register: resources
+- name: find all _hostname__resc resources to add them to the 'replResc'
+  shell: "ilsresc -l | grep 'resource name' | awk '{print $3}' | grep -e .*_resc"
+  register: resources
 
-  - debug: resources
+- debug: resources
 
-  - name: add _hostname__resc to 'replResc'
-    command: iadmin addchildtoresc replResc {{ item }}
-    with_items:
-    - "{{ resources.stdout_lines }}"
+- name: add _hostname__resc to 'replResc'
+  command: iadmin addchildtoresc replResc {{ item }}
+  with_items:
+  - "{{ resources.stdout_lines }}"

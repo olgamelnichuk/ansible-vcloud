@@ -1,6 +1,0 @@
----
-- hosts: [irods_icat]
-  roles: [ldap_client, irods_server, irods_idropweb2]
-  sudo: true
-  vars:
-    icat_enabled: true

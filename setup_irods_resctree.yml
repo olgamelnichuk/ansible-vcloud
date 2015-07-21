@@ -1,5 +1,0 @@
----
-- name: create iRODS resource tree
-  hosts: [irods_icat]
-  roles: [irods_resctree]
-
