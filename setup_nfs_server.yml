@@ -1,7 +1,0 @@
----
-- name: Set up nfs server with LDAP-based authentication
-  hosts: [nfs_server]
-  roles: [ldap_client, nfs_server]
-  sudo: true
-  vars:
-    nfs_with_ldap: yes

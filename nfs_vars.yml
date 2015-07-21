@@ -1,0 +1,9 @@
+---
+nfs_domain: example.com
+nfs_host: nfs.example.com
+nfs_exports:
+- { path: "/nfs_export", regexp: "^/nfs_export\\s.*", permissions: "*(rw,fsid=0,insecure,root_squash,no_subtree_check)" }
+- { path: "/nfs_export/homes", regexp: "^/nfs_export/homes\\s.*", permissions: "*(rw,nohide,sync,insecure,root_squash,no_subtree_check)" }
+nfs_mounts:
+- { name: "/nfs/homes", src: "/homes", fstype: nfs4, opts: "rw,bg,soft,intr,lock,ac,tcp,nfsvers=4,timeo=1800" }
+nfs_users_path: "/nfs_export/homes"
