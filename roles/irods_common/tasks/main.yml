@@ -1,10 +1,12 @@
 ---
+- debug: var=irods_upgrade_only
+
 - name: setting up common variables
   set_fact:
-    irods_icat_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.2/ubuntu14/irods-icat-4.1.2-ubuntu14-x86_64.deb
-    irods_postgres_plugin_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.2/ubuntu14/irods-database-plugin-postgres-1.5-ubuntu14-x86_64.deb
-    irods_resource_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.2/ubuntu14/irods-resource-4.1.2-ubuntu14-x86_64.deb
-    irods_icommands_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.2/ubuntu14/irods-icommands-4.1.2-ubuntu14-x86_64.deb
+    irods_icat_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-icat-4.1.3-ubuntu14-x86_64.deb
+    irods_postgres_plugin_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-database-plugin-postgres-1.5-ubuntu14-x86_64.deb
+    irods_resource_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-resource-4.1.3-ubuntu14-x86_64.deb
+    irods_icommands_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-icommands-4.1.3-ubuntu14-x86_64.deb
   when: not irods_upgrade_only
 
 - debug: var={{ item }}
