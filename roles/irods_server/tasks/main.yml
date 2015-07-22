@@ -24,10 +24,13 @@
 
 - debug: var=ps_awx
 
-- name: setup irods server
-  command: /tmp/setup_irods_with_expect
-  register: setup_with_expect
+- name: setup irods_server
+  shell: sudo /var/lib/irods/packaging/setup_irods.sh < /tmp/setup_irods.input
   when: ps_awx.stdout_lines | length < 3
+#- name: setup irods server
+#  command: /tmp/setup_irods_with_expect
+#  register: setup_with_expect
+#  when: ps_awx.stdout_lines | length < 3
 
 - name: test if irods is already installed and running
   shell: ps awx | grep irodsServer

@@ -1,0 +1,19 @@
+{{ irods_zone_name }}
+{{ irods_service_port }}
+{{ irods_port_range_begin }}
+{{ irods_port_range_end }}
+{{ irods_vault_dir_default }}
+{{ irods_zone_key }}
+{{ irods_negotiation_key }}
+{{ irods_control_plane_port }}
+{{ irods_control_plane_key }}
+https://schemas.irods.org/configuration
+{{ irods_admin_username }}
+{{ irods_admin_password }}
+yes
+{{ irods_db_hostname }}
+{{ irods_db_port }}
+{{ irods_db_name }}
+{{ irods_db_user }}
+{{ irods_db_password }}
+yes
