@@ -1,16 +1,35 @@
 ---
+#
+# IMPORTNAT: Known ubuntu + libnss-ldap bug: https://bugs.launchpad.net/ubuntu/+source/libnss-ldap/+bug/1024475 
+# Use libnss-ldapd instead: http://arthurdejong.org/nss-pam-ldapd/setup
+#
 - name: upgrade all packages
   apt: update_cache=yes
+
+#- name: uninstall ldap libraried
+#  apt: pkg={{ item }} state=absent
+#  with_items:
+#  - ldap-auth-client
+#  - libpam-ldap
+#  - libnss-ldap
 
 - name: install required packages
   apt: pkg={{ item }} state=latest
   with_items: 
-  - ldap-auth-client
+  - libpam-ldapd
+  - libnss-ldapd
   - nscd
   - ldap-utils
 
-- name: Set up /etc/nsswitch.conf to use ldap lookups
-  shell: auth-client-config -t nss -p lac_ldap
+#- name: install required packages
+#  apt: pkg={{ item }} state=latest
+#  with_items: 
+#  - ldap-auth-client
+#  - nscd
+#  - ldap-utils
+
+#- name: Set up /etc/nsswitch.conf to use ldap lookups
+#  shell: auth-client-config -t nss -p lac_ldap
 
 - name: copy my_mkhomedir config
   template: src=my_mkhomedir dest=/usr/share/pam-configs/my_mkhomedir
@@ -18,9 +37,9 @@
 - name: copy my_mkhomedir config
   template: src=my_groups dest=/usr/share/pam-configs/my_groups
 
-- name: update /etc/ldap.conf
+- name: update /etc/nslcd.conf
   lineinfile:
-    dest: /etc/ldap.conf 
+    dest: /etc/nslcd.conf 
     line: "{{ item.line }}"
     regexp: "{{ item.regexp }}" 
     state: "{{ item.state }}"
@@ -28,15 +47,39 @@
   with_items:
   - { regexp: "^[#]?base dc=.*", line: "base {{ ldap_base }}", state: present }
   - { regexp: "^uri.*", line: "uri  ldap://{{ ldap_host }}", state: present }
-  - { regexp: "^[#]?ldap_version.*", line: "ldap_version 3", state: present }
-  - { regexp: "^[#]?pam_filter.*", line: "pam_filter objectclass=posixAccount", state: present }
-  - { regexp: "^[#]?pam_login_attribute.*", line: "pam_login_attribute uid", state: present }
-  - { regexp: "^[#]?pam_password.*", line: "pam_password crypt", state: present }
-  - { regexp: "^[#]?nss_base_passwd.*", line: "nss_base_passwd ou=People,{{ ldap_base }}", state: present }
-  - { regexp: "^[#]?nss_base_shadow.*", line: "nss_base_shadow ou=People,{{ ldap_base }}", state: present }
-  - { regexp: "^[#]?nss_base_group.*", line: "nss_base_group  ou=Group,{{ ldap_base }}", state: present }
-  - { regexp: "^[#]?nss_base_hosts.*", line: "nss_base_hosts  ou=Hosts,{{ ldap_base }}", state: present }
-  notify: restart nscd
+  notify: restart nslcd
+
+- name: update /etc/nsswitch.conf
+  lineinfile:
+    dest: /etc/nsswitch.conf
+    line: "{{ item.line }}"
+    regexp: "{{ item.regexp }}" 
+    state: "{{ item.state }}"
+    backup: yes
+  with_items:
+  - { regexp: "^passwd.*", line: "passwd:    files ldap", state: present }
+  - { regexp: "^group.*", line: "group:    files ldap", state: present }
+  - { regexp: "^shadow.*", line: "shadow:    files ldap", state: present }
+
+#- name: update /etc/ldap.conf
+#  lineinfile:
+#    dest: /etc/ldap.conf 
+#    line: "{{ item.line }}"
+#    regexp: "{{ item.regexp }}" 
+#    state: "{{ item.state }}"
+#    backup: yes
+#  with_items:
+#  - { regexp: "^[#]?base dc=.*", line: "base {{ ldap_base }}", state: present }
+#  - { regexp: "^uri.*", line: "uri  ldap://{{ ldap_host }}", state: present }
+#  - { regexp: "^[#]?ldap_version.*", line: "ldap_version 3", state: present }
+#  - { regexp: "^[#]?pam_filter.*", line: "pam_filter objectclass=posixAccount", state: present }
+#  - { regexp: "^[#]?pam_login_attribute.*", line: "pam_login_attribute uid", state: present }
+#  - { regexp: "^[#]?pam_password.*", line: "pam_password crypt", state: present }
+#  - { regexp: "^[#]?nss_base_passwd.*", line: "nss_base_passwd ou=People,{{ ldap_base }}", state: present }
+#  - { regexp: "^[#]?nss_base_shadow.*", line: "nss_base_shadow ou=People,{{ ldap_base }}", state: present }
+#  - { regexp: "^[#]?nss_base_group.*", line: "nss_base_group  ou=Group,{{ ldap_base }}", state: present }
+#  - { regexp: "^[#]?nss_base_hosts.*", line: "nss_base_hosts  ou=Hosts,{{ ldap_base }}", state: present }
+#  notify: restart nscd
 
 - name: set selections for libpam-runtime package
   debconf: >
@@ -50,6 +93,17 @@
   #shell: dpkg-reconfigure --frontend noninteractive libpam-runtime
   shell: DEBIAN_FRONTEND=noninteractive pam-auth-update
 
+- name: stop nscd
+  service: name=nscd state=stopped
+
+- name:  stop nslcd
+  service: name=nslcd state=stopped
+
+- name: start nslcd
+  service: name=nslcd state=started
+
+- name:  start nscd
+  service: name=nscd state=started
 
 #
 # !!! debconf doesn't always work !!!
