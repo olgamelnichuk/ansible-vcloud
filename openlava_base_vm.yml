@@ -1,0 +1,8 @@
+---
+- name: Playground vm setup
+  hosts: openlava_nodes
+  roles: 
+    - { role: ldap_client }
+    - { role: nfs_client, nfs_with_ldap: true }
+    - { role: docker_ubuntu }
+  sudo: true
