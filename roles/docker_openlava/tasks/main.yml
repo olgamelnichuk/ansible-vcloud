@@ -1,0 +1,152 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+    - build-essential
+    - libncurses5-dev
+    - tcl
+    - tcl-dev
+    - tcl8.6-dev
+    - sysv-rc-conf
+
+- name: Create user openlava
+  user: name=openlava comment="Openlava User" group=admin home=/home/openlava state=present
+
+- name: create folder
+  file: path=/home/openlava/compile state=directory
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: download the distribution
+  get_url: url=http://www.openlava.org/tarball/openlava-3.0.tar.gz dest=/home/openlava/compile
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: unzip it
+  command: tar zxvf openlava-3.0.tar.gz chdir=/home/openlava/compile
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: configure it
+  shell: ./configure chdir=/home/openlava/compile/openlava-3.0
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: make it
+  shell: make chdir=/home/openlava/compile/openlava-3.0
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: install it
+  shell: sudo make install chdir=/home/openlava/compile/openlava-3.0
+
+- name: copy scripts
+  shell: cp lsb.hosts lsb.params lsb.queues lsb.users lsf.cluster.openlava lsf.conf lsf.shared lsf.task openlava.* /opt/openlava-3.0/etc chdir=/home/openlava/compile/openlava-3.0/config
+
+- name: change owner
+  shell: chown -R openlava:admin /opt/openlava-3.0
+
+- name: copy openlava service starter to init.d
+  shell: cp /opt/openlava-3.0/etc/openlava /etc/init.d
+
+- name: copy openlava profiles
+  shell: cp /opt/openlava-3.0/etc/openlava.* /etc/profile.d
+
+- name: update the config file
+  lineinfile: 
+    dest: "/opt/openlava-3.0/etc/lsf.cluster.openlava"
+    regexp: '.*{{ hostvars[item].ansible_hostname }}$'
+    insertbefore: "End     Host"
+    line: "{{ hostvars[item].ansible_hostname  }}      !              !     1       -    (cs docker)"
+    state: present
+    backup: yes
+  when: hostvars[item].ansible_default_ipv4.address is defined
+  with_items: 
+    - '{{ groups.docker_openlava_nodes }}'
+
+- name: replace loopback for hostname
+  lineinfile: 
+    dest: /etc/hosts
+    regexp: '^127.0.1.1 {{ hostvars[item].ansible_hostname }}$'
+    line: '{{ hostvars[item].ansible_default_ipv4.address }} {{ hostvars[item].ansible_hostname }}'
+  when: hostvars[item].ansible_default_ipv4.address is defined
+  with_items: 
+    - '{{ groups.docker_openlava_nodes }}'
+
+- name: add lines to /etc/hosts file 
+  lineinfile: 
+    dest: /etc/hosts
+    regexp: '.*{{ hostvars[item].ansible_hostname }}$'
+    line: '{{ hostvars[item].ansible_default_ipv4.address }} {{ hostvars[item].ansible_hostname }}'
+  when: hostvars[item].ansible_default_ipv4.address is defined
+  with_items: 
+    - '{{ groups.docker_openlava_nodes }}'
+
+- name: add it to the boot list
+  shell: sysv-rc-conf openlava on
+
+- name: stop the service
+  shell: service openlava stop
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: start the service
+  shell: service openlava start
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: add lines to .bashrc
+  lineinfile: 
+     dest: /home/openlava/.bashrc
+     regexp: '. /etc/profile.d/openlava.sh'
+     insertbefore: "EOF"
+     line: '. /etc/profile.d/openlava.sh'
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: check openlava works
+  shell: sleep 15; . /etc/profile.d/openlava.sh && lsid
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: check openlava works
+  shell: . /etc/profile.d/openlava.sh && bhosts
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: openlava and docker integration new components download
+  get_url: url=https://github.com/openlava/openlava/raw/master/examples/docker/docker_terminate dest=/opt/openlava-3.0/bin
+  get_url: url=https://github.com/openlava/openlava/raw/master/examples/docker/docker_stop dest=/opt/openlava-3.0/bin
+  get_url: url=https://github.com/openlava/openlava/raw/master/examples/docker/docker_resume dest=/opt/openlava-3.0/bin
+  get_url: url=https://github.com/openlava/openlava/raw/master/examples/docker/docker_starter.c dest=/opt/openlava-3.0/bin
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: openlava and docker integration new components compilation
+  shell: cd /opt/openlava-3.0/bin; gcc -o docker_starter docker_starter.c
+  sudo: yes
+  sudo_user: "openlava"
+
+- name: add docker_queue into lsb.queues
+  template: src=lsb.queues dest=/opt/openlava-3.0/etc/lsb.queues owner=openlava group=admin mode=0644
+
+- name: add docker into lsf.shared
+  lineinfile: 
+    dest: /opt/openlava-3.0/etc/lsf.shared
+    insertbefore: "End Resource"
+    line: '   docker     Boolean ()       ()          (docker server)'
+    state: present
+  sudo: yes
+  sudo_user: "openlava"
+
+
+
+
+
+
+
+
+    
