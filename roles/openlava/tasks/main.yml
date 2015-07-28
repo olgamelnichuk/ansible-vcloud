@@ -17,27 +17,22 @@
 
 - name: create folder
   file: path=/home/openlava/compile state=directory
-  sudo: yes
   sudo_user: "openlava"
 
 - name: download the distribution
   get_url: url=http://www.openlava.org/tarball/openlava-3.0.tar.gz dest=/home/openlava/compile
-  sudo: yes
   sudo_user: "openlava"
 
 - name: unzip it
   command: tar zxvf openlava-3.0.tar.gz chdir=/home/openlava/compile
-  sudo: yes
   sudo_user: "openlava"
 
 - name: configure it
   shell: ./configure chdir=/home/openlava/compile/openlava-3.0
-  sudo: yes
   sudo_user: "openlava"
 
 - name: make it
   shell: make chdir=/home/openlava/compile/openlava-3.0
-  sudo: yes
   sudo_user: "openlava"
 
 - name: install it
@@ -90,12 +85,10 @@
 
 - name: stop the service
   shell: service openlava stop
-  sudo: yes
   sudo_user: "openlava"
 
 - name: start the service
   shell: service openlava start
-  sudo: yes
   sudo_user: "openlava"
 
 - name: add lines to .bashrc
@@ -104,34 +97,32 @@
      regexp: '. /etc/profile.d/openlava.sh'
      insertbefore: "EOF"
      line: '. /etc/profile.d/openlava.sh'
-  sudo: yes
   sudo_user: "openlava"
 
 - name: check openlava works
   shell: sleep 15; . /etc/profile.d/openlava.sh && lsid
-  sudo: yes
   sudo_user: "openlava"
 
 - name: check openlava works
   shell: . /etc/profile.d/openlava.sh && bhosts
-  sudo: yes
   sudo_user: "openlava"
 
 - name: openlava and docker integration new components download
-  get_url: url=https://github.com/openlava/openlava/raw/master/examples/docker/docker_terminate dest=/opt/openlava-3.0/bin
-  get_url: url=https://github.com/openlava/openlava/raw/master/examples/docker/docker_stop dest=/opt/openlava-3.0/bin
-  get_url: url=https://github.com/openlava/openlava/raw/master/examples/docker/docker_resume dest=/opt/openlava-3.0/bin
-  get_url: url=https://github.com/openlava/openlava/raw/master/examples/docker/docker_starter.c dest=/opt/openlava-3.0/bin
-  sudo: yes
+  get_url: url={{item.url}} dest={{item.dest}}
+  with_items: 
+     - { url: 'https://github.com/openlava/openlava/raw/master/examples/docker/docker_terminate', dest: '/opt/openlava-3.0/bin' }
+     - { url: 'https://github.com/openlava/openlava/raw/master/examples/docker/docker_resume', dest: '/opt/openlava-3.0/bin' } 
+     - { url: 'https://github.com/openlava/openlava/raw/master/examples/docker/docker_stop', dest: '/opt/openlava-3.0/bin' } 
   sudo_user: "openlava"
+  when: openlava_with_docker
 
-- name: openlava and docker integration new components compilation
-  shell: cd /opt/openlava-3.0/bin; gcc -o docker_starter docker_starter.c
-  sudo: yes
-  sudo_user: "openlava"
+- name: openlava and docker integration starter
+  template: src=docker_starter dest=/opt/openlava-3.0/bin/docker_starter owner=openlava group=admin mode=0751
+  when: openlava_with_docker
 
 - name: add docker_queue into lsb.queues
   template: src=lsb.queues dest=/opt/openlava-3.0/etc/lsb.queues owner=openlava group=admin mode=0644
+  when: openlava_with_docker
 
 - name: add docker into lsf.shared
   lineinfile: 
@@ -139,8 +130,8 @@
     insertbefore: "End Resource"
     line: '   docker     Boolean ()       ()          (docker server)'
     state: present
-  sudo: yes
   sudo_user: "openlava"
+  when: openlava_with_docker
 
 
 

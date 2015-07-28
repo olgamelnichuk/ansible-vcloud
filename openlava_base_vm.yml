@@ -6,7 +6,6 @@
     - { role: ldap_client }
     - { role: nfs_client, nfs_with_ldap: true }
     - { role: docker_ubuntu }
-    - { role: docker_openlava }
+    - { role: openlava, openlava_with_docker: true }
   sudo: true
-  environment:
-     LSB_DOCKER_IMAGE: "ubuntu:app"
+

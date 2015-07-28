@@ -1,0 +1,5 @@
+#!/bin/sh
+
+command="docker run --name=$LSB_JOBID --entrypoint="/usr/bin/env" -i $1"
+eval $command
+
