@@ -1,0 +1,37 @@
+---
+- set_fact: 
+    serial_number: 1
+
+- name: is zone file exists?
+  stat: path=/etc/bind/{{ zone_file }}
+  register: zone_file_stat
+
+- name: fetching last serial number
+  shell: "less /etc/bind/{{ zone_file }} | grep '; Serial' | awk '{print $1}'"
+  register: last_serial_number
+  when: zone_file_stat.stat.exists
+
+- debug: var=last_serial_number 
+  when: zone_file_stat.stat.exists
+
+- set_fact:
+    serial_number: "{{ last_serial_number.stdout_lines[0] }}"
+  when: zone_file_stat.stat.exists 
+
+- debug: var=serial_number
+
+- name: copy tmplate file
+  template: src={{ tmpl_file }} dest=/etc/bind/{{ zone_file }} owner=root group=bind
+  register: zone_file_copy
+
+- debug: var=zone_file_copy.changed
+
+- name: increment serial number if {{ zone_file }} changed
+  set_fact:
+    serial_number: "{{ serial_number | int + 1 }}"
+  when: zone_file_copy.changed   
+
+- debug: var=serial_number
+
+- name: copy tmplate file
+  template: src={{ tmpl_file }} dest=/etc/bind/{{ zone_file }} owner=root group=bind
