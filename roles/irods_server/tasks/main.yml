@@ -62,3 +62,6 @@
 - include: pam_authentication.yml
   when: irods_pam_auth_enabled
   tags: ssl_keys
+
+- name: restart irods service
+  service: name=irods state=restarted enabled=true

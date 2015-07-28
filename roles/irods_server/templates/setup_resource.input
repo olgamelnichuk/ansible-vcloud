@@ -1,6 +1,5 @@
 {{ irods_service_account_name }}
 {{ irods_service_group_name }}
-{{ irods_zone_name }}
 {{ irods_service_port }}
 {{ irods_port_range_begin }}
 {{ irods_port_range_end }}
@@ -11,11 +10,8 @@
 {{ irods_control_plane_key }}
 https://schemas.irods.org/configuration
 {{ irods_admin_username }}
+yes
+{{ irods_ies_hostname }}
+{{ irods_zone_name }}
+yes
 {{ irods_admin_password }}
-yes
-{{ irods_db_hostname }}
-{{ irods_db_port }}
-{{ irods_db_name }}
-{{ irods_db_user }}
-{{ irods_db_password }}
-yes

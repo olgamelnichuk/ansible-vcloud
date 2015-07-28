@@ -10,3 +10,6 @@
 
 - name: copy expect script to setup irods resource
   template: src=setup_irods_resource.sh dest=/tmp/setup_irods_with_expect owner=root group=root mode=0700
+
+- name: copy expect script to setup irods server
+  template: src=setup_resource.input dest=/tmp/setup_irods.input owner=root group=root mode=0700
