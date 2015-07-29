@@ -10,7 +10,6 @@
 #  apt: pkg={{ item }} state=absent
 #  with_items:
 #  - ldap-auth-client
-#  - libpam-ldap
 #  - libnss-ldap
 
 - name: install required packages
