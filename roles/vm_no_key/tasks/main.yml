@@ -32,7 +32,7 @@
   lineinfile: dest=/etc/sudoers state=present regexp="^Defaults env_keep\+\=SSH_AUTH_SOCK" line="Defaults env_keep+=SSH_AUTH_SOCK"
 
 - name: Create user ansible
-  user: name=ansible comment="Ansible User" group=admin home=/home/ansible state=present
+  user: name=ansible comment="Ansible User" group=admin home=/home/ansible shell=/bin/bash state=present
 
 - name: Check if key-pair exists 
   local_action: stat path={{ key_dir }}/{{ key_name }}
