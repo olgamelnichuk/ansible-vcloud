@@ -1,0 +1,18 @@
+---
+- name: check if data VG exists
+  shell: vgdisplay | grep "VG Name.*data" | wc -l
+  register: vgdisplay_out
+
+- set_fact: vg_create=true
+  when: vgdisplay_out.stdout_lines[0] | int == 0
+
+- debug: var=vg_create
+
+- name: create data VG
+  shell: vgcreate data {{ partition }}
+  when: vg_create
+
+# do pvdisplay /dev/sdb1 | grep "VG Name" first
+#- name: extend data VG
+#  shell: vgextend data {{ partition }}
+#  when: not vg_create

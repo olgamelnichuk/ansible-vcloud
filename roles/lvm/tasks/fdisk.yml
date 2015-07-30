@@ -1,0 +1,14 @@
+---
+- name: check if partition exists already
+  stat: path={{ partition }}
+  register: partition_stat 
+
+- debug: var=partition_stat.stat.exists
+
+- name: copy fdisk script
+  template: src=fdisk.yml dest=/tmp/fdisk.sh
+  when: not partition_stat.stat.exists 
+
+- name: create a partition
+  shell: sh /tmp/fdisk.sh
+  when: not partition_stat.stat.exists

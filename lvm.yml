@@ -1,0 +1,6 @@
+---
+- name: Add new HDD
+  hosts: "{{ hosts }}"
+  sudo: true
+  roles:
+  - { role: lvm, device: "{{ device }}" }

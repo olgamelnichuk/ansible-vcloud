@@ -1,0 +1,9 @@
+---
+- name: check if physical volume for the partiotion exists
+  shell: "pvdisplay | grep 'PV Name.*{{ partition }}' | wc -l"
+  register: pvdisplay_out
+
+- debug: var=pvdisplay_out
+- name: create physical volume
+  shell: pvcreate {{ partition }}
+  when: pvdisplay_out.stdout_lines[0] | int == 0

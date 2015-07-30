@@ -1,0 +1,24 @@
+---
+- name: check if data_vault LV exists
+  shell: lvdisplay | grep /dev/data/data_vault | wc -l
+  register: lvdisplay_out
+
+- name: check the free space in data VG
+  shell: sudo vgs --rows data | grep VFree | awk '{ split($2,a,"."); print a[1] }'
+  register: free_space
+
+- set_fact:
+    lv_size: "{{ free_space.stdout_lines[0] }}"
+    lv_create: "{{ lvdisplay_out.stdout_lines[0] | int == 0 }}"
+
+- debug: var=lv_size
+
+- debug: var=lv_create
+
+#- name: create LV
+#  shell: lvcreate -L {{ lv_size }}G -n data_vault data
+#  when: lv_create
+
+#- name: extend LV
+#  shell: lvextend -L+{{ lv_size }}G /dev/data/data_vault
+#  when: not lv_create

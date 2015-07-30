@@ -1,0 +1,26 @@
+---
+- set_fact: 
+    vg_create: false
+    partition: "{{ device }}1"
+
+- debug: var=device
+
+- debug: var=partition
+
+- name: create a partition if it doesn't exist
+  include: fdisk.yml
+
+- name: create a physical volume if it doesn't exist
+  include: pvcreate.yml 
+
+- name: create or extend data VG
+  include: vgcreate.yml
+
+- name: create or extend data LV
+  include: lvcreate.yml
+
+
+
+
+
+
