@@ -1,12 +1,15 @@
 ---
 - debug: var={{ nfs_host }}
+  tags: nfs_client
 
 - name: create mount directory if it doesn't exist
   file: path={{ item.name }} state=directory mode=755
   with_items:
   - "{{ nfs_mounts }}"
+  tags: nfs_client
 
 - name: configure fstab
   mount: name={{ item.name }} src="{{ nfs_host }}:{{ item.src }}" fstype={{ item.fstype }}  opts="{{ item.opts }}" state=mounted
   with_items:
   - "{{ nfs_mounts }}"
+  tags: nfs_client
