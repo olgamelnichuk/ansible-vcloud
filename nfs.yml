@@ -3,5 +3,5 @@
   hosts: nfs_server
   sudo: true
   roles: 
-    - { role:ldap_client }
+    - { role: ldap_client }
     - { role: nfs_server, nfs_with_ldap: yes }
