@@ -19,8 +19,5 @@
 - name: create or extend data LV
   include: lvcreate.yml
 
-
-
-
-
-
+- name: make sure the mount is on
+  mount: name=/data src="/dev/data/data_vault" fstype=ext4  opts=defaults state=mounted 

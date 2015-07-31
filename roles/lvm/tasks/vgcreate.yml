@@ -12,7 +12,11 @@
   shell: vgcreate data {{ partition }}
   when: vg_create
 
-# do pvdisplay /dev/sdb1 | grep "VG Name" first
-#- name: extend data VG
-#  shell: vgextend data {{ partition }}
-#  when: not vg_create
+- name: check if VG contains the partition
+  shell: pvdisplay {{ partition }} | grep "VG Name" | wc -l
+  register: pvdisplay_out
+  when: not vg_create
+
+- name: extend data VG with partition
+  shell: vgextend data {{ partition }}
+  when: (not vg_create) and (pvdisplay_out.stdout_lines[0] | int == 0)

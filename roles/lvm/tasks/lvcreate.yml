@@ -4,7 +4,7 @@
   register: lvdisplay_out
 
 - name: check the free space in data VG
-  shell: sudo vgs --rows data | grep VFree | awk '{ split($2,a,"."); print a[1] }'
+  shell: sudo vgs --rows --units G data | grep VFree | awk '{ split($2,a,"."); print a[1] }'
   register: free_space
 
 - set_fact:
@@ -15,10 +15,18 @@
 
 - debug: var=lv_create
 
-#- name: create LV
-#  shell: lvcreate -L {{ lv_size }}G -n data_vault data
-#  when: lv_create
+- name: create LV
+  shell: lvcreate -L {{ (lv_size | int) -1 }}.99G -n data_vault data
+  when: lv_create
 
-#- name: extend LV
-#  shell: lvextend -L+{{ lv_size }}G /dev/data/data_vault
-#  when: not lv_create
+- name: make a file system
+  shell: mkfs -t ext4 /dev/data/data_vault
+  when: lv_create
+
+- name: extend LV
+  shell: lvextend -L+{{ lv_size }}G /dev/data/data_vault
+  when: (not lv_create) and (lv_size | int > 0)
+
+- name: resize filesystem after LV extend
+  shell: resize2fs /dev/data/data_vault
+  when: (not lv_create) and (lv_size | int > 0)
