@@ -13,10 +13,10 @@
   when: vg_create
 
 - name: check if VG contains the partition
-  shell: sudo pvs --rows /dev/sdb1 | grep 'VG' | awk '{ split($0,a," "); print a[2] }' | wc -w
+  shell: pvs --rows /dev/sdb1 | grep 'VG' | awk '{ split($0,a," "); print a[2] }' | wc -w
   register: pvdisplay_out
   when: not vg_create
 
 - name: extend VG with partition
-  shell: vgextend {{ partition }}
+  shell: vgextend {{ vg_name}} {{ partition }}
   when: (not vg_create) and (pvdisplay_out.stdout_lines[0] | int == 0)
