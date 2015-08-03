@@ -15,8 +15,6 @@
 
 - debug: var=lv_create
 
-- debug: msg="{{ (lv_create == false) and ((lv_size | int) > 0) }}"
-
 - name: create LV
   shell: lvcreate -L {{ (lv_size | int) -1 }}.99G -n {{ lv_name }} {{ vg_name }}
   when: lv_create
@@ -27,8 +25,8 @@
 
 - name: extend LV
   shell: lvextend -L+{{ lv_size }}G /dev/{{ vg_name }}/{{ lv_name }}
-  when: (lv_create == false) and ((lv_size | int) > 0)
+  when: (lv_create | bool == false) and (lv_size | int > 0)
 
 - name: resize filesystem after LV extend
   shell: resize2fs /dev/{{ vg_name }}/{{ lv_name }}
-  when: (lv_create == false) and ((lv_size | int) > 0)
+  when: (lv_create | bool == false) and (lv_size | int > 0)
