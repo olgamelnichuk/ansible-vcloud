@@ -18,5 +18,5 @@
   when: not vg_create
 
 - name: extend VG with partition
-  shell: vgextend {{ vg_name}} {{ partition }}
+  shell: vgextend {{ vg_name }} {{ partition }}
   when: (not vg_create) and (pvdisplay_out.stdout_lines[0] | int == 0)
