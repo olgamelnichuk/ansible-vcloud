@@ -24,7 +24,7 @@
   when: lv_create
 
 - name: extend LV
-  shell: lvextend -L+{{ lv_size }}G /dev/{{ vg_name }}/{{ lv_name }}
+  shell: lvextend -L+{{ (lv_size | int) -1 }}.99G /dev/{{ vg_name }}/{{ lv_name }}
   when: (lv_create | bool == false) and (lv_size | int > 0)
 
 - name: resize filesystem after LV extend
