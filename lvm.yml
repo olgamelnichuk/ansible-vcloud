@@ -4,3 +4,4 @@
   sudo: true
   roles:
   - { role: lvm, device: "{{ device }}", vg_name: "{{ vg_name }}", lv_name: "{{ lv_name }}" }  # mount_point: {optional}
+

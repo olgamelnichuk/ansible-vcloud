@@ -236,7 +236,7 @@ TERMINATE[/opt/openlava-3.0/bin/docker_terminate]
 #DATALIMIT    = 20000          # jobs data segment limit
 #STACKLIMIT   = 2048
 #CORELIMIT    = 20000
-#PROCLIMIT    = 5              # job processor limit
+PROCLIMIT    = 8              # job processor limit
 #USERS        = all            # users who can submit jobs to this queue
 #HOSTS        = all            # hosts on which jobs in this queue can run
 #PRE_EXEC     = /usr/local/lsf/misc/testq_pre >> /tmp/pre.out
