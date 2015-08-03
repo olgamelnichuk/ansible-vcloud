@@ -1,6 +1,6 @@
 ---
-- name: check if data VG exists
-  shell: vgdisplay | grep "VG Name.*data" | wc -l
+- name: check if VG exists
+  shell: vgdisplay | grep "VG Name.*{{ vg_name }}" | wc -l
   register: vgdisplay_out
 
 - set_fact: vg_create=true
@@ -8,8 +8,8 @@
 
 - debug: var=vg_create
 
-- name: create data VG
-  shell: vgcreate data {{ partition }}
+- name: create VG
+  shell: vgcreate {{ vg_name }} {{ partition }}
   when: vg_create
 
 - name: check if VG contains the partition
@@ -17,6 +17,6 @@
   register: pvdisplay_out
   when: not vg_create
 
-- name: extend data VG with partition
-  shell: vgextend data {{ partition }}
+- name: extend VG with partition
+  shell: vgextend {{ partition }}
   when: (not vg_create) and (pvdisplay_out.stdout_lines[0] | int == 0)

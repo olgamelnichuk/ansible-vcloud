@@ -13,11 +13,12 @@
 - name: create a physical volume if it doesn't exist
   include: pvcreate.yml 
 
-- name: create or extend data VG
+- name: create or extend VG
   include: vgcreate.yml
 
-- name: create or extend data LV
+- name: create or extend LV
   include: lvcreate.yml
 
 - name: make sure the mount is on
-  mount: name=/data src="/dev/data/data_vault" fstype=ext4  opts=defaults state=mounted 
+  mount: name=/{{ mount_point }} src="/dev/{{ vg_name }}/{{ lv_name }}" fstype=ext4  opts=defaults state=mounted
+  when: mount_point is defined
