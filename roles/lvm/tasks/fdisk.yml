@@ -6,7 +6,7 @@
 - debug: var=partition_stat.stat.exists
 
 - name: copy fdisk script
-  template: src=fdisk.yml dest=/tmp/fdisk.sh
+  template: src=fdisk.j2 dest=/tmp/fdisk.sh
   when: not partition_stat.stat.exists 
 
 - name: create a partition
