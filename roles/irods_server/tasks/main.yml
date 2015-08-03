@@ -49,16 +49,6 @@
   command: /tmp/iinit
   sudo: false
 
-- name: check if '{{ ansible_hostname }}_resc' resource already exists
-  command: iadmin lr {{ ansible_hostname }}_resc
-  register: resource_details
-  sudo: false
-
-- name: create new resource 
-  command: iadmin mkresc {{ ansible_hostname }}_resc "unixfilesystem" {{ ansible_hostname }}:{{ irods_vault_dir }}
-  sudo: false
-  when: resource_details.stdout_lines | length < 2
-
 - include: pam_authentication.yml
   when: irods_pam_auth_enabled
   tags: ssl_keys

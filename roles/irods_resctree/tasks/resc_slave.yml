@@ -1,0 +1,81 @@
+---
+- name: check if slaveRescN exists
+  shell: ilsresc -l slaveResc{{ item }} | wc -l
+  register: ilsresc_out
+  with_sequence: count={{ groups.irods_resource | length }}
+
+# workaround for https://github.com/ansible/ansible/issues/11422 
+- name: check if slaveRescN exists
+  shell: ilsresc -l slaveResc1 | wc -l
+  register: ilsresc_out
+  when: groups.irods_resource | length == 1
+
+- set_fact:
+    results: '{{ [ilsresc_out] }}'
+
+- set_fact:
+    results: '{{ ilresc_out.results }}'
+  when: ilresc_out.results is defined 
+
+- debug: var=ilsresc_out
+
+- set_fact: 
+    indices: '{{ results | selectattr("stdout_lines.0","equalto","1") | map(attribute="item") | list }}'
+
+- debug: var=indices
+
+- name: create slaveRescN if it doesn't exist
+  shell: iadmin mkresc slaveResc{{ item }} passthru '' 'read=0.9;write=0.9'
+  with_items: 
+    - "{{ indices }}"
+
+- name: create slaveRescN if it doesn't exist
+  shell: iadmin addchildtoresc replResc slaveResc{{ item }}
+  with_items: 
+    - "{{ indices }}"
+
+- name: find FQDN
+  shell: dig +noall +answer +short -x {{ item }} | awk '{ print substr($0, 0, length($0)-1) }'
+  register: fqdns_out
+  with_items:
+    - "{{ groups.irods_resource }}"
+
+- set_fact:
+    fqdns_out_results: '{{ [fqdns_out] }}'
+
+- set_fact:
+    fqdns_out_results: '{{ fqdns_out.results }}'
+  when: fqdns_out.results is defined
+
+- name: find names
+  shell: dig +noall +answer +short -x {{ item }} | awk '{ split($0,a,"."); print a[1] }'
+  register: names_out
+  with_items:
+    - "{{ groups.irods_resource }}"
+
+- set_fact:
+    names_out_results: '{{ [names_out] }}'
+
+- set_fact:
+    names_out_results: '{{ names_out.results }}'
+  when: names_out.results is defined
+
+- set_fact:
+    fqdns: '{{ fqdns_out_results | map(attribute="stdout_lines.0") | list }}'
+    names: '{{ names_out_results | map(attribute="stdout_lines.0") | list }}'
+
+
+- debug: var=names
+
+- debug: var=fqdns
+
+- name: create resource
+  shell: iadmin mkresc {{ names[(item|int) -1] }}_resc 'unixfilesystem' {{ fqdns[(item|int) -1] }}:{{ irods_vault_dir }}
+  with_items: 
+    - "{{ indices }}"
+
+- name: add resource to the tree
+  shell: iadmin addchildtoresc slaveResc{{ item }} {{ names[(item|int) -1] }}_resc
+  with_items: 
+    - "{{ indices }}"
+
