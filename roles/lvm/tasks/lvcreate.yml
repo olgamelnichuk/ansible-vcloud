@@ -25,8 +25,8 @@
 
 - name: extend LV
   shell: lvextend -L+{{ lv_size }}G /dev/{{ vg_name }}/{{ lv_name }}
-  when: (not lv_create) and (lv_size | int > 0)
+  when: (lv_create == false) and ((lv_size | int) > 0)
 
 - name: resize filesystem after LV extend
   shell: resize2fs /dev/{{ vg_name }}/{{ lv_name }}
-  when: (not lv_create) and (lv_size | int > 0)
+  when: (lv_create == false) and ((lv_size | int) > 0)
