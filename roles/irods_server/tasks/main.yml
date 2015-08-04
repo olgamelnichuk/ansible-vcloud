@@ -1,8 +1,4 @@
 ---
-- name: set icat_enabled to false if it isn't defined
-  set_fact: icat_enabled=false
-  when: icat_enabled is not defined
-
 - name: upgrade all packages
   apt: update_cache=yes
 
@@ -53,5 +49,12 @@
   when: irods_pam_auth_enabled
   tags: ssl_keys
 
+- include: hosts_config.yml
+  when: irods_hosts_config_enabled
+  tags: hosts_config
+
 - name: restart irods service
   service: name=irods state=restarted enabled=true
+  tags:
+  - ssl_keys 
+  - hosts_config

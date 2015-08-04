@@ -1,0 +1,19 @@
+---
+- name: find fqdn
+  shell: "dig +noall +answer +short -x {{ ansible_default_ipv4.address }} | awk '{ print substr($0, 0, length($0)-1) }'"
+  register: fqdn_out
+
+- name: finad short name
+  shell: "dig +noall +answer +short -x {{ ansible_default_ipv4.address }} | awk -F. '{ print $1 }'"
+  register: name_out
+
+- set_fact:
+    host_fqdn: "{{ fqdn_out.stdout_lines[0] }}"
+    host_name: "{{ name_out.stdout_lines[0] }}"
+
+- debug: var=host_fqdn
+
+- debug: var=host_name
+
+- name: copy hosts_config.json
+  template: src=hosts_config.j2 dest=/etc/irods/hosts_config.json
