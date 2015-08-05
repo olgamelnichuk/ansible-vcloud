@@ -14,9 +14,17 @@
     zone_file_tmpl2: "db.192.j2"
     zone_file2: "db.192"
 
-- include: copy_zone_file.yml zone_file={{ zone_file1 }}  tmpl_file={{ zone_file_tmpl1 }}
+- include: copy_zone_file.yml zone_file={{ zone_file1 }}  tmpl_file={{ zone_file_tmpl1 }}  zone={{ dns_zone }} zone_table={{ dns_table }}
 
-- include: copy_zone_file.yml zone_file={{ zone_file2 }} tmpl_file={{ zone_file_tmpl2 }}
+- include: copy_zone_file.yml zone_file={{ zone_file2 }} tmpl_file={{ zone_file_tmpl2 }} zone={{ dns_zone}} zone_table={{ dns_table }}
+
+- set_fact:
+    zone_file_tmpl3: "db_dns_zone_.j2" 
+    zone_file3: "db.{{ dns_zone_public }}"
+  when: dns_zone_public is defined
+
+- include: copy_zone_file.yml zone_file={{ zone_file3 }} tmpl_file={{ zone_file_tmpl3 }} zone={{ dns_zone_public }} zone_table={{ dns_table_public }}
+  when: dns_zone_public is defined
 
 - name: copy the configs
   template: src={{ item.src }} dest=/etc/bind/{{ item.dest }} owner=root group=bind

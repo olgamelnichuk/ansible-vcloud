@@ -6,17 +6,17 @@
 ; If you make multiple changes before restarting BIND9, simply increment the Serial once. 
 ;
 $TTL    604800
-@       IN      SOA     {{ dns_zone }}. root.{{ dns_zone }}. (
+@       IN      SOA     {{ zone }}. root.{{ zone }}. (
                               {{ serial_number }}         ; Serial
                          604800         ; Refresh
                           86400         ; Retry
                         2419200         ; Expire
                          604800 )       ; Negative Cache TTL
 ;
-@       IN      NS      ns.{{ dns_zone }}.
+@       IN      NS      ns.{{ zone }}.
 @       IN      A       {{ dns_master_ip }}
 @       IN      AAAA    ::1
 ns      IN      A       {{ dns_master_ip }}
-{% for item in dns_table %}
+{% for item in zone_table %}
 {{ item.name }}      IN      A       {{ item.ip }}  
 {% endfor %}

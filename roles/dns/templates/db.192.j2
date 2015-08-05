@@ -3,7 +3,7 @@
 ; BIND reverse data file for local loopback interface
 ;
 $TTL    604800
-@       IN      SOA     ns.{{ dns_zone }}. root.{{ dns_zone }}. (
+@       IN      SOA     ns.{{ zone }}. root.{{ zone }}. (
                               {{ serial_number }}         ; Serial
                          604800         ; Refresh
                           86400         ; Retry
@@ -11,7 +11,7 @@ $TTL    604800
                          604800 )       ; Negative Cache TTL
 ;
 @       IN      NS      ns.
-{{ dns_master_ip.split('.')[-1] }}   IN      PTR     ns.{{ dns_zone }}.
-{% for item in dns_table %}
-{{ item.ip.split('.')[-1] }}      IN      PTR       {{ item.name }}.{{ dns_zone }}.  
+{{ dns_master_ip.split('.')[-1] }}   IN      PTR     ns.{{ zone }}.
+{% for item in zone_table %}
+{{ item.ip.split('.')[-1] }}      IN      PTR       {{ item.name }}.{{ zone }}.  
 {% endfor %}

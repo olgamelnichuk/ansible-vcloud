@@ -11,6 +11,13 @@ zone "{{ dns_zone }}" {
     file "/etc/bind/db.{{ dns_zone }}";
 };
 
+{% if dns_zone_public is defined %}
+zone "{{ dns_zone_public }}" {
+	type master;
+    file "/etc/bind/db.{{ dns_zone_public }}";
+};
+{% endif %}
+
 zone "1.168.192.in-addr.arpa" {
         type master;
         file "/etc/bind/db.192";
