@@ -1,0 +1,16 @@
+---
+- name: pull iRAP docker image
+  shell: docker pull nunofonseca/irap_ubuntu:v0.7.0p1
+
+
+
+ 
+
+
+
+
+
+
+
+
+    
