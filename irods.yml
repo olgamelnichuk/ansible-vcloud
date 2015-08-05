@@ -25,7 +25,7 @@
 
 - name: iRODS resource tree setup
   hosts: irods_icat
-  roles: 
+  roles:
     - irods_resctree
   tags: irods_resctree
 
