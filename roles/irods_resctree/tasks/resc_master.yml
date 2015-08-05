@@ -1,0 +1,34 @@
+---
+- name: check if masterResc exists
+  shell: ilsresc -l masterResc | wc -l
+  register: ilsresc_out
+
+- name: create masterResc if it doesn't exist
+  shell: "{{ item }}"
+  with_items:
+  - "iadmin mkresc masterResc passthru '' 'read=1.1;write=1.1'"
+  - "iadmin addchildtoresc replResc masterResc"
+  when: ilsresc_out.stdout_lines[0] | int < 2
+
+- name: icat fqdn
+  shell: dig +noall +answer +short -x {{ groups.irods_icat[0] }} | awk '{ print substr($0, 0, length($0)-1) }'
+  register: icat_fqdn_out
+
+- name: icat name
+  shell: dig +noall +answer +short -x {{ groups.irods_icat[0] }} | awk '{ split($0,a,"."); print a[1] }'
+  register: icat_name_out
+
+- set_fact:
+    icat_name: "{{ icat_name_out.stdout_lines[0] }}"
+    icat_fqdn: "{{ icat_fqdn_out.stdout_lines[0] }}"
+
+- name: check if icat resource exists
+  shell: ilsresc -l {{ icat_name }}_resc | wc -l
+  register: ilsresc_out
+
+- name: create icat rescource if it doesn't exists
+  shell: "{{ item }}"
+  with_items:
+  - "iadmin mkresc {{ icat_name }}_resc 'unixfilesystem' {{ icat_fqdn }}:{{ irods_vault_dir }}"
+  - "iadmin addchildtoresc masterResc {{ icat_name }}_resc"
+  when: ilsresc_out.stdout_lines[0] | int < 2

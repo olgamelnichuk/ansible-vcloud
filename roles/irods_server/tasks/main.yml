@@ -1,8 +1,4 @@
 ---
-- name: set icat_enabled to false if it isn't defined
-  set_fact: icat_enabled=false
-  when: icat_enabled is not defined
-
 - name: upgrade all packages
   apt: update_cache=yes
 
@@ -49,19 +45,16 @@
   command: /tmp/iinit
   sudo: false
 
-- name: check if '{{ ansible_hostname }}_resc' resource already exists
-  command: iadmin lr {{ ansible_hostname }}_resc
-  register: resource_details
-  sudo: false
-
-- name: create new resource 
-  command: iadmin mkresc {{ ansible_hostname }}_resc "unixfilesystem" {{ ansible_hostname }}:{{ irods_vault_dir }}
-  sudo: false
-  when: resource_details.stdout_lines | length < 2
-
 - include: pam_authentication.yml
   when: irods_pam_auth_enabled
   tags: ssl_keys
 
+- include: hosts_config.yml
+  when: irods_hosts_config_enabled
+  tags: hosts_config
+
 - name: restart irods service
   service: name=irods state=restarted enabled=true
+  tags:
+  - ssl_keys 
+  - hosts_config

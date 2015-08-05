@@ -16,7 +16,7 @@
 - debug: var=lv_create
 
 - name: create LV
-  shell: lvcreate -L {{ (lv_size | int) -1 }}.99G -n {{ lv_name }} {{ vg_name }}
+  shell: lvcreate -l 100%FREE -n {{ lv_name }} {{ vg_name }}
   when: lv_create
 
 - name: make a file system

@@ -1,0 +1,5 @@
+---
+icat_enabled: false
+irods_upgrade_only: false
+irods_pam_auth_enabled: false
+irods_hosts_config_enabled: false

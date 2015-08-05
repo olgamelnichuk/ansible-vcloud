@@ -1,0 +1,20 @@
+---
+- name: check if rootResc exists
+  shell: ilsresc -l {{ irods_root_resc }} | wc -l
+  register: ilsresc_out
+
+- name: create rootResc if it doesn't exist
+  shell: iadmin mkresc {{ irods_root_resc }} 'passthru'
+  when: ilsresc_out.stdout_lines[0] | int < 2
+
+- name: check if replResc exists
+  shell: ilsresc -l replResc | wc -l
+  register: ilsresc_out
+
+- name: create replResc if it doesn't exist
+  shell: "{{ item }}"
+  with_items:
+  - "iadmin mkresc replResc 'replication'"
+  - "iadmin addchildtoresc {{ irods_root_resc }} replResc"
+  when: ilsresc_out.stdout_lines[0] | int < 2
+
