@@ -48,7 +48,7 @@
 - name: test docker installation
   shell: docker run hello-world
 
-- name: Make sure docker group can do sudo
+- name: Make sure docker group can run docker command
   lineinfile: 
     dest: /etc/sudoers 
     state: present 
