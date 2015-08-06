@@ -47,3 +47,10 @@
 
 - name: test docker installation
   shell: docker run hello-world
+
+- name: Make sure docker group can do sudo
+  lineinfile: 
+    dest: /etc/sudoers 
+    state: present 
+    regexp: "^%docker.*" 
+    line: "%docker ALL=NOPASSWD: /usr/bin/docker"
