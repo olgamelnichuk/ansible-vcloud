@@ -1,6 +1,6 @@
 #!/bin/sh
 
-command="docker run --name=$LSB_JOBID -i $*"
+command="docker run --name=$LSB_JOBID -v $*"
 echo $command
 eval $command
 

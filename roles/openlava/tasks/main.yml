@@ -135,21 +135,7 @@
     line: '   docker     Boolean ()       ()          (docker server)'
     state: present
   sudo_user: "openlava"
-  when: openlava_with_docker
-
-- name: get docker group
-  shell: "getent group | grep 'docker:*' | cut '-d:' -f3"
-  register: docker_group
-  when: openlava_with_docker
-
-- name: create docker group
-  lineinfile: 
-     dest: /etc/group
-     insertbefore: "EOF"
-     line: 'docker:x:{{ docker_group.stdout }}:'
-  when: openlava_with_docker
-
- 
+  when: openlava_with_docker 
 
 
 
