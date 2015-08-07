@@ -1,0 +1,26 @@
+---
+- name: place ngseasy scripts to NFS server  
+  template: src={{item.src}} dest={{item.dest}} owner=root group=root mode=0755
+  with_items: 
+     - { src: 'ngseasy', dest: '/export/ngseasy/bin/ngseasy' }
+     - { src: 'ngseasy_alignment', dest: '/export/ngseasy/bin/ngseasy_alignment' } 
+     - { src: 'ngseasy_bsqr', dest: '/export/ngseasy/bin/ngseasy_bsqr' } 
+     - { src: 'ngseasy_fastqc', dest: '/export/ngseasy/bin/ngseasy_fastqc' } 
+     - { src: 'ngseasy_initiate_fastq', dest: '/export/ngseasy/bin/ngseasy_initiate_fastq' } 
+     - { src: 'ngseasy_initiate_project', dest: '/export/ngseasy/bin/ngseasy_initiate_project' } 
+     - { src: 'ngseasy_realn', dest: '/export/ngseasy/bin/ngseasy_realn' } 
+     - { src: 'ngseasy_trimmomatic', dest: '/export/ngseasy/bin/ngseasy_trimmomatic' } 
+     - { src: 'ngseasy_variant_calling', dest: '/export/ngseasy/bin/ngseasy_variant_calling' } 
+
+
+
+ 
+
+
+
+
+
+
+
+
+    

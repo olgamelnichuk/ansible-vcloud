@@ -1,0 +1,67 @@
+---
+- name: pull ngseasy docker images - base
+  shell: docker pull compbio/ngseasy-base:1.0
+
+- name: pull ngseasy docker images - fastqc
+  shell: docker pull compbio/ngseasy-fastqc:1.0
+
+- name: pull ngseasy docker images - trimmomatic
+  shell: docker pull compbio/ngseasy-trimmomatic:1.0
+
+- name: pull ngseasy docker images - snap
+  shell: docker pull compbio/ngseasy-snap:1.0
+
+- name: pull ngseasy docker images - bwa
+  shell: docker pull compbio/ngseasy-bwa:1.0
+
+- name: pull ngseasy docker images - bowtie2
+  shell: docker pull compbio/ngseasy-bowtie2:1.0
+
+- name: pull ngseasy docker images - stampy
+  shell: docker pull compbio/ngseasy-stampy:1.0
+
+- name: pull ngseasy docker images - picardtools
+  shell: docker pull compbio/ngseasy-picardtools:1.0
+
+- name: pull ngseasy docker images - freebayes
+  shell: docker pull compbio/ngseasy-freebayes:1.0
+
+- name: pull ngseasy docker images - platypus
+  shell: docker pull compbio/ngseasy-platypus:1.0
+
+- name: pull ngseasy docker images - glia
+  shell: docker pull compbio/ngseasy-glia:1.0
+
+- name: pull ngseasy docker images - delly
+  shell: docker pull compbio/ngseasy-delly:1.0
+
+- name: pull ngseasy docker images - lumpy
+  shell: docker pull compbio/ngseasy-lumpy:1.0
+
+- name: pull ngseasy docker images - bcbiovar
+  shell: docker pull compbio/ngseasy-bcbiovar:1.0
+
+- name: pull ngseasy docker images - cnmops
+  shell: docker pull compbio/ngseasy-cnmops:1.0
+
+- name: pull ngseasy docker images - mhmm
+  shell: docker pull compbio/ngseasy-mhmm:1.0
+
+- name: pull ngseasy docker images - exomdepth
+  shell: docker pull compbio/ngseasy-exomedepth:1.0
+
+- name: pull ngseasy docker images - slope
+  shell: docker pull compbio/ngseasy-slope:1.0
+
+
+
+ 
+
+
+
+
+
+
+
+
+    
