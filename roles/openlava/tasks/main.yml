@@ -124,6 +124,10 @@
   template: src=lsb.queues dest=/opt/openlava-3.0/etc/lsb.queues owner=openlava group=admin mode=0644
   when: openlava_with_docker
 
+- name: add lsb.params
+  template: src=lsb.params dest=/opt/openlava-3.0/etc/lsb.params owner=openlava group=admin mode=0644
+  when: openlava_with_docker
+
 - name: add docker into lsf.shared
   lineinfile: 
     dest: /opt/openlava-3.0/etc/lsf.shared
@@ -133,14 +137,18 @@
   sudo_user: "openlava"
   when: openlava_with_docker
 
-- name: add ansible user to docker group
-  shell: sudo usermod -aG docker ansible
+- name: get docker group
+  shell: "getent group | grep 'docker:*' | cut '-d:' -f3"
+  register: docker_group
+  when: openlava_with_docker
 
-- name: add openlava user to docker group
-  shell: sudo usermod -aG docker openlava
+- name: create docker group
+  lineinfile: 
+     dest: /etc/group
+     insertbefore: "EOF"
+     line: 'docker:x:{{ docker_group.stdout }}:'
+  when: openlava_with_docker
 
-- name: pull iRAP
-  shell: docker pull nunofonseca/irap_ubuntu:v0.7.0p1
  
 
 
