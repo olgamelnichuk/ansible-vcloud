@@ -1,0 +1,19 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - nginx
+
+- name: enable nginx service
+  service: name=nginx enabled=true state=started
+
+- name: create file dir
+  file: path=/data/files state=directory
+
+- name: copy nginx.conf to /etc/nginx
+  template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf
+  notify: restart nginx
+

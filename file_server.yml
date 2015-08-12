@@ -1,0 +1,5 @@
+- name: Setup local file server
+  hosts: file_server
+  roles: 
+  - file_server
+  sudo: true
