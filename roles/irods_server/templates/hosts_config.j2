@@ -1,8 +1,14 @@
 {
     "host_entries": [
         {
-             "address_type": "local",
-             "addresses": [{"address": "{{ host_fqdn }}"}, {"address": "{{ host_name }}"}]
+            "address_type": "local",
+            "addresses": [
+            {% if public_hostname is defined %}
+                {"address": "{{ public_hostname }}"}, 
+            {% endif %}
+                {"address": "{{ host_fqdn }}"}, 
+                {"address": "{{ host_name }}"}
+            ]
         }
     ]
 }

@@ -15,5 +15,9 @@
 
 - debug: var=host_name
 
+- set_fact:
+    public_hostname: "{{ irods_public_hostname }}"
+  when: (irods_public_hostname is defined) and (icat_enabled)
+
 - name: copy hosts_config.json
   template: src=hosts_config.j2 dest=/etc/irods/hosts_config.json
