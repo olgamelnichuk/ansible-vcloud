@@ -1,0 +1,38 @@
+---
+- name: find openlava install dir
+  shell: ls /opt | grep openlava
+  register: openlava_dir
+
+- set_fact: 
+    openlava_dir: "/opt/{{ openlava_dir.stdout }}"
+
+- debug: var=openlava_dir
+
+- name: add lines to /etc/hosts file 
+  lineinfile: 
+    dest: /etc/hosts
+    regexp: '.*{{ hostvars[item].ansible_hostname }}$'
+    line: '{{ hostvars[item].ansible_default_ipv4.address }} {{ hostvars[item].ansible_hostname }}'
+    backup: yes
+  with_items: 
+    - '{{ groups.docker_openlava_nodes }}'
+
+- name: update lsf.cluster.openlava config with all cluster nodes
+  lineinfile: 
+    dest: "{{ openlava_dir }}/etc/lsf.cluster.openlava"
+    regexp: '^{{ hostvars[item].ansible_hostname }}.*'
+    insertbefore: "End\\s*Host"
+    line: "{{ hostvars[item].ansible_hostname }}      !       !      1      -      (cs) "
+    state: present
+  with_items: 
+    - '{{ groups.docker_openlava_nodes }}'
+  notify: restart openlava
+
+- name: check that openlava lsid works
+  shell: . /etc/profile.d/openlava.sh && lsid
+
+- name: check openlava bhosts works
+  shell: . /etc/profile.d/openlava.sh && bhosts
+
+- name: check openlava lshosts works
+  shell: . /etc/profile.d/openlava.sh && lshosts

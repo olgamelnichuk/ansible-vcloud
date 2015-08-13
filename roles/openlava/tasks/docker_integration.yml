@@ -1,0 +1,39 @@
+---
+- name: find openlava install dir
+  shell: ls /opt | grep openlava
+  register: openlava_dir
+
+- set_fact: 
+    openlava_dir: "/opt/{{ openlava_dir.stdout }}"
+
+- name: copy docker specific scripts 
+  copy: src={{ item }} dest={{ openlava_dir }}/bin owner=openlava group=openlava
+  with_items: 
+     - docker_terminate
+     - docker_resume
+     - docker_stop
+
+#- name: copy docker starter
+#  template: src=docker_starter dest=/opt/openlava-3.0/bin/docker_starter owner=openlava group=openlava mode=0751
+
+#- name: add docker queue to lsb.queues
+#  template: src=lsb.queues dest=/opt/openlava-3.0/etc/lsb.queues owner=openlava group=openlava mode=0644
+
+- name: add docker resource to lsf.shared
+  lineinfile: 
+    dest: "{{ openlava_dir }}/etc/lsf.shared"
+    insertbefore: "End\\s*Resource"
+    line: '   docker         Boolean ()       ()          (docker server)'
+    state: present
+
+- name: update lsf.cluster.openlava config with all cluster nodes
+  lineinfile: 
+    dest: "{{ openlava_dir }}/etc/lsf.cluster.openlava"
+    regexp: '^{{ hostvars[item].ansible_hostname }}.*'
+    insertbefore: "End\\s*Host"
+    line: "{{ hostvars[item].ansible_hostname }}      !       !      1      -      (cs docker) "
+    state: present
+  with_items: 
+    - '{{ groups.docker_openlava_nodes }}'
+  notify: restart openlava
+  tags: cluster_update

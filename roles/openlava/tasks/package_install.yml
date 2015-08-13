@@ -1,0 +1,9 @@
+---
+- name: download openlava package
+  get_url: url={{ openlava_pkg_url }} dest=/tmp
+  register: openlava_pkg
+
+- debug: var=openlava_pkg.dest
+
+- name: install openlava package
+  apt: deb={{ openlava_pkg.dest }} state=installed

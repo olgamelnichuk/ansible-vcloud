@@ -48,34 +48,34 @@
 - name: test docker installation
   shell: docker run hello-world
 
-- name: remove local docker group 
-  shell: groupdel docker
-  when: ldap_installed=="yes"
+#- name: remove local docker group 
+#  shell: groupdel docker
+#  when: ldap_installed=="yes"
 
-- name: get docker group
-  shell: "getent group | grep 'docker:*' | cut '-d:' -f3"
-  register: docker_group
-  when: ldap_installed=="yes" 
+#- name: get docker group
+#  shell: "getent group | grep 'docker:*' | cut '-d:' -f3"
+#  register: docker_group
+#  when: ldap_installed=="yes" 
 
-- debug: msg="Docker group in LDAP {{docker_group.stdout}}"
-  when: ldap_installed=="yes"
+#- debug: msg="Docker group in LDAP {{docker_group.stdout}}"
+#  when: ldap_installed=="yes"
 
-- name: fail if docker_group is not defined on ldap
-  fail:
-    msg: "There are no docker group on LDAP server"
-  when: ldap_installed=="yes" and (docker_group.stdout | int  < 10000)
+#- name: fail if docker_group is not defined on ldap
+#  fail:
+#    msg: "There are no docker group on LDAP server"
+#  when: ldap_installed=="yes" and (docker_group.stdout | int  < 10000)
 
-- name: create docker group
-  lineinfile: 
-     dest: /etc/group
-     insertbefore: "EOF"
-     line: 'docker:x:{{ docker_group.stdout }}:'
-  when: ldap_installed=="yes" and (docker_group.stdout | int  > 10000)
+#- name: create docker group
+#  lineinfile: 
+#     dest: /etc/group
+#     insertbefore: "EOF"
+#     line: 'docker:x:{{ docker_group.stdout }}:'
+#  when: ldap_installed=="yes" and (docker_group.stdout | int  > 10000)
 
-- name: restart docker
-  shell: restart docker
-  when: ldap_installed=="yes" 
+#- name: restart docker
+#  shell: restart docker
+#  when: ldap_installed=="yes" 
 
-- name: add local group docker
-  shell: usermod -aG docker {{ ansible_ssh_user }}
-  when: ldap_installed=="no"
+#- name: add local group docker
+#  shell: usermod -aG docker {{ ansible_ssh_user }}
+#  when: ldap_installed=="no"
