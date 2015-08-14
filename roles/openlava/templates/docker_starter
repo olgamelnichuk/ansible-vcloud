@@ -1,8 +1,0 @@
-#!/bin/sh
-
-command="docker run --name=$LSB_JOBID -v $*"
-echo $command
-eval $command
-
-# Example of bsub command 
-# bsub -m docker-vm2 -q docker_queue -o /.../log4.txt -e /.../log_err4.txt 'nunofonseca/irap_ubuntu:v0.7.0p1 bash -c \"source /irap_install/irap_setup.sh \&\& ls\"'

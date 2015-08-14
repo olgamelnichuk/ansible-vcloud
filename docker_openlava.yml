@@ -5,6 +5,6 @@
     #- { role: ldap_client }
     #- { role: nfs_client, nfs_with_ldap: true }
     #- { role: docker_ubuntu }
-    - { role: openlava } #, openlava_with_docker: true }
+    - { role: openlava, docker_integration_enabled: true }
   sudo: true
 

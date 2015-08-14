@@ -23,22 +23,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <pwd.h>
 
 static char buf[BUFSIZ];
+static char volumes[BUFSIZ];
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     char *cmd;
     char *container;
+    char *username;
     char *jobId;
     FILE *fp;
     FILE *pf;
     time_t t;
     struct tm *tm;
     int cc;
+    char buff[512];
 
-    fp = fopen("starter.log", "a+");
+    fp = fopen("docker_starter.log", "a+");
     setbuf(fp, NULL);
 
     t = time(NULL);
@@ -56,7 +59,10 @@ main(int argc, char **argv)
     /* This is the image docker will use to create
      * a container in which to run the job
      */
-    container = getenv("LSB_DOCKER_CONTAINER");
+    container = getenv("LSB_DOCKER_IMAGE");
+
+    struct passwd *p = getpwuid(getuid()); 
+    username = p->pw_name;
 
     /* The jobId is used as the name of the container
      * so job control action can use jobId and use
@@ -67,7 +73,8 @@ main(int argc, char **argv)
     /* This is the complete command line which is
      * to be run.
      */
-    sprintf(buf, "docker run --name=%s %s %s", jobId, container, cmd);
+    sprintf(volumes, "-v /home/%s:/home/%s", username, username);     
+    sprintf(buf, "docker run --name=%s %s %s %s", jobId, volumes, container, cmd);
 
     fprintf(fp, "%d:%d:%d:%d:%d starter runs: %s\n",
             tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,
@@ -82,6 +89,10 @@ main(int argc, char **argv)
      * the job is done. You can just wait in
      * fgets() if you like.
      */
+    while(fgets(buff, sizeof(buff), pf)!=NULL){
+	        printf("%s", buff);
+	}
+
     cc = pclose(pf);
 
     fprintf(fp, "%d:%d:%d:%d:%d run done with status %d\n",

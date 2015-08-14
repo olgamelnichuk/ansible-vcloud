@@ -24,4 +24,5 @@
   tags: cluster_update
 
 - include: docker_integration.yml
-  when: openlava_docker_integration_enabled
+  when: docker_integration_enabled
+  tags: docker_integration

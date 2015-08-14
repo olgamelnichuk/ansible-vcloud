@@ -1,4 +1,9 @@
 ---
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+    - build-essential
+
 - name: find openlava install dir
   shell: ls /opt | grep openlava
   register: openlava_dir
@@ -7,17 +12,23 @@
     openlava_dir: "/opt/{{ openlava_dir.stdout }}"
 
 - name: copy docker specific scripts 
-  copy: src={{ item }} dest={{ openlava_dir }}/bin owner=openlava group=openlava
+  copy: src={{ item }} dest={{ openlava_dir }}/bin owner=openlava group=openlava mode=0751
   with_items: 
      - docker_terminate
      - docker_resume
      - docker_stop
 
-#- name: copy docker starter
-#  template: src=docker_starter dest=/opt/openlava-3.0/bin/docker_starter owner=openlava group=openlava mode=0751
+- name: copy docker_starter.c
+  copy: src=docker_starter.c dest=/tmp
 
-#- name: add docker queue to lsb.queues
-#  template: src=lsb.queues dest=/opt/openlava-3.0/etc/lsb.queues owner=openlava group=openlava mode=0644
+- name: compile docker_starter.c
+  shell: gcc /tmp/docker_starter.c -o {{ openlava_dir }}/bin/docker_starter
+
+- name: fix docker_starter permissions
+  file: path={{ openlava_dir }}/bin/docker_starter owner=openlava group=openlava mode=0751
+
+- name: add docker queue to lsb.queues
+  template: src=lsb.queues dest={{ openlava_dir }}/etc/lsb.queues
 
 - name: add docker resource to lsf.shared
   lineinfile: 

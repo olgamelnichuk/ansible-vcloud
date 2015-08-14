@@ -24,6 +24,7 @@
     insertbefore: "End\\s*Host"
     line: "{{ hostvars[item].ansible_hostname }}      !       !      1      -      (cs) "
     state: present
+    backup: yes
   with_items: 
     - '{{ groups.docker_openlava_nodes }}'
   notify: restart openlava
