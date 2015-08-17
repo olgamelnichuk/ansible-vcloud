@@ -48,3 +48,14 @@
     - '{{ groups.docker_openlava_nodes }}'
   notify: restart openlava
   tags: cluster_update
+
+- name: copy 'dockercmd' script
+  copy: src=dockercmd.py dest=/usr/local/bin/dockercmd mode=0750
+  tags: update_dockercmd
+
+- name: allow users to run 'dockercmd' command
+  lineinfile: 
+    dest: /etc/sudoers 
+    state: present 
+    regexp: "^ALL.*" 
+    line: "ALL ALL=NOPASSWD: /usr/local/bin/dockercmd"
