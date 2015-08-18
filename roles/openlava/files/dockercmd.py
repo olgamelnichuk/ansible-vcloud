@@ -1,6 +1,10 @@
 #!/usr/bin/python
 
-import sys, os, subprocess, argparse, stat
+import sys, os, subprocess, argparse, stat, logging
+
+logging.basicConfig(level = logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 class DefaultAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -10,22 +14,29 @@ class DefaultAction(argparse.Action):
         previous.append((self.dest, values))
         setattr(namespace, 'ordered_args', previous)
 
-class CheckVolumes(DefaultAction):
-    def __init__(self, option_strings, dest, nargs=None, **kwargs):
-        super(CheckVolumes, self).__init__(option_strings, dest, **kwargs)
+def create_check_volume_action(uid):
+    class CheckVolume(DefaultAction):
+        def __init__(self, option_strings, dest, nargs=None, **kwargs):
+            super(CheckVolume, self).__init__(option_strings, dest, **kwargs)
+            self.uid = uid
     
-    def __call__(self, parser, namespace, values, option_string=None):
-        if (self.volume_valid(values)):
-            super(CheckVolumes, self).__call__(parser, namespace, values, option_string)
+        def __call__(self, parser, namespace, values, option_string=None):
+            if (self.is_volume_valid(values)):
+                super(CheckVolume, self).__call__(parser, namespace, values, option_string)
 
-    def volume_valid(self, volume):
-        hvolume = volume.split(":")[0]
-        stat = os.stat(hvolume)
-        print oct(stat.st_mode)
-        print stat.st_uid
-        print stat.st_gid
-        return True
+        def is_volume_valid(self, volume):
+            volumepath = volume.split(":")[0]
+            stat = os.stat(volumepath)
+            logger.debug('(uid=%s, volume_path=%s)/(st_uid=%s, st_gid=%s, st_mode=%s)', self.uid, volumepath, stat.st_uid, stat.st_gid, oct(stat.st_mode))
+            
+            # only volums that belongs to a user are alowed
+            return (int(stat.st_uid) == int(self.uid))
 
+    return CheckVolume
+
+
+IMAGE_AND_COMMAND = 'IMAGE_AND_COMMAND'
+CONTAINER = 'CONTAINER'
 
 
 def get_argparser():
@@ -35,40 +46,48 @@ def get_argparser():
 
     parser_stop = subparsers.add_parser('stop')
     parser_stop.add_argument('-t', '--time')
-    parser_stop.add_argument('OTHER')
+    parser_stop.add_argument(CONTAINER)
 
     parser_pause = subparsers.add_parser('pause')
-    parser_pause.add_argument('OTHER')
+    parser_pause.add_argument(CONTAINER)
 
     parser_unpause = subparsers.add_parser('unpause')
-    parser_unpause.add_argument('OTHER')
+    parser_unpause.add_argument(CONTAINER)
 
     parser_run = subparsers.add_parser('run')
     parser_run.add_argument('-e', '--env', dest='-e', action=DefaultAction)
     parser_run.add_argument('-u', '--user', dest='-u', action=DefaultAction)
     parser_run.add_argument('-w', '--workdir', dest='-w',  action=DefaultAction)
-    parser_run.add_argument('-v', '--volume', dest='-v', action=CheckVolumes)
-    parser_run.add_argument('OTHER', nargs=argparse.REMAINDER, action=DefaultAction)
-
-    #parser_create.set_defaults(which='create')
-    #parser_create.add_argument(
-    #    '--first_name', required=True, help='First Name')
-    #parser_create.add_argument(
-    #    '--last_name', required=True, help='Last Name'
-
+    parser_run.add_argument('-v', '--volume', dest='-v', action=create_check_volume_action(get_uid()))
+    parser_run.add_argument('--volumes-from', dest='--volumes-from',  action=DefaultAction)
+    parser_run.add_argument('--rm', dest='--rm',  nargs=0, action=DefaultAction)
+    parser_run.add_argument('--read-only', dest='--read-only',  nargs=0, action=DefaultAction)
+    parser_run.add_argument('-p', '--publish', dest='-p',  action=DefaultAction)
+    parser_run.add_argument('-P', '--publish-all', dest='-P',  action=DefaultAction)
+    parser_run.add_argument('--name', dest='--name',  action=DefaultAction)
+    parser_run.add_argument('--hostname', dest='--hostname',  action=DefaultAction)
+    parser_run.add_argument('-m', '--memory', dest='-m',  action=DefaultAction)
+    parser_run.add_argument('--memory-swap', dest='--memory-swap',  action=DefaultAction)
+    parser_run.add_argument('-d', '--detach', dest='--detach', nargs=0, action=DefaultAction)
+    parser_run.add_argument('--add-host', dest='--add-host',  action=DefaultAction)
+    parser_run.add_argument('--entrypoint', dest='--entrypoint',  action=DefaultAction)
+    parser_run.add_argument('--env-file', dest='--env-file',  action=DefaultAction)
+    parser_run.add_argument('-l', '--label', dest='-l',  action=DefaultAction)
+    parser_run.add_argument('--label-file', dest='--label-file',  action=DefaultAction)
+    parser_run.add_argument('--link', dest='--link',  action=DefaultAction)
+    parser_run.add_argument(IMAGE_AND_COMMAND, nargs=argparse.REMAINDER, action=DefaultAction)
 
     return parser    
-
-def check_volume(v):
-    print v
 
 def get_username():
     return os.environ.get('SUDO_USER') 
 
-def docker_command(args):
+def get_uid():
+    return os.environ.get('SUDO_UID') 
+
+def run_command(command):
     try:
-        command = "docker " + " ".join(args) 
-        output = subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True)
+        output = subprocess.Popen(command, stderr=subprocess.STDOUT, shell=True)
         exit_ok(output)
     except subprocess.CalledProcessError as e:
         exit_err(e.output) 
@@ -82,16 +101,27 @@ def exit_err(msg):
     sys.exit(1)
 
 def main(argv):
- 
-    if (get_username() == 'root'):
+    
+    logger.debug('(uid=%s, username=%s)', get_uid(), get_username())
+
+    if (get_uid() == 0):
         exit_err("root doesn't suppose to run this script.")
+
+    logger.debug('(uid=%s, arguments=[ %s ])', get_uid(), " ".join(argv))
     
     if (len(argv) < 1):
         exit_err(" Usage: dickercmd <run|stop|pouse|unpouse> <options>")
 
     args = get_argparser().parse_args(argv)
-    print args.ordered_args
-    #docker_command(args)
-        
+    logger.debug('(uid=%s, filtered_arguments=%s)', get_uid(), args.ordered_args)
+
+    ordered_args = reduce(lambda x, y: x + [y[0]] + (y[1] if isinstance(y[1], list) else [y[1]]), args.ordered_args, [])
+    ordered_args = filter(lambda x: x not in [IMAGE_AND_COMMAND, CONTAINER], ordered_args)
+
+    command = ' '.join(['docker', argv[0]] + ordered_args)
+    logger.info('(uid=%s, command=[ %s ])', get_uid(), command)
+    
+    run_command(command) 
+
 if __name__ == "__main__":
     main(sys.argv[1:])

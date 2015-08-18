@@ -1,4 +1,4 @@
 #!/bin/sh
 # original: https://github.com/openlava/openlava/blob/3.0/examples/docker/docker_stop
 
-docker pause $LSB_JOBID
+sudo dockercmd pause $LSB_JOBID

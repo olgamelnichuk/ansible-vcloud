@@ -74,7 +74,7 @@ int main(int argc, char **argv)
      * to be run.
      */
     sprintf(volumes, "-v /home/%s:/home/%s", username, username);     
-    sprintf(buf, "docker run --name=%s %s %s %s", jobId, volumes, container, cmd);
+    sprintf(buf, "sudo dockercmd run --name=%s %s %s %s", jobId, volumes, container, cmd);
 
     fprintf(fp, "%d:%d:%d:%d:%d starter runs: %s\n",
             tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,

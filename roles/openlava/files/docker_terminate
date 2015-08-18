@@ -1,4 +1,4 @@
 #!/bin/sh
 # original: https://github.com/openlava/openlava/blob/3.0/examples/docker/docker_terminate
 
-docker stop $LSB_JOBID
+sudo dockercmd stop $LSB_JOBID
