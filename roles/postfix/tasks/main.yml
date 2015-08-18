@@ -1,0 +1,39 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items:
+  - mailutils 
+  - postfix
+
+- name: create the password file
+  shell: "echo '{{ postfix_smtp_host }}:{{ postfix_smtp_port }}   {{ postfix_smtp_user }}:{{ postfix_smtp_password }}' > /etc/postfix/sasl_passwd "
+
+- name: convert the password file
+  shell: postmap /etc/postfix/sasl_passwd
+
+- name: secure the password file
+  file: path={{ item }} owner=root group=root  mode=600
+  with_items:
+  - "/etc/postfix/sasl_passwd"
+  - "/etc/postfix/sasl_passwd.db"
+
+- name: configure /etc/postfix/main.cf
+  lineinfile: 
+    dest: /etc/postfix/main.cf
+    regexp: '^{{ item.name }}\s?=.*'
+    line: '{{ item.name }} = {{ item.value }}'
+    state: present
+  with_items: 
+    - { name: 'myhostname', value: '{{ ansible_hostname }}.localdomain' }
+    #- { name: 'myorigin', value: '{{  }}' }
+    - { name: 'relayhost', value: '{{ postfix_smtp_host }}:{{ postfix_smtp_port }}' }
+    - { name: 'smtp_sasl_auth_enable', value: 'yes' }
+    - { name: 'smtp_sasl_security_options', value: 'noanonymous'}
+    - { name: 'smtp_sasl_password_maps', value: 'hash:/etc/postfix/sasl_passwd' }
+    - { name: 'smtpd_use_tls', value: 'yes' }
+    - { name: 'inet_interfaces', value: 'loopback-only' }
+    #- { name: 'mydestination', value: ''}
+  notify: restart postfix
