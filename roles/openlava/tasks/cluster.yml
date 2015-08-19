@@ -8,6 +8,12 @@
 
 - debug: var=openlava_dir
 
+- name: remove all 192.* lines from /etc/hosts file 
+  lineinfile: 
+    dest: /etc/hosts
+    regexp: '^{{ ansible_default_ipv4.address.split(".") | first }}.*'
+    state: absent
+
 - name: add lines to /etc/hosts file 
   lineinfile: 
     dest: /etc/hosts
@@ -16,6 +22,12 @@
     backup: yes
   with_items: 
     - '{{ groups.docker_openlava_nodes }}'
+
+- name: remove old nodes from lsf.cluster.openlava config
+  lineinfile: 
+    dest: "{{ openlava_dir }}/etc/lsf.cluster.openlava"
+    regexp: '.*\\(cs\\).?$'
+    state: absent
 
 - name: update lsf.cluster.openlava config with all cluster nodes
   lineinfile: 

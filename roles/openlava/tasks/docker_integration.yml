@@ -37,6 +37,13 @@
     line: '   docker         Boolean ()       ()          (docker server)'
     state: present
 
+- name: remove old nodes from lsf.cluster.openlava config
+  lineinfile: 
+    dest: "{{ openlava_dir }}/etc/lsf.cluster.openlava"
+    regexp: '.*\(cs\s+docker\)\s?$'
+    state: absent
+  tags: cluster_update
+
 - name: update lsf.cluster.openlava config with all cluster nodes
   lineinfile: 
     dest: "{{ openlava_dir }}/etc/lsf.cluster.openlava"
