@@ -1,0 +1,6 @@
+---
+rsync_share_path: /home/share
+rsync_user: rsync
+rsync_password: rsync
+rsync_uid: nobody
+rsync_gid: nogroup

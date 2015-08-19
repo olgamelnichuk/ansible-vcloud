@@ -1,0 +1,32 @@
+---
+# quick test: sudo rsync user@hostname::share
+# usage: rsync -avz /home/files --progress user@hostname::share
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - ssh
+  - rsync
+  - xinetd
+  - sysstat
+
+- name: copy rsync_xinetd config
+  copy: src=rsync_service dest=/etc/xinetd.d/rsync
+
+- name: configure rsync daemon
+  lineinfile:
+    dest: "/etc/default/rsync"
+    regexp: "^.?RSYNC_ENABLE.*"
+    line: "RSYNC_ENABLE=inetd"
+    state: present
+
+- name: create rsyncd.secrets
+  shell: 'echo "{{ rsync_user }}:{{ rsync_password }}" > /etc/rsyncd.secrets'
+
+- name: secure rsyncd.secrets
+  file: path=/etc/rsyncd.secrets mode=600
+
+- name: copy rsyncd.conf
+  template: src=rsyncd.conf.j2 dest=/etc/rsyncd.conf
+
+- name: restart xinetd
+  service: name=xinetd state=restarted

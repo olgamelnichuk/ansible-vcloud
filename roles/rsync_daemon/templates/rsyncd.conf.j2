@@ -1,0 +1,13 @@
+max connections = 4
+log file = /var/log/rsync.log
+timeout = 300
+
+[share]
+comment = Public Share
+path = {{ rsync_share_path }}
+read only = no
+list = yes
+uid = {{ rsync_uid }}
+gid = {{ rsync_gid }}
+auth users = {{ rsync_user }}
+secrets file = /etc/rsyncd.secrets

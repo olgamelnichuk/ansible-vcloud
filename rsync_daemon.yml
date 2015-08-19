@@ -1,0 +1,6 @@
+---
+- name: Install rsync daemon
+  hosts: rsync_hosts
+  sudo: true
+  roles:
+  - rsync_daemon
