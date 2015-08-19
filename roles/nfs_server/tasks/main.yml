@@ -1,25 +1,30 @@
 ---
+- name: start nfs service
+  service: name=nfs-kernel-server state=started
+
 - name: create {{ item }} folder
   file: path={{ item.path }} state=directory owner=root group=root mode=755
   with_items:
   - "{{ nfs_exports }}"
+  tags: exports_update
 
-- name: update /etc/exports
+- name: remove all exports from /etc/exports first
   lineinfile:
     dest: /etc/exports
-    line: "{{ item.path }} {{ item.permissions }}"
+    regexp: "^/export.*"
+    state: absent
+  tags: exports_update
+
+- name: add exports to /etc/exports
+  lineinfile:
+    dest: /etc/exports
+    line: "{{ item.path }}    {{ item.permissions }}"
     regexp: "{{ item.regexp }}"
     state: present
   with_items: 
   - "{{ nfs_exports }}"
   tags: exports_update
 
-- name: restart nfs service
-  service: name=nfs-kernel-server state=started
-  register: nfs_service
-  tags: exports_update
-
-- name: update exports tables
+- name: update exports
   shell: exportfs -ra
-  when: not nfs_service.changed
   tags: exports_update
