@@ -13,7 +13,7 @@
   when: vg_create
 
 - name: check if VG contains the partition
-  shell: pvs --rows /dev/sdb1 | grep 'VG' | awk '{ split($0,a," "); print a[2] }' | wc -w
+  shell: pvs --rows {{ partition }} | grep 'VG' | awk '{ split($0,a," "); print a[2] }' | wc -w
   register: pvdisplay_out
   when: not vg_create
 
