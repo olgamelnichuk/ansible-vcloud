@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, os, subprocess, argparse, stat, logging
+import sys, os, subprocess, argparse, stat, logging, grp, pwd
 
 logging.basicConfig(level = logging.INFO)
 
@@ -19,18 +19,31 @@ def create_check_volume_action(uid):
         def __init__(self, option_strings, dest, nargs=None, **kwargs):
             super(CheckVolume, self).__init__(option_strings, dest, **kwargs)
             self.uid = uid
+            self.user = pwd.getpwuid(int(uid)).pw_name
     
         def __call__(self, parser, namespace, values, option_string=None):
             if (self.is_volume_valid(values)):
                 super(CheckVolume, self).__call__(parser, namespace, values, option_string)
 
         def is_volume_valid(self, volume):
-            volumepath = volume.split(":")[0]
+            vspec = volume.split(":")
+            volumepath = vspec[0]
+            ro = len(vspec) == 3 and vspec[2] == 'ro'
+
             stat = os.stat(volumepath)
             logger.debug('(uid=%s, volume_path=%s)/(st_uid=%s, st_gid=%s, st_mode=%s)', self.uid, volumepath, stat.st_uid, stat.st_gid, oct(stat.st_mode))
             
-            # only volums that belongs to a user are alowed
-            return (int(stat.st_uid) == int(self.uid))
+            if (os.path.islink(volumepath)):
+                volumepath = os.path.realpath(volumepath)
+
+            if (int(stat.st_uid) == int(self.uid)):
+                return True
+            
+            groups = [g.gr_name for g in grp.getgrall() if self.user in g.gr_mem]
+            if (stat.st_gid not in groups):
+                return False
+            
+            return bool(stat.st_mode & (stat.S_IRGRP if ro else stat.S_IWGRP))
 
     return CheckVolume
 

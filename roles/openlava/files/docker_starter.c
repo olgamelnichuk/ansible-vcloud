@@ -24,9 +24,35 @@
 #include <stdlib.h>
 #include <time.h>
 #include <pwd.h>
+#include <mntent.h>
 
 static char buf[BUFSIZ];
 static char volumes[BUFSIZ];
+
+char *get_nfs_mounts()
+{
+  struct mntent *ent;
+  FILE *file;
+
+  file = setmntent("/proc/mounts", "r");
+  if (file == NULL)
+    return NULL;
+
+
+  char sbuf[512];
+  char *s = sbuf;
+  int length = 0;
+
+  while (NULL != (ent = getmntent(file))) {
+    if (strcmp(ent->mnt_type,"nfs4") == 0)
+      s += sprintf(s, " -v %s:%s ", ent->mnt_dir, ent->mnt_dir);/*ent->mnt_fsname);*/
+  }
+  endmntent(file);
+
+  char * out = malloc(sizeof(sbuf)); 
+  sprintf(out, "%s", sbuf);
+  return out;     
+}
 
 int main(int argc, char **argv)
 {
@@ -41,6 +67,7 @@ int main(int argc, char **argv)
     struct tm *tm;
     int cc;
     char buff[512];
+    char *mounts;
 
     fp = fopen("docker_starter.log", "a+");
     setbuf(fp, NULL);
@@ -75,8 +102,16 @@ int main(int argc, char **argv)
     /* This is the complete command line which is
      * to be run.
      */
+
+    mounts = get_nfs_mounts();
+
+    fprintf(fp, "%d:%d:%d:%d:%d mounts: %s\n",
+            tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,
+            tm->tm_min, tm->tm_sec, mounts);
+
+
     sprintf(volumes, "-v /home/%s:/home/%s", username, username);     
-    sprintf(buf, "sudo dockercmd run --name=%s %s %s %s %s", jobId, volumes, (options != NULL ? options : ""), image, cmd);
+    sprintf(buf, "sudo dockercmd run --name=%s %s %s %s %s %s", jobId, volumes, mounts, (options != NULL ? options : ""), image, cmd);
 
     fprintf(fp, "%d:%d:%d:%d:%d starter runs: %s\n",
             tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,
