@@ -74,6 +74,7 @@ def get_argparser():
     parser_run.add_argument('-v', '--volume', dest='-v', action=create_check_volume_action(get_uid()))
     parser_run.add_argument('--volumes-from', dest='--volumes-from',  action=DefaultAction)
     parser_run.add_argument('--rm', dest='--rm',  nargs=0, action=DefaultAction)
+    parser_run.add_argument('-t', '--tty', dest='-t',  nargs=0, action=DefaultAction)
     parser_run.add_argument('--read-only', dest='--read-only',  nargs=0, action=DefaultAction)
     parser_run.add_argument('-p', '--publish', dest='-p',  action=DefaultAction)
     parser_run.add_argument('-P', '--publish-all', dest='-P',  action=DefaultAction)
