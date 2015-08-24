@@ -20,5 +20,5 @@
   include: lvcreate.yml
 
 - name: make sure the mount is on
-  mount: name=/{{ mount_point }} src="/dev/{{ vg_name }}/{{ lv_name }}" fstype=ext4  opts=defaults state=mounted
+  mount: name={{ mount_point }} src="/dev/{{ vg_name }}/{{ lv_name }}" fstype=ext4  opts=defaults state=mounted
   when: mount_point is defined
