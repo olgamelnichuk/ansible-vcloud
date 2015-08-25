@@ -27,7 +27,7 @@
 #include <mntent.h>
 
 static char buf[BUFSIZ];
-static char volumes[BUFSIZ];
+/*static char volumes[BUFSIZ];*/
 
 char *get_nfs_mounts()
 {
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
     char buff[512];
     char *mounts;
 
-    fp = fopen("docker_starter.log", "a+");
+    fp = fopen("/tmp/docker_starter.log", "a+");
     setbuf(fp, NULL);
 
     t = time(NULL);
@@ -110,8 +110,8 @@ int main(int argc, char **argv)
             tm->tm_min, tm->tm_sec, mounts);
 
 
-    sprintf(volumes, "-v /home/%s:/home/%s", username, username);     
-    sprintf(buf, "sudo dockercmd run --name=%s %s %s %s %s %s", jobId, volumes, mounts, (options != NULL ? options : ""), image, cmd);
+    /*sprintf(volumes, "-v /home/%s:/home/%s", username, username);*/
+    sprintf(buf, "sudo dockercmd run --name=%s %s %s %s %s", jobId, mounts, (options != NULL ? options : ""), image, cmd);
 
     fprintf(fp, "%d:%d:%d:%d:%d starter runs: %s\n",
             tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,

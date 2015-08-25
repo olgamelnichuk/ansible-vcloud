@@ -77,7 +77,7 @@ def get_argparser():
     parser_run.add_argument('-t', '--tty', dest='-t',  nargs=0, action=DefaultAction)
     parser_run.add_argument('--read-only', dest='--read-only',  nargs=0, action=DefaultAction)
     parser_run.add_argument('-p', '--publish', dest='-p',  action=DefaultAction)
-    parser_run.add_argument('-P', '--publish-all', dest='-P',  action=DefaultAction)
+    parser_run.add_argument('-P', '--publish-all', nargs=0, dest='-P',  action=DefaultAction)
     parser_run.add_argument('--name', dest='--name',  action=DefaultAction)
     parser_run.add_argument('--hostname', dest='--hostname',  action=DefaultAction)
     parser_run.add_argument('-m', '--memory', dest='-m',  action=DefaultAction)

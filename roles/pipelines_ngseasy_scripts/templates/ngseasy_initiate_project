@@ -48,7 +48,7 @@ echo -e "#######################################################################
 ###########################################################################################
 ## default options
 ###########################################################################################
-HOME="/nfs/ngseasy/ngs_projects"
+HOME="/nfs/ngseasy"
 config_tsv=""
 project_directory=""
 
@@ -128,6 +128,14 @@ if [[ ! -d "${project_directory}" ]]
       logger_ngseasy "[${NGSEASY_STEP}]:ERROR:${project_directory} does not exist. Exiting."
       sleep 2s
       exit 1;
+fi
+
+if [[ ! -d "${project_directory}/run_logs" ]]; then
+    mkdir ${project_directory}/run_logs
+fi
+
+if [[ ! -d "${project_directory}/ngseasy_tmp" ]]; then
+    mkdir ${project_directory}/ngseasy_tmp
 fi
 
 ###########################################################################################
@@ -219,25 +227,25 @@ fi
 ###########################################################################################
 # config_tsv=config_file
 #
-logger_ngseasy "[${NGSEASY_STEP}]:CMD: awk 'NR >1 {print $5"/"$1}' ${config_tsv} | sort | uniq > ${HOME}/ngseasy_tmp/Project_list" ${config_run_log}
-awk 'NR >1 {print $5"/"$1}' ${config_tsv} | sort | uniq > ${HOME}/ngseasy_tmp/Project_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+logger_ngseasy "[${NGSEASY_STEP}]:CMD: awk 'NR >1 {print $5"/"$1}' ${config_tsv} | sort | uniq > ${project_directory}/ngseasy_tmp/Project_list" ${config_run_log}
+awk 'NR >1 {print $5"/"$1}' ${config_tsv} | sort | uniq > ${project_directory}/ngseasy_tmp/Project_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
 
-while read -f PROJECTNAME
+while read -r PROJECTDIR
 do
 
-    if [[ ! -d "${project_directory}/${PROJECTNAME}" ]]; then
+    if [[ ! -d "${PROJECTDIR}" ]]; then
 
-        mkdir -p ${project_directory}/${PROJECTNAME}
+        mkdir -p ${PROJECTDIR}
         #chmod -R 776 ${project_directory}/${PROJECTNAME}
 
-        logger_ngseasy "[${NGSEASY_STEP}]:Making [${project_directory}/${PROJECTNAME}] project directory" ${config_run_log}
+        logger_ngseasy "[${NGSEASY_STEP}]:Making [${PROJECTDIR}] project directory" ${config_run_log}
 
     else
-        logger_ngseasy "[${NGSEASY_STEP}]:Project directory [${project_directory}/${PROJECTNAME}] Exists" ${config_run_log}
+        logger_ngseasy "[${NGSEASY_STEP}]:Project directory [${PROJECTDIR}] Exists" ${config_run_log}
 
     fi
 
-done < ${HOME}/ngseasy_tmp/Project_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+done < ${project_directory}/ngseasy_tmp/Project_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
 wait
 
 ###########################################################################################
@@ -245,9 +253,9 @@ wait
 ###########################################################################################
 ## PROJECT_DIR/PROJECT_ID/SAMPLE_ID
 #
-logger_ngseasy "[${NGSEASY_STEP}]:CMD: awk 'NR >1 {print $5"/"$1"/"$2}' ${config_tsv} | sort | uniq > ${HOME}/ngseasy_tmp/ProjectBySample_list" ${config_run_log}
+logger_ngseasy "[${NGSEASY_STEP}]:CMD: awk 'NR >1 {print $5"/"$1"/"$2}' ${config_tsv} | sort | uniq > ${project_directory}/ngseasy_tmp/ProjectBySample_list" ${config_run_log}
 
-awk 'NR >1 {print $5"/"$1"/"$2}' ${config_tsv} | sort | uniq > ${HOME}/ngseasy_tmp/ProjectBySample_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+awk 'NR >1 {print $5"/"$1"/"$2}' ${config_tsv} | sort | uniq > ${project_directory}/ngseasy_tmp/ProjectBySample_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
 
 ## Read project_list
 #
@@ -308,7 +316,7 @@ PROJECT_SAMPLE_DIRS=$f1
             logger_ngseasy "[${NGSEASY_STEP}]:${PROJECT_SAMPLE_DIRS}] Exist" ${config_run_log}
     fi
 
-done < ${HOME}/ngseasy_tmp/ProjectBySample_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+done < ${project_directory}/ngseasy_tmp/ProjectBySample_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
 wait
 
 ###########################################################################################
@@ -319,5 +327,5 @@ wait
 ###########################################################################################
 ## remove lists
 ###########################################################################################
-rm ${HOME}/ngseasy_tmp/ProjectBySample_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
-rm ${HOME}/ngseasy_tmp/Project_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+rm ${project_directory}/ngseasy_tmp/ProjectBySample_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+rm ${project_directory}/ngseasy_tmp/Project_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}

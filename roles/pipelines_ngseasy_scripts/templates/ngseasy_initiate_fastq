@@ -323,6 +323,14 @@ DATE=`date +"%d%m%y"`
 ########################################################################################################
 LOGFILE="${PROJECT_DIR}/${PROJECT_ID}/run_logs/${SAMPLE_ID}.${TRIM}.${BSQR}.${REALN}.${ALIGNER}.${RUNDATE}.${NGSEASY_STEP}"
 
+#######################################################################################################
+## check and make log directory
+########################################################################################################
+if [ ! -d "${PROJECT_DIR}/${PROJECT_ID}/run_logs/" ]
+then
+  mkdir -p ${PROJECT_DIR}/${PROJECT_ID}/run_logs/
+fi
+
 ########################################################################################################
 ## check and make logfile
 ########################################################################################################
@@ -339,15 +347,6 @@ logger_ngseasy "[${NGSEASY_STEP}]:logging to [${LOGFILE}.log]"  ${LOGFILE}
 logger_ngseasy "[${NGSEASY_STEP}]:Config:[$PROJECT_ID\t$SAMPLE_ID\t$FASTQ1\t$FASTQ2\t$PROJECT_DIR\t$DNA_PREP_LIBRARY_ID\t$NGS_PLATFORM\t
 $NGS_TYPE\t$BAIT\t$CAPTURE\t$GENOMEBUILD\t$FASTQC\t$TRIM\t$BSQR\t$REALN\t$ALIGNER\t$VARCALLER\t$CNV\t$ANNOTATOR\t$CLEANUP\t$NCPU\t
 $VERSION\t$NGSUSER]"  ${LOGFILE}
-
-
-#######################################################################################################
-## check and make log directory
-########################################################################################################
-if [ ! -d "${PROJECT_DIR}/${PROJECT_ID}/run_logs/" ]
-then
-  mkdir -p ${PROJECT_DIR}/${PROJECT_ID}/run_logs/
-fi
 
 
 ########################################################################################################
@@ -379,7 +378,7 @@ fi
 ###########################################################################################
 ## permissions
 ###########################################################################################
-chmod -R 776 ${SOUT}/*
+## chmod -R 776 ${SOUT}/*
 
 ###########################################################################################
 ## THE END

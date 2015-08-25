@@ -79,17 +79,19 @@ echo -e "#######################################################################
 ########################################################################################################
 ## test if docker is intsalled and exit if not
 ########################################################################################################
-command -v docker >/dev/null 2>&1 || { echo "I require Docker...but it's not installed.  Aborting." >&2; exit 1; }
+## command -v docker >/dev/null 2>&1 || { echo "I require Docker...but it's not installed.  Aborting." >&2; exit 1; }
 
 ########################################################################################################
 ## test if image is intsalled and exit if not
 ########################################################################################################
-docker images | grep ngseasy-fastqc 2>&1 || { echo "compbio/ngseasy-fastqc:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
+## docker images | grep ngseasy-fastqc 2>&1 || { echo "compbio/ngseasy-fastqc:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
 
 ########################################################################################################
 ## docker run command
 ########################################################################################################
-DOCKER_RUN="docker run -P -w /home/pipeman -e HOME=/home/pipeman -e USER=pipeman --user pipeman"
+## DOCKER_RUN="docker run -P -w /home/pipeman -e HOME=/home/pipeman -e USER=pipeman --user pipeman"
+## DOCKER_OPTS="--rm -P -w /home/pipeman -e HOME=/home/pipeman -e USER=pipeman --user pipeman"
+DOCKER_OPTS="--rm -P -w /home/pipeman -e HOME=/home/pipeman"
 
 ########################################################################################################
 ## global logging fuction
@@ -124,7 +126,7 @@ This is is optomised for PE data, and calls 2 threads as default to process the 
 ########################################################################################################
 ## get options for command line args
 ########################################################################################################
-  while  getopts "hc:d:" opt
+  while  getopts "hc:d:j:" opt
   do
 
       case ${opt} in
@@ -140,6 +142,10 @@ This is is optomised for PE data, and calls 2 threads as default to process the 
 	  d)
 	  project_directory=${OPTARG}
 	  ;;
+
+	  j)
+      job_name=${OPTARG}
+      ;;
       esac
   done
 ###########################################################################################
@@ -153,21 +159,6 @@ if [[ -z "$config_tsv" ]]; then
     sleep 1s
     exit 1
 fi
-########################################################################################################
-## check config file exists.
-########################################################################################################
-if [[ ! -e "${config_tsv}" ]]
-then
-	    logger_ngseasy "[${NGSEASY_STEP}]:ERROR : [${config_tsv}] does not exist....exiting "
-	    ngseasy_fastqc_usage;
-	    exit 1;
-else
-	    logger_ngseasy "[${NGSEASY_STEP}]:Configuration file found [${config_tsv}] "
-	    if [[ ! -e ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}.log ]]
-	    then
-	    touch ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}.log
-	    fi
-fi
 
 ########################################################################################################
 ## check project_directory exists.
@@ -180,6 +171,23 @@ if [[ ! -d "${project_directory}" ]]
 else
 	    logger_ngseasy "[${NGSEASY_STEP}]:Top Level Project Directory [${project_directory}] "
 fi
+
+########################################################################################################
+## check config file exists.
+########################################################################################################
+if [[ ! -e "${config_tsv}" ]]
+then
+	    logger_ngseasy "[${NGSEASY_STEP}]:ERROR : [${config_tsv}] does not exist....exiting "
+	    ngseasy_fastqc_usage;
+	    exit 1;
+else
+	    logger_ngseasy "[${NGSEASY_STEP}]:Configuration file found [${config_tsv}] "
+	    if [[ ! -e ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}.log ]]
+	    then
+	    touch ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}.log
+	    fi
+fi
+
 
 ###########################################################################################
 ## check Num feilds in  ${config_tsv}
@@ -203,26 +211,26 @@ fi
 ###########################################################################################
 ## check ${config_tsv}. is this a batch file or the orginal config file
 #
-logger_ngseasy "[${NGSEASY_STEP}]:Checking [${config_tsv}] format" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+logger_ngseasy "[${NGSEASY_STEP}]:Checking [${config_tsv}] format" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
 
 hasheader=`sed 1q ${config_tsv} | grep PROJECT_ID | wc -l | awk '{print $1}'`
 
 if [[ "${config_tsv}" == *.batch.* ]]
 then
-  logger_ngseasy "[${NGSEASY_STEP}]:[${config_tsv}] is a BACTH file ie a subset of the original config file" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:[${config_tsv}] is a BACTH file ie a subset of the original config file" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
   RUNFILE="${config_tsv}"
-  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
 elif [[ "$hasheader" -eq 1 ]]
 then
-  logger_ngseasy "[${NGSEASY_STEP}]:[${config_tsv}] header present. Removing this" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
-  logger_ngseasy "[${NGSEASY_STEP}]:[cmd]:sed 1d \${config_tsv} > ${config_tsv}.tmp" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:[${config_tsv}] header present. Removing this" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:[cmd]:sed 1d \${config_tsv} > ${config_tsv}.tmp" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
   sed 1d ${config_tsv} > ${config_tsv}.tmp
   RUNFILE="${config_tsv}.tmp"
-  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
 else
   RUNFILE="${config_tsv}"
-  logger_ngseasy "[${NGSEASY_STEP}]:[${RUNFILE}] is seemingly perfect" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
-  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:[${RUNFILE}] is seemingly perfect" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
 fi
 
 ###########################################################################################
@@ -259,6 +267,7 @@ DATE=`date +"%d%m%y"`
 ## LOGFILE
 ###########################################################################################
 LOGFILE="${PROJECT_DIR}/${PROJECT_ID}/run_logs/${SAMPLE_ID}.${TRIM}.${BSQR}.${REALN}.${ALIGNER}.${RUNDATE}.ngseasy_fastqc"
+DEPENDENCY_FILE="${PROJECT_DIR}/${PROJECT_ID}/run_logs/dependency.ngseasy_fastqc.${RUNDATE}"
 
 ########################################################################################################
 ## check and make logfile
@@ -473,14 +482,10 @@ BAM_PREFIX="${SAMPLE_ID}.${NGS_TYPE}.${DNA_PREP_LIBRARY_ID}.${NGS_PLATFORM}.${TR
 ## call docker: run as -d in background (-d does not work with --rm=true).
 ## This runs all containers in background..simultaneuously!
 #
-logger_ngseasy "[${NGSEASY_STEP}]:[cmd]:docker run -d -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -w /home/pipeman -e HOME=/home/pipeman -e USER=pipeman --user pipeman --name fastqc_${BAM_PREFIX} -t compbio/ngseasy-fastqc:${NGSEASYVERSION} /usr/local/pipeline/FastQC/fastqc --threads 2 --extract --outdir ${SOUTDocker}/fastq ${SOUTDocker}/fastq/${FQ1} ${SOUTDocker}/fastq/${FQ2}" ${LOGFILE}
+logger_ngseasy "[${NGSEASY_STEP}]:[cmd]:docker run -d -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -w /home/pipeman -e HOME=/home/pipeman --name fastqc_${BAM_PREFIX} -t compbio/ngseasy-fastqc:${NGSEASYVERSION} /usr/local/pipeline/FastQC/fastqc --threads 2 --extract --outdir ${SOUTDocker}/fastq ${SOUTDocker}/fastq/${FQ1} ${SOUTDocker}/fastq/${FQ2}" ${LOGFILE}
 
-	${DOCKER_RUN} \
-	-d \
-	-v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-	--name fastqc_${BAM_PREFIX} \
-	-t compbio/ngseasy-fastqc:${NGSEASYVERSION} /usr/local/pipeline/FastQC/fastqc --threads 2 --extract \
-	--dir ${SOUTDocker}/tmp --outdir ${SOUTDocker}/fastq ${SOUTDocker}/fastq/${FQ1} ${SOUTDocker}/fastq/${FQ2}
+LSB_DOCKER_IMAGE=compbio/ngseasy-fastqc:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects"  bsub \
+-J "${job_name}" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" /usr/local/pipeline/FastQC/fastqc --threads 2 --extract --dir ${SOUTDocker}/tmp --outdir ${SOUTDocker}/fastq ${SOUTDocker}/fastq/${FQ1} ${SOUTDocker}/fastq/${FQ2}
 
 ###########################################################################################
 ## QUIT IF no-fastqc option is selected
@@ -495,10 +500,12 @@ fi
 ###########################################################################################
 ## permissions
 ###########################################################################################
-chmod -R 776 ${SOUT}/*
+## chmod -R 776 ${SOUT}/*
 
 ###########################################################################################
 ## THE END
 ###########################################################################################
 done < ${RUNFILE}
 logger_ngseasy " END:FastQC on raw Fastq files " ${LOGFILE}
+
+echo "fastqc_${BAM_PREFIX}" >> ${DEPENDENCY_FILE}
