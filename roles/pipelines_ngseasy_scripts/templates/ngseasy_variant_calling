@@ -84,20 +84,21 @@ echo -e "#######################################################################
 ########################################################################################################
 ## test if docker is intsalled and exit if not
 ########################################################################################################
-command -v docker >/dev/null 2>&1 || { echo "I require Docker...but it's not installed.  Aborting." >&2; exit 1; }
+## command -v docker >/dev/null 2>&1 || { echo "I require Docker...but it's not installed.  Aborting." >&2; exit 1; }
 
 ########################################################################################################
 ## test if images are intsalled and exit if not
 ########################################################################################################
-docker images | grep ngseasy-freebayes 2>&1 || { echo "compbio/ngseasy-freebayes:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
-docker images | grep ngseasy-platypus 2>&1 || { echo "compbio/ngseasy-platypus:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
-docker images | grep ngseasy-base 2>&1 || { echo "compbio/ngseasy-base:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
-docker images | grep ngseasy-bcbiovar 2>&1 || { echo "compbio/ngseasy-bcbio-variation:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
+## docker images | grep ngseasy-freebayes 2>&1 || { echo "compbio/ngseasy-freebayes:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
+## docker images | grep ngseasy-platypus 2>&1 || { echo "compbio/ngseasy-platypus:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
+## docker images | grep ngseasy-base 2>&1 || { echo "compbio/ngseasy-base:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
+## docker images | grep ngseasy-bcbiovar 2>&1 || { echo "compbio/ngseasy-bcbio-variation:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
 
 ########################################################################################################
 ## docker run command
 ########################################################################################################
-DOCKER_RUN="docker run -P -w /home/pipeman -e HOME=/home/pipeman -e USER=pipeman --user pipeman"
+##DOCKER_RUN="docker run -P -w /home/pipeman -e HOME=/home/pipeman -e USER=pipeman --user pipeman"
+DOCKER_OPTS="--rm -P -w /home/pipeman -e HOME=/home/pipeman"
 
 ########################################################################################################
 ## global logging fuction
@@ -109,6 +110,14 @@ function logger_ngseasy() {
  echo -e [`date`]":[NGSEASY:${NGSEASYVERSION}]:"${message}":[${USER}]:[`uname -a`]"
 }
 
+function touch_file() {
+  file=${1}
+  if [ ! -e "${file}" ]
+  then
+     touch ${file}
+  fi
+  echo "${file}"
+}
 ########################################################################################################
 ## global usage
 ########################################################################################################
@@ -140,7 +149,7 @@ fi
 
 ########################################################################################################
 ## get options for command line args
-  while  getopts "hc:d:" opt
+  while  getopts "hc:d:j:w:" opt
   do
 
       case ${opt} in
@@ -156,7 +165,15 @@ fi
     d)
     project_directory=${OPTARG}
     ;;
-      esac
+
+    j)
+    job_name=${OPTARG}
+    ;;
+
+    w)
+    dependency=${OPTARG}
+    ;;
+    esac
   done
 
 ########################################################################################################
@@ -308,6 +325,8 @@ fi
 ## LOGFILE
 ########################################################################################################
 LOGFILE="${PROJECT_DIR}/${PROJECT_ID}/run_logs/${SAMPLE_ID}.${TRIM}.${BSQR}.${REALN}.${ALIGNER}.${RUNDATE}.${NGSEASY_STEP}"
+
+LOG_DIR="${PROJECT_DIR}/${PROJECT_ID}/run_logs"
 
 ########################################################################################################
 ## check and make logfile
@@ -551,24 +570,32 @@ if [[ ! -e  "${SOUT}/reports/${BAMFILE}.mapped.reads.bed" ]] && [[ ! -e  "${SOUT
 
   logger_ngseasy "[${NGSEASY_STEP}]:Generating Mapped Reads BED File and Callable Regions File" ${LOGFILE}
 
-  ${DOCKER_RUN} \
-  -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-  --name callable_regions_${BAM_PREFIX} \
-  -t compbio/ngseasy-base:${NGSEASYVERSION} /bin/bash -c \
-  "time sambamba view -t ${NCPU} -F \"mapping_quality>0 and paired and (not unmapped)\" -f bam ${SOUTDocker}/alignments/${BAMFILE} | \
+  CMDFILE=$(touch_file "${LOG_DIR}/regions.cmd")
+
+  echo "#!/bin/bash
+#
+#BSUB -J ${job_name}.regions             
+#BSUB -q docker_queue               
+#BSUB -o ${LOGFILE}.out
+#BSUB -e ${LOGFILE}.err
+
+/bin/bash -c \
+  \"time sambamba view -t ${NCPU} -F 'mapping_quality>0 and paired and (not unmapped)' -f bam ${SOUTDocker}/alignments/${BAMFILE} | \
   bedtools bamtobed | \
   bedtools merge > ${SOUTDocker}/reports/${BAMFILE}.mapped.reads.bed && \
-  time sambamba view -t ${NCPU} -F \"mapping_quality>0 and paired and (not unmapped)\" -f bam ${SOUTDocker}/alignments/${BAMFILE} | \
-  bedtools genomecov -split -ibam stdin -bga -max 500 | awk '\$4>0' > ${SOUTDocker}/reports/${BAMFILE}.genomecov.bed"
-  sleep 1s
-  docker logs callable_regions_${BAM_PREFIX} >> ${LOGFILE}.log
-  docker rm callable_regions_${BAM_PREFIX}
+  time sambamba view -t ${NCPU} -F 'mapping_quality>0 and paired and (not unmapped)' -f bam ${SOUTDocker}/alignments/${BAMFILE} | \
+  bedtools genomecov -split -ibam stdin -bga -max 500 | awk '\$4>0' > ${SOUTDocker}/reports/${BAMFILE}.genomecov.bed\"" > ${CMDFILE}
+  
+  LSB_DOCKER_IMAGE=compbio/ngseasy-base:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t" bsub  -w "${dependency}" < ${CMDFILE}
 
 # move on
 elif [[ -e  "${SOUT}/reports/${BAMFILE}.mapped.reads.bed" ]]  && [[ -e  "${SOUT}/reports/${BAMFILE}.genomecov.bed"  ]]; then
 
   logger_ngseasy "[${NGSEASY_STEP}]:Mapped Reads [${SOUT}/reports/${BAMFILE}.mapped.reads.bed]" ${LOGFILE}
   logger_ngseasy "[${NGSEASY_STEP}]:Callable Regions [${SOUT}/reports/${BAMFILE}.genomecov.bed]" ${LOGFILE}
+
+   # submit an empty job 
+  bsub -J "${job_name}.regions" -w "${dependency}" date
 
 # cant find shit
 else
@@ -580,16 +607,31 @@ else
 
 fi
 
+dependency="done('${job_name}.regions')"
+
 # tmp: stop here until this works
 # exit 1
 
 # quick fix to get mapped regrions file for freebayes-parallel
-  logger_ngseasy "[${NGSEASY_STEP}]:START Make regions files for var-callers" ${LOGFILE}
+logger_ngseasy "[${NGSEASY_STEP}]:START Make regions files for var-callers" ${LOGFILE}
+
+CMDFILE=$(touch_file "${LOG_DIR}/regions_quick_fix.cmd")
+
+echo "#!/bin/bash
+#
+#BSUB -J ${job_name}.quick_fix                           
+#BSUB -o ${LOGFILE}.out
+#BSUB -e ${LOGFILE}.err
 
 time awk '{print $1":"$2".."$3}' ${SOUT}/reports/${BAMFILE}.mapped.reads.bed > ${SOUT}/reports/${BAMFILE}.mapped.regions
 time awk '{print $1":"$2"-"$3}'  ${SOUT}/reports/${BAMFILE}.mapped.reads.bed > ${SOUT}/reports/${BAMFILE}.platypus.intervals
-#time awk '{print $1":"$2"-"$3}'  ${SOUT}/reports/${BAMFILE}.mapped.reads.bed | tr '\n' ','  > ${SOUT}/reports/${BAMFILE}.platypus.intervals
-  logger_ngseasy "[${NGSEASY_STEP}]:END Make regions files for varcallers" ${LOGFILE}
+#time awk '{print $1":"$2"-"$3}'  ${SOUT}/reports/${BAMFILE}.mapped.reads.bed | tr '\n' ','  > ${SOUT}/reports/${BAMFILE}.platypus.intervals" > ${CMDFILE}
+
+bsub -w "done('${job_name}.regions')" < ${CMDFILE}
+
+dependency="done('${job_name}.quick_fix')"
+
+logger_ngseasy "[${NGSEASY_STEP}]:END Make regions files for varcallers" ${LOGFILE}
 
 # time bedtools genomecov -split -ibam ${SOUTDocker}/alignments/${BAMFILE} -g ${GENOMEFILE} -d | /usr/local/pipeline/freebayes/scripts/coverage_to_regions.py ${FAI} 1000 > ${REFFASTA}.1000.regions
 # awk '{print \$1":"$2"-"$3}'  ${SOUT}/reports/${BAMFILE}.mapped.reads.bed | awk 'BEGIN{ORS=","}1' > ${SOUT}/reports/${BAMFILE}.platypus.intervals
@@ -638,11 +680,16 @@ if [ "${VARCALLER}" == "freebayes" ]
 #  bgzip -c > ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz && \
 #  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz"
 
-  ${DOCKER_RUN} \
-  -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-  --name Freebayes_${BAM_PREFIX} \
-  -t compbio/ngseasy-freebayes:${NGSEASYVERSION} /bin/bash -c \
-  "time /usr/local/pipeline/freebayes/scripts/freebayes-parallel ${SOUTDocker}/reports/${BAMFILE}.mapped.regions ${NCPU} \
+  CMDFILE=$(touch_file "${LOG_DIR}/varcaller.cmd")
+
+  echo "#!/bin/bash
+#
+#BSUB -J ${job_name}             
+#BSUB -q docker_queue               
+#BSUB -o ${LOGFILE}.out
+#BSUB -e ${LOGFILE}.err
+
+/bin/bash -c \"time /usr/local/pipeline/freebayes/scripts/freebayes-parallel ${SOUTDocker}/reports/${BAMFILE}.mapped.regions ${NCPU} \
   -f ${REFFASTA} \
   -b ${SOUTDocker}/alignments/${BAMFILE} \
   --min-coverage 5 \
@@ -659,16 +706,12 @@ if [ "${VARCALLER}" == "freebayes" ]
   vt normalize -r ${REFFASTA} -q - 2> /dev/null | \
   vcfuniqalleles | \
   bgzip -c > ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz && \
-  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz"
+  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz\"" > ${CMDFILE}
 
-# add vt decompose -s - | \
+  LSB_DOCKER_IMAGE=compbio/ngseasy-freebayes:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t" bsub  -w "${dependency}" < ${CMDFILE}
 
-#logs
-docker logs Freebayes_${BAM_PREFIX} >> ${LOGFILE}.log
-docker rm Freebayes_${BAM_PREFIX}
-
-# logs
-logger_ngseasy "[${NGSEASY_STEP}]:END Variant Calling using Freebayes "  ${LOGFILE}
+  # logs
+  logger_ngseasy "[${NGSEASY_STEP}]:END Variant Calling using Freebayes "  ${LOGFILE}
 
 ########################################################################################################
 # Platypus # still missing a lot - what was the publication about then
@@ -678,6 +721,17 @@ elif [ "${VARCALLER}" == "platypus" ]
   then
 
   logger_ngseasy "[${NGSEASY_STEP}]:START Variant Calling using Platypus "  ${LOGFILE}
+
+  CMDFILE=$(touch_file "${LOG_DIR}/varcaller.cmd")
+
+  echo "#!/bin/bash
+#
+#BSUB -J ${job_name}             
+#BSUB -q docker_queue               
+#BSUB -o ${LOGFILE}.out
+#BSUB -e ${LOGFILE}.err 
+
+" > ${CMDFILE}
 
   if [ "${NGS_TYPE}" == "TGS" ] || [ "${NGS_TYPE}" == "WEX" ]
     then
@@ -693,11 +747,7 @@ elif [ "${VARCALLER}" == "platypus" ]
 #                   "--minVarFreq", "0.0"]
 #      --regions=${SOUTDocker}/reports/${BAMFILE}.platypus.intervals
 
-    ${DOCKER_RUN} \
-    -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-    --name platypus_${BAM_PREFIX} \
-    -t compbio/ngseasy-platypus:${NGSEASYVERSION} /bin/bash -c \
-    "time python /usr/local/pipeline/Platypus/bin/Platypus.py callVariants \
+      echo "/bin/bash -c \"time python /usr/local/pipeline/Platypus/bin/Platypus.py callVariants \
       --nCPU ${NCPU} \
       --bamFiles=${SOUTDocker}/alignments/${BAMFILE} \
       --refFile=${REFFASTA} \
@@ -734,19 +784,10 @@ elif [ "${VARCALLER}" == "platypus" ]
       vt normalize -r ${REFFASTA} -q - 2> /dev/null | \
       vcfuniqalleles | \
       bgzip -c > ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz && \
-      tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz"
-      sleep 1s
-      #logs
-      docker logs platypus_${BAM_PREFIX} >> ${LOGFILE}.log
-      docker rm platypus_${BAM_PREFIX}
+      tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz\"" >> ${CMDFILE} 
 
     else
-
-      ${DOCKER_RUN} \
-      -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-      --name platypus_${BAM_PREFIX} \
-      -t compbio/ngseasy-platypus:${VERSION} /bin/bash -c \
-      "time python /usr/local/pipeline/Platypus/bin/Platypus.py callVariants \
+      echo "/bin/bash -c \"time python /usr/local/pipeline/Platypus/bin/Platypus.py callVariants \
       --nCPU ${NCPU} \
       --bamFiles=${SOUTDocker}/alignments/${BAMFILE} \
       --refFile=${REFFASTA} \
@@ -783,17 +824,13 @@ elif [ "${VARCALLER}" == "platypus" ]
       vt normalize -r ${REFFASTA} -q - 2> /dev/null | \
       vcfuniqalleles | \
       bgzip -c > ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz && \
-      tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz"
-      sleep 1s
-
-#logs
-docker logs platypus_${BAM_PREFIX} >> ${LOGFILE}.log
-docker rm platypus_${BAM_PREFIX}
-
-#logs
-logger_ngseasy "[${NGSEASY_STEP}]:END Variant Calling using Platypus "  ${LOGFILE}
-
+      tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz\"" >> ${CMDFILE}
   fi
+
+  LSB_DOCKER_IMAGE=compbio/ngseasy-platypus:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t" bsub  -w "${dependency}" < ${CMDFILE}
+
+  logger_ngseasy "[${NGSEASY_STEP}]:END Variant Calling using Platypus "  ${LOGFILE}
+
 ########################################################################################################
 # UnifiedGenotyper #
 #-----------------------------------------------------------------------------#
@@ -801,16 +838,21 @@ logger_ngseasy "[${NGSEASY_STEP}]:END Variant Calling using Platypus "  ${LOGFIL
 elif [ "${VARCALLER}" == "UnifiedGenotyper" ]
   then
 
-# requires /alignments/${BAM_PREFIX}.filtered.bam
+  # requires /alignments/${BAM_PREFIX}.filtered.bam
 
   # UnifiedGenotyper EMIT_ALL_CONFIDENT_SITES
   logger_ngseasy "[${NGSEASY_STEP}]:START GATK UnifiedGenotyper " ${LOGFILE}
 
-  ${DOCKER_RUN} \
-  -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-  --name UnifiedGenotyper_${BAM_PREFIX} \
-  -t compbio/ngseasy-gatk:${NGSEASYVERSION} /bin/bash -c \
-  "time java -Xmx6g -Djava.io.tmpdir=${SOUTDocker}/tmp -jar /usr/local/bin/GenomeAnalysisTK.jar \
+  CMDFILE=$(touch_file "${LOG_DIR}/varcaller.cmd")
+
+  echo "#!/bin/bash
+#
+#BSUB -J ${job_name}             
+#BSUB -q docker_queue               
+#BSUB -o ${LOGFILE}.out
+#BSUB -e ${LOGFILE}.err 
+  
+/bin/bash -c \"time java -Xmx6g -Djava.io.tmpdir=${SOUTDocker}/tmp -jar /usr/local/bin/GenomeAnalysisTK.jar \
   -T UnifiedGenotyper \
   -R ${REFFASTA} \
   -nct ${NCPU} \
@@ -855,11 +897,10 @@ elif [ "${VARCALLER}" == "UnifiedGenotyper" ]
   vt normalize -r ${REFFASTA} -q - 2> /dev/null | \
   vcfuniqalleles | \
   bgzip -c > ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz && \
-  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz"
+  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz\"" > ${CMDFILE}
 
-#logs
-  docker logs UnifiedGenotyper_${SAMPLE_ID} >> ${LOGFILE}.log
-  docker rm UnifiedGenotyper_${SAMPLE_ID}
+  LSB_DOCKER_IMAGE=compbio/ngseasy-gatk:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t" bsub  -w "${dependency}" < ${CMDFILE}
+
   logger_ngseasy " END Variant Calling using UnifiedGenotyper "  ${LOGFILE}
 
 ########################################################################################################
@@ -872,11 +913,16 @@ elif [ "${VARCALLER}" == "HaplotypeCaller" ]
 
   logger_ngseasy "[${NGSEASY_STEP}]:START Variant Calling using HaplotypeCaller "  ${LOGFILE}
 
-  ${DOCKER_RUN} \
-  -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-  --name HaplotypeCaller_${BAM_PREFIX} \
-  -t compbio/ngseasy-gatk:${NGSEASYVERSION} /bin/bash -c \
-  "time java -Xmx6g -Djava.io.tmpdir=${SOUTDocker}/tmp -jar /usr/local/bin/GenomeAnalysisTK.jar \
+  CMDFILE=$(touch_file "${LOG_DIR}/varcaller.cmd")
+
+  echo "#!/bin/bash
+#
+#BSUB -J ${job_name}             
+#BSUB -q docker_queue               
+#BSUB -o ${LOGFILE}.out
+#BSUB -e ${LOGFILE}.err 
+
+/bin/bash -c \"time java -Xmx6g -Djava.io.tmpdir=${SOUTDocker}/tmp -jar /usr/local/bin/GenomeAnalysisTK.jar \
   -T HaplotypeCaller \
   -R ${REFFASTA} \
   -nct ${NCPU} \
@@ -923,12 +969,10 @@ elif [ "${VARCALLER}" == "HaplotypeCaller" ]
   vt normalize -r ${REFFASTA} -q - 2> /dev/null | \
   vcfuniqalleles | \
   bgzip -c > ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz && \
-  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz"
+  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz\"" > ${CMDFILE} 
 
+  LSB_DOCKER_IMAGE=compbio/ngseasy-gatk:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t" bsub  -w "${dependency}" < ${CMDFILE}
 
-#logs
-  docker logs HaplotypeCaller_${SAMPLE_ID} >> ${LOGFILE}.log
-  docker rm HaplotypeCaller_${SAMPLE_ID}
   logger_ngseasy " END Variant Calling using HaplotypeCaller "  ${LOGFILE}
 
 ########################################################################################################
@@ -940,16 +984,21 @@ then
 
   logger_ngseasy "[${NGSEASY_STEP}]:START Ensembl Variant Calling using Freebayes + HaplotypeCaller "  ${LOGFILE}
 
-## freebayes
-logger_ngseasy "[${NGSEASY_STEP}]:START Variant Calling using Freebayes " ${LOGFILE}
+  ## freebayes
+  logger_ngseasy "[${NGSEASY_STEP}]:START Variant Calling using Freebayes " ${LOGFILE}
 
-VARCALLER="freebayes"
+  VARCALLER="freebayes"
 
-  ${DOCKER_RUN} \
-  -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-  --name Freebayes_${BAM_PREFIX} \
-  -t compbio/ngseasy-freebayes:${NGSEASYVERSION} /bin/bash -c \
-  "time /usr/local/pipeline/freebayes/scripts/freebayes-parallel ${SOUTDocker}/reports/${BAMFILE}.mapped.regions ${NCPU} \
+  CMDFILE=$(touch_file "${LOG_DIR}/varcaller.ensemble_freebayes.cmd")
+
+  echo "#!/bin/bash
+#
+#BSUB -J ${job_name}.freebayes             
+#BSUB -q docker_queue               
+#BSUB -o ${LOGFILE}.out
+#BSUB -e ${LOGFILE}.err 
+
+/bin/bash -c \"time /usr/local/pipeline/freebayes/scripts/freebayes-parallel ${SOUTDocker}/reports/${BAMFILE}.mapped.regions ${NCPU} \
   -f ${REFFASTA} \
   -b ${SOUTDocker}/alignments/${BAMFILE} \
   --min-coverage 10 \
@@ -966,13 +1015,9 @@ VARCALLER="freebayes"
   vt normalize -r ${REFFASTA} -q - 2> /dev/null | \
   vcfuniqalleles | \
   bgzip -c > ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz && \
-  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz"
+  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz\"" > ${CMDFILE}
 
-
-#logs
-  docker logs Freebayes_${SAMPLE_ID} >> ${LOGFILE}.log#
-
-  docker rm Freebayes_${SAMPLE_ID}
+  LSB_DOCKER_IMAGE=compbio/ngseasy-freebayes:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t" bsub  -w "${dependency}" < ${CMDFILE}
 
   # copy vcf to cohort vcf directory
   cp ${SOUT}/vcf/${BAM_PREFIX}.raw.snps.indels.${VARCALLER}.vcf ${PROJECT_DIR}/${PROJECT_ID}/cohort_vcfs/;
@@ -991,11 +1036,16 @@ VARCALLER="freebayes"
 
 logger_ngseasy "[${NGSEASY_STEP}]:START Variant Calling using HaplotypeCaller "  ${LOGFILE}
 
-  ${DOCKER_RUN} \
-  -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-  --name HaplotypeCaller_${BAM_PREFIX} \
-  -t compbio/ngseasy-gatk:${NGSEASYVERSION} /bin/bash -c \
-  "time java -Xmx6g -Djava.io.tmpdir=${SOUTDocker}/tmp -jar /usr/local/bin/GenomeAnalysisTK.jar \
+CMDFILE=$(touch_file "${LOG_DIR}/varcaller.ensemble_haplotypecaller.cmd")
+
+  echo "#!/bin/bash
+#
+#BSUB -J ${job_name}.haplotypecaller            
+#BSUB -q docker_queue               
+#BSUB -o ${LOGFILE}.out
+#BSUB -e ${LOGFILE}.err 
+
+/bin/bash -c \"time java -Xmx6g -Djava.io.tmpdir=${SOUTDocker}/tmp -jar /usr/local/bin/GenomeAnalysisTK.jar \
   -T HaplotypeCaller \
   -R ${REFFASTA} \
   -nct ${NCPU} \
@@ -1041,14 +1091,11 @@ logger_ngseasy "[${NGSEASY_STEP}]:START Variant Calling using HaplotypeCaller " 
   vt normalize -r ${REFFASTA} -q - 2> /dev/null | \
   vcfuniqalleles | \
   bgzip -c > ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz && \
-  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz"
+  tabix ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.${VARCALLER}.vcf.gz\"" > ${CMDFILE}
 
+  LSB_DOCKER_IMAGE=compbio/ngseasy-gatk:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t" bsub  -w "done('${job_name}.freebayes')" < ${CMDFILE}
 
-#logs
-  docker logs HaplotypeCaller_${BAM_PREFIX} >> ${LOGFILE}.log
-  docker rm HaplotypeCaller_${BAM_PREFIX}
   logger_ngseasy " END Variant Calling using HaplotypeCaller "  ${LOGFILE}
-
 
 ##############################################################################################
 ## bcbio.variation
@@ -1057,23 +1104,26 @@ logger_ngseasy "[${NGSEASY_STEP}]:START Variant Calling using HaplotypeCaller " 
 
   logger_ngseasy " START bcbio-variation in Ensembl Variant Calling using Freebayes + HaplotypeCaller "  ${LOGFILE}
 
-#Docker Output Dir: this is the mouned directory set by ngseasy_volumes_container
+  CMDFILE=$(touch_file "${LOG_DIR}/varcaller.ensemble_bcbio.cmd")
 
-  ${DOCKER_RUN} \
-  -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-  --name bcbio-variation_${BAM_PREFIX} \
-  -t compbio/ngseasy-bcbio-variation:${NGSEASYVERSION} bcbio-variation-recall ensemble \
+ echo "#!/bin/bash
+#
+#BSUB -J ${job_name}            
+#BSUB -q docker_queue               
+#BSUB -o ${LOGFILE}.out
+#BSUB -e ${LOGFILE}.err   
+
+bcbio-variation-recall ensemble \
   -c ${NCPU} \
   -n 2 \
   --nofiltered \
   ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.ensemble.vcf \
   ${REFFASTA} \
   ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.freebayes.vcf \
-  ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.HaplotypeCaller.vcf;
+  ${SOUTDocker}/vcf/${BAM_PREFIX}.snps.indels.HaplotypeCaller.vcf" > ${CMDFILE}
 
-#logs
-  docker logs bcbio-variation_${BAM_PREFIX} >> ${LOGFILE}.log
-  docker rm bcbio-variation_${BAM_PREFIX}
+  LSB_DOCKER_IMAGE=compbio/ngseasy-bcbio-variation:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t" bsub  -w "done('${job_name}.haplotypecaller')" < ${CMDFILE}
+
   logger_ngseasy " END Variant Calling using HaplotypeCaller "  ${LOGFILE}
 
   logger_ngseasy " END bcbio-variation in Ensembl Variant Calling using Freebayes + HaplotypeCaller "  ${LOGFILE}
@@ -1084,7 +1134,7 @@ fi
 ###########################################################################################
 ## permissions
 ###########################################################################################
-chmod -R 776 ${SOUT}/*
+##chmod -R 776 ${SOUT}/*
 
 ###########################################################################################
 ## THE END

@@ -30,20 +30,23 @@ def create_check_volume_action(uid):
             volumepath = vspec[0]
             ro = len(vspec) == 3 and vspec[2] == 'ro'
 
-            stat = os.stat(volumepath)
-            logger.debug('(uid=%s, volume_path=%s)/(st_uid=%s, st_gid=%s, st_mode=%s)', self.uid, volumepath, stat.st_uid, stat.st_gid, oct(stat.st_mode))
+            st = os.stat(volumepath)
+            logger.debug('(uid=%s, volume_path=%s)/(st_uid=%s, st_gid=%s, st_mode=%s)', self.uid, volumepath, st.st_uid, st.st_gid, oct(st.st_mode))
             
             if (os.path.islink(volumepath)):
                 volumepath = os.path.realpath(volumepath)
-
-            if (int(stat.st_uid) == int(self.uid)):
+            
+            # if user is the owner then OK
+            if (int(st.st_uid) == int(self.uid)):
                 return True
             
+            # if user is a memeber of the group then check RW permissions
             groups = [g.gr_name for g in grp.getgrall() if self.user in g.gr_mem]
-            if (stat.st_gid not in groups):
-                return False
+            if (st.st_gid in groups):
+                return bool(st.st_mode & (stat.S_IRGRP if ro else stat.S_IWGRP))
             
-            return bool(stat.st_mode & (stat.S_IRGRP if ro else stat.S_IWGRP))
+            # check others' permissions
+            return bool(st.st_mode & (stat.S_IROTH if ro else stat.S_IWOTH))
 
     return CheckVolume
 
@@ -65,6 +68,13 @@ def get_argparser():
     parser_pause.add_argument(CONTAINER)
 
     parser_unpause = subparsers.add_parser('unpause')
+    parser_unpause.add_argument(CONTAINER)
+
+    parser_unpause = subparsers.add_parser('ps')
+
+    parser_unpause = subparsers.add_parser('images')
+
+    parser_unpause = subparsers.add_parser('rm')
     parser_unpause.add_argument(CONTAINER)
 
     parser_run = subparsers.add_parser('run')
@@ -127,13 +137,17 @@ def main(argv):
         exit_err(" Usage: dickercmd <run|stop|pouse|unpouse> <options>")
 
     args = get_argparser().parse_args(argv)
-    logger.debug('(uid=%s, filtered_arguments=%s)', get_uid(), args.ordered_args)
 
-    ordered_args = reduce(lambda x, y: x + [y[0]] + (y[1] if isinstance(y[1], list) else [y[1]]), args.ordered_args, [])
-    ordered_args = filter(lambda x: x not in [IMAGE_AND_COMMAND, CONTAINER], ordered_args)
+    if hasattr(args, 'ordered_args'):
+        logger.debug('(uid=%s, filtered_arguments=%s)', get_uid(), args.ordered_args)
 
-    command = ' '.join(['docker', argv[0]] + ordered_args)
-    logger.info('(uid=%s, command=[ %s ])', get_uid(), command)
+        ordered_args = reduce(lambda x, y: x + [y[0]] + (y[1] if isinstance(y[1], list) else [y[1]]), args.ordered_args, [])
+        ordered_args = filter(lambda x: x not in [IMAGE_AND_COMMAND, CONTAINER], ordered_args)
+
+        command = ' '.join(['docker', argv[0]] + ordered_args)
+        logger.info('(uid=%s, command=[ %s ])', get_uid(), command)
+    else:
+        command = ' '.join(['docker'] + argv)
     
     run_command(command) 
 

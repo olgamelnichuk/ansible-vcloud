@@ -449,9 +449,15 @@ if [[ -e "${fqout1}" ]] && [[ -e "${fqout2}" ]]; then
 	logger_ngseasy "[${NGSEASY_STEP}]:Check if FastQC Data already exists [$fqout1] and [$fqout2]" ${LOGFILE}
 	logger_ngseasy "[${NGSEASY_STEP}]:FastQC Data already exists...skipping this bit" ${LOGFILE}
 
+	# submit an empty job 
+	bsub -J "${job_name}" date
+
 elif [[ -e "${SOUT}/fastq/${illprefix1}_fastqc.html" ]] && [[ -e "${SOUT}/fastq/$illprefix2}_fastqc.html" ]]; then
 	logger_ngseasy "[${NGSEASY_STEP}]:Check if FastQC Data already exists [${SOUT}/fastq/${illprefix1}_fastqc.html] and [${SOUT}/fastq/${illprefix2}_fastqc.html]" ${LOGFILE}
 	logger_ngseasy "[${NGSEASY_STEP}]:FastQC Data already exists...skipping this bit" ${LOGFILE}
+
+	# submit an empty job 
+	bsub -J "${job_name}" date
 
 elif [[ "$FASTQC" == "qc-fastqc" ]]; then
 
@@ -483,6 +489,7 @@ BAM_PREFIX="${SAMPLE_ID}.${NGS_TYPE}.${DNA_PREP_LIBRARY_ID}.${NGS_PLATFORM}.${TR
 ## This runs all containers in background..simultaneuously!
 #
 logger_ngseasy "[${NGSEASY_STEP}]:[cmd]:docker run -d -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -w /home/pipeman -e HOME=/home/pipeman --name fastqc_${BAM_PREFIX} -t compbio/ngseasy-fastqc:${NGSEASYVERSION} /usr/local/pipeline/FastQC/fastqc --threads 2 --extract --outdir ${SOUTDocker}/fastq ${SOUTDocker}/fastq/${FQ1} ${SOUTDocker}/fastq/${FQ2}" ${LOGFILE}
+logger_ngseasy "bsub -J '${job_name}' -q docker_queue -o '${LOGFILE}.out' -e '${LOGFILE}.err'..." ${LOGFILE}
 
 LSB_DOCKER_IMAGE=compbio/ngseasy-fastqc:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects"  bsub \
 -J "${job_name}" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" /usr/local/pipeline/FastQC/fastqc --threads 2 --extract --dir ${SOUTDocker}/tmp --outdir ${SOUTDocker}/fastq ${SOUTDocker}/fastq/${FQ1} ${SOUTDocker}/fastq/${FQ2}
