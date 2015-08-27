@@ -1,6 +1,6 @@
 ---
 - name: place ngseasy scripts to NFS server  
-  template: src={{ item }} dest=/export/ngseasy/bin/{{ item }} owner=root group=root mode=0755
+  copy: src={{ item }} dest=/export/ngseasy/bin/{{ item }} owner=root group=root mode=0755
   with_items: 
   - 'ngseasy'
   - 'ngseasy_alignment'
