@@ -21,6 +21,9 @@
 - include: build_from_sources.yml
   when: not openlava_pkg_install
 
+- include: post_install.yml
+  tags: post_install
+
 - include: cluster.yml
   tags: cluster_update
 
