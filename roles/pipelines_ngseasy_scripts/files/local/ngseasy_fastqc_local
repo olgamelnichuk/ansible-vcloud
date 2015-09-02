@@ -1,0 +1,232 @@
+#!/bin/bash
+
+########################################################################################################
+## global logging fuction
+########################################################################################################
+function logger_ngseasy() {
+ message=${1}
+ mylogfile=${2}
+ echo -e [`date`]":[NGSEASY:${NGSEASYVERSION}]:"${message}":[${USER}]:[`uname -a`]" >> ${mylogfile}.log;
+ echo -e [`date`]":[NGSEASY:${NGSEASYVERSION}]:"${message}":[${USER}]:[`uname -a`]"
+}
+
+########################################################################################################
+
+while  getopts "c:" opt
+  do
+    case ${opt} in
+    c)
+    RUNFILE=${OPTARG}
+    ;;
+
+    esac
+done
+
+# ${HOME}=/home/pipeman
+
+NGS_PROJECTS_DIR=${HOME}/ngs_projects
+
+NGSEASY_STEP="ngseasy_fastqc"
+
+###########################################################################################
+## Read config and loop through all lines calling fastqc docker
+###########################################################################################
+while read -r f1 f2 f3 f4 f5 f6 f7 f8 f9 f10 f11 f12 f13 f14 f15 f16 f17 f18 f19 f20 f21 f22 f23
+do
+PROJECT_ID=$f1
+SAMPLE_ID=$f2
+FASTQ1=$f3
+FASTQ2=$f4
+PROJECT_DIR=$f5
+DNA_PREP_LIBRARY_ID=$f6
+NGS_PLATFORM=$f7
+NGS_TYPE=$f8
+BAIT=$f9
+CAPTURE=$f10
+GENOMEBUILD=$f11
+FASTQC=$f12
+TRIM=$f13
+REALN=$f14
+BSQR=$f15
+ALIGNER=$f16
+VARCALLER=$f17
+CNV=$f18
+ANNOTATOR=$f19
+CLEANUP=$f20
+NCPU=$f21
+NGSEASYVERSION=$f22
+NGSUSER=$f23
+DATE=`date +"%d%m%y"`
+
+###########################################################################################
+## project/sample specific LOGFILE
+###########################################################################################
+LOGFILE="${NGS_PROJECTS_DIR}/${PROJECT_ID}/run_logs/${SAMPLE_ID}.${TRIM}.${BSQR}.${REALN}.${ALIGNER}.${RUNDATE}.ngseasy_fastqc"
+
+###########################################################################################
+## check and make log directory
+###########################################################################################
+if [ ! -d "${NGS_PROJECTS_DIR}/${PROJECT_ID}/run_logs/" ]; then
+  mkdir ${NGS_PROJECTS_DIR}/${PROJECT_ID}/run_logs/
+fi
+
+########################################################################################################
+## check and make logfile
+########################################################################################################
+if [ ! -e "${LOGFILE}.log" ]; then
+  touch ${LOGFILE}.log
+fi
+
+###########################################################################################
+## FASTQC
+###########################################################################################
+if [[ "$FASTQC" == "qc-fastqc" ]]; then
+
+  logger_ngseasy "[${NGSEASY_STEP}]:START: FastQC on raw Fastq files" ${LOGFILE}
+  sleep 1s
+
+  ###########################################################################################
+  ## OUTPUT SAMPLE DIR
+  ############################################################################################
+  SOUT=${NGS_PROJECTS_DIR}/${PROJECT_ID}/${SAMPLE_ID}
+
+  logger_ngseasy "[${NGSEASY_STEP}]:Sample Directory [${SOUT}]" ${LOGFILE}
+
+  ###########################################################################################
+  ## check local dir exists
+  ###########################################################################################
+  if [ ! -d "${SOUT}" ]; then
+    logger_ngseasy "[${NGSEASY_STEP}]: Can't Find ${SOUT} directory. Please check everything is ok " ${LOGFILE}
+    exit 1
+  fi
+
+  logger_ngseasy "[${NGSEASY_STEP}]: Setting OUTPUT directory to [${SOUT}]" ${LOGFILE}
+
+  ###########################################################################################
+  ## check for fastq files exist
+  ###########################################################################################
+  if [ ! -s "${SOUT}/fastq/${FASTQ1}" ] && [ ! -s "${SOUT}/fastq/${FASTQ2}" ]; then
+    logger_ngseasy "[${NGSEASY_STEP}]: Can't Find fastq files [${SOUT}/fastq/${FASTQ1}] and [${SOUT}/fastq/${FASTQ2}] in [${SOUT}/fastq/] " ${LOGFILE}
+    logger_ngseasy "[${NGSEASY_STEP}]: Please run ngseasy_initiate_fastq or copy files to [${SOUT}/fastq/] " ${LOGFILE}
+    exit 1
+  fi
+
+  ###########################################################################################
+  ## set new names for copied fastq files
+  ###########################################################################################
+  # test for fomrat of suffix ie is it fastq or fq
+  # or _R1.fastq _R1.fq
+  # ILLUMINA : NA10831_ATCACG_L002_R1_001.fastq.gz
+  # Illumina FASTQ files use the following naming scheme:
+  # <sample name>_<barcode sequence>_L<lane (0-padded to 3 digits)>_R<read number>_<set number (0-padded to 3 digits>.fastq.gz
+
+  logger_ngseasy "[${NGSEASY_STEP}]: Checking Fastq file naming conventions" ${LOGFILE}
+
+  if [[ "${FASTQ1}" == *_1.fastq.gz ]]; then
+
+    rawFASTQ1=`basename ${SOUT}/fastq/${FASTQ1} _1.fastq.gz`
+    rawFASTQ2=`basename ${SOUT}/fastq/${FASTQ2} _2.fastq.gz`
+
+    fq1_suffix="1.fastq.gz"
+    fq2_suffix="2.fastq.gz"
+
+    FQ1=${rawFASTQ1}_${fq1_suffix}
+    FQ2=${rawFASTQ2}_${fq2_suffix}
+
+  elif [[ "${FASTQ1}" == *_R1.fastq.gz ]]; then
+
+    rawFASTQ1=`basename ${SOUT}/fastq/${FASTQ1} _R1.fastq.gz`
+    rawFASTQ2=`basename ${SOUT}/fastq/${FASTQ2} _R2.fastq.gz`
+
+    fq1_suffix="R1.fastq.gz"
+    fq2_suffix="R2.fastq.gz"
+
+    FQ1=${rawFASTQ1}_${fq1_suffix}
+    FQ2=${rawFASTQ2}_${fq2_suffix}
+
+  elif [[ "${FASTQ1}" == *_1.fq.gz ]]; then
+
+    rawFASTQ1=`basename ${SOUT}/fastq/${FASTQ1} _1.fq.gz`
+    rawFASTQ2=`basename ${SOUT}/fastq/${FASTQ2} _2.fq.gz`
+
+    fq1_suffix="1.fq.gz"
+    fq2_suffix="2.fq.gz"
+
+    FQ1=${rawFASTQ1}_${fq1_suffix}
+    FQ2=${rawFASTQ2}_${fq2_suffix}
+
+  elif [[ "${FASTQ1}" == *_R1.fq.gz ]]; then
+
+    rawFASTQ1=`basename ${SOUT}/fastq/${FASTQ1} _R1.fq.gz`
+    rawFASTQ2=`basename ${SOUT}/fastq/${FASTQ2} _R2.fq.gz`
+
+    fq1_suffix="R1.fq.gz"
+    fq2_suffix="R2.fq.gz"
+
+    FQ1=${rawFASTQ1}_${fq1_suffix}
+    FQ2=${rawFASTQ2}_${fq2_suffix}
+
+  elif [[ "${FASTQ1}" == *_L*_R1_[0-9][0-9][0-9].fastq.gz ]]; then
+
+    logger_ngseasy "[${NGSEASY_STEP}]:Illumina fastq naming scheme" ${LOGFILE}
+
+    illprefix1=`basename ${SOUT}/fastq/${FASTQ1} .fastq.gz`
+    illprefix2=`basename ${SOUT}/fastq/${FASTQ2} .fastq.gz`
+
+    FQ1=${FASTQ1}
+    FQ2=${FASTQ2}
+
+  elif [[ "${FASTQ1}" == *_L*_R1_[0-9][0-9][0-9][0-9].fastq.gz ]]; then
+
+    logger_ngseasy "[${NGSEASY_STEP}]:Illumina fastq naming scheme" ${LOGFILE}
+
+    illprefix1=`basename ${SOUT}/fastq/${FASTQ1} .fastq.gz`
+    illprefix2=`basename ${SOUT}/fastq/${FASTQ2} .fastq.gz`
+
+    FQ1=${FASTQ1}
+    FQ2=${FASTQ2}
+
+  else
+
+    logger_ngseasy "[${NGSEASY_STEP}]: Fastq naming format not recognised for files [$FASTQ1] [$FASTQ2]" ${LOGFILE}
+    logger_ngseasy "[${NGSEASY_STEP}]: This should be one of [_1.fastq.gz] [_1.fq.gz] [_R1.fastq.gz] [_R1.fq.gz]" ${LOGFILE}
+    logger_ngseasy "[${NGSEASY_STEP}]: or one of Illuminas stoopid names eg [_R1_001.fastq.gz]" ${LOGFILE}
+    exit 1
+  fi
+
+  logger_ngseasy "[${NGSEASY_STEP}]: FQ1 [${FQ1}]" ${LOGFILE}
+  logger_ngseasy "[${NGSEASY_STEP}]: FQ2 [${FQ2}]" ${LOGFILE}
+  sleep 2s
+
+  ###########################################################################################
+  ## check if qc'd data already exists
+  ###########################################################################################
+  fqout1="${SOUT}/fastq/${rawFASTQ1}_1_fastqc.html"
+  fqout2="${SOUT}/fastq/${rawFASTQ2}_2_fastqc.html"
+
+  if [[ -e "${fqout1}" ]] && [[ -e "${fqout2}" ]]; then
+
+    logger_ngseasy "[${NGSEASY_STEP}]:Check if FastQC Data already exists [$fqout1] and [$fqout2]" ${LOGFILE}
+    logger_ngseasy "[${NGSEASY_STEP}]:FastQC Data already exists...skipping this bit" ${LOGFILE}
+
+  elif [[ -e "${SOUT}/fastq/${illprefix1}_fastqc.html" ]] && [[ -e "${SOUT}/fastq/$illprefix2}_fastqc.html" ]]; then
+
+    logger_ngseasy "[${NGSEASY_STEP}]:Check if FastQC Data already exists [${SOUT}/fastq/${illprefix1}_fastqc.html] and [${SOUT}/fastq/${illprefix2}_fastqc.html]" ${LOGFILE}
+    logger_ngseasy "[${NGSEASY_STEP}]:FastQC Data already exists...skipping this bit" ${LOGFILE}
+
+  else
+
+    logger_ngseasy "[${NGSEASY_STEP}]: Running /usr/local/pipeline/FastQC/fastqc --threads 2 --extract --dir ${SOUT}/tmp --outdir ${SOUT}/fastq ${SOUT}/fastq/${FQ1} ${SOUT}/fastq/${FQ2}" ${LOGFILE}
+ 
+    /usr/local/pipeline/FastQC/fastqc --threads 2 --extract --dir ${SOUT}/tmp --outdir ${SOUT}/fastq ${SOUT}/fastq/${FQ1} ${SOUT}/fastq/${FQ2}
+  fi
+
+fi
+###########################################################################################
+## THE END
+###########################################################################################
+done < ${RUNFILE}
+
+chmod -R 777 ${SOUT}/*
+
+logger_ngseasy " END:FastQC on raw Fastq files " ${LOGFILE}

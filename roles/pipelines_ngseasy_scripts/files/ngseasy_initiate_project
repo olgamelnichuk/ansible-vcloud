@@ -230,7 +230,7 @@ fi
 logger_ngseasy "[${NGSEASY_STEP}]:CMD: awk 'NR >1 {print $5"/"$1}' ${config_tsv} | sort | uniq > ${project_directory}/ngseasy_tmp/Project_list" ${config_run_log}
 awk 'NR >1 {print $5"/"$1}' ${config_tsv} | sort | uniq > ${project_directory}/ngseasy_tmp/Project_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
 
-while read -r PROJECTDIR
+while read PROJECTDIR
 do
 
     if [[ ! -d "${PROJECTDIR}" ]]; then

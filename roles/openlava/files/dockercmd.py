@@ -22,13 +22,15 @@ def create_check_volume_action(uid):
             self.user = pwd.getpwuid(int(uid)).pw_name
     
         def __call__(self, parser, namespace, values, option_string=None):
-            if (self.is_volume_valid(values)):
+            values=self.check_volume(values)
+            if (values is not None):
                 super(CheckVolume, self).__call__(parser, namespace, values, option_string)
 
-        def is_volume_valid(self, volume):
+        def check_volume(self, volume):
             vspec = volume.split(":")
             volumepath = vspec[0]
-            ro = len(vspec) == 3 and vspec[2] == 'ro'
+            volume = vspec[0] + ":" + vspec[1]
+            pp = (":" + vspec[2]) if len(vspec) > 2 else ""
 
             st = os.stat(volumepath)
             logger.debug('(uid=%s, volume_path=%s)/(st_uid=%s, st_gid=%s, st_mode=%s)', self.uid, volumepath, st.st_uid, st.st_gid, oct(st.st_mode))
@@ -38,15 +40,22 @@ def create_check_volume_action(uid):
             
             # if user is the owner then OK
             if (int(st.st_uid) == int(self.uid)):
-                return True
+                return volume + pp
             
             # if user is a memeber of the group then check RW permissions
             groups = [g.gr_name for g in grp.getgrall() if self.user in g.gr_mem]
             if (st.st_gid in groups):
-                return bool(st.st_mode & (stat.S_IRGRP if ro else stat.S_IWGRP))
+                if (bool(st.st_mode & stat.S_IWGRP)):
+                    return volume + pp
+                elif (bool(st.st_mode & stat.S_IRGRP)):
+                    return volume + ":ro"
             
             # check others' permissions
-            return bool(st.st_mode & (stat.S_IROTH if ro else stat.S_IWOTH))
+            if (bool(st.st_mode & stat.S_IWOTH)):
+                return volume + pp
+            elif (bool(st.st_mode & stat.S_IROTH)):
+                return volume + ":ro"
+            return None
 
     return CheckVolume
 
