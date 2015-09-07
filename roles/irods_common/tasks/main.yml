@@ -7,7 +7,7 @@
     irods_postgres_plugin_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-database-plugin-postgres-1.5-ubuntu14-x86_64.deb
     irods_resource_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-resource-4.1.3-ubuntu14-x86_64.deb
     irods_icommands_pkg_url: ftp://ftp.renci.org/pub/irods/releases/4.1.3/ubuntu14/irods-icommands-4.1.3-ubuntu14-x86_64.deb
-  when: not irods_upgrade_only
+  when: irods_default_version
 
 - debug: var={{ item }}
   with_items:
