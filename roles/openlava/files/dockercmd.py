@@ -79,12 +79,13 @@ def get_argparser():
     parser_unpause = subparsers.add_parser('unpause')
     parser_unpause.add_argument(CONTAINER)
 
-    parser_unpause = subparsers.add_parser('ps')
+    parser_ps = subparsers.add_parser('ps')
+    parser_ps.add_argument('-a', dest='-a', nargs=0, action=DefaultAction)
+    
+    parser_images = subparsers.add_parser('images')
 
-    parser_unpause = subparsers.add_parser('images')
-
-    parser_unpause = subparsers.add_parser('rm')
-    parser_unpause.add_argument(CONTAINER)
+    parser_rm = subparsers.add_parser('rm')
+    parser_rm.add_argument(CONTAINER)
 
     parser_run = subparsers.add_parser('run')
     parser_run.add_argument('-e', '--env', dest='-e', action=DefaultAction)
