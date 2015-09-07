@@ -53,7 +53,6 @@
     state: present
   with_items: 
     - '{{ groups.docker_openlava_nodes }}'
-  notify: restart openlava
   tags: cluster_update
 
 - name: copy 'dockercmd' script
@@ -66,3 +65,7 @@
     state: present 
     regexp: "^ALL.*" 
     line: "ALL ALL=NOPASSWD: /usr/local/bin/dockercmd"
+
+- name: restart openlava
+  service: name=openlava state=restarted
+  tags: cluster_update
