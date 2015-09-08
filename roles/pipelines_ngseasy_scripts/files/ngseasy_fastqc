@@ -237,5 +237,8 @@ logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE_PIPEMAN to [${RUNFILE_PIPEMAN}
 
 CMD=`which  ngseasy_fastqc_local`
 
+logger_ngseasy "LSB_DOCKER_IMAGE=compbio/ngseasy-fastqc:${NGSEASYVERSION} LSB_DOCKER_OPTIONS=\"${DOCKER_OPTS} -v ${project_directory}:/home/pipeman/ngs_projects\"  bsub \
+  -J \"${job_name}\" -w \"${dependency}\" -q docker_queue -o \"${LOGDIR}/${RUNFILE_NAME}.job.out\" -e \"${LOGDIR}/${RUNFILE_NAME}.job.err\" ${CMD} -c ${RUNFILE_PIPEMAN}" ${RUNLOG}
+
 LSB_DOCKER_IMAGE=compbio/ngseasy-fastqc:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${project_directory}:/home/pipeman/ngs_projects"  bsub \
-  -J "${job_name}.${SAMPLE_ID}" -w "${dependency}" -q docker_queue -o "${LOGDIR}/${RUNFILE_NAME}.job.out" -e "${LOGDIR}/${RUNFILE_NAME}.job.err" ${CMD} -c ${RUNFILE_PIPEMAN}
+  -J "${job_name}" -w "${dependency}" -q docker_queue -o "${LOGDIR}/${RUNFILE_NAME}.job.out" -e "${LOGDIR}/${RUNFILE_NAME}.job.err" ${CMD} -c ${RUNFILE_PIPEMAN}

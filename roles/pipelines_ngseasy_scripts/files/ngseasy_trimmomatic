@@ -418,7 +418,7 @@ fi
 ########################################################################################################
 # adapter_fa : check of this is in palce and exit if not
 ########################################################################################################
-adapter_fa="/home/pipeman/ngs_resources/reference_genomes_b37/contaminant_list.fa"
+adapter_fa="/home/pipeman/ngs_projects/ngseasy_resources/reference_genomes_b37/contaminant_list.fa"
 logger_ngseasy "[${NGSEASY_STEP}]:setting adaptor list docker dir [$adapter_fa]" ${LOGFILE}
 
 ########################################################################################################
@@ -476,15 +476,15 @@ logger_ngseasy "[${NGSEASY_STEP}]:START qc of raw fastq files" ${LOGFILE}
 logger_ngseasy "[${NGSEASY_STEP}]:TRIM set to [$TRIM] - adaptor trim. Adaptor and read quality trimming" ${LOGFILE}
 
 ## get ngs_resource mapping
-myresources=`dirname ${PROJECT_DIR}`
-NGSResources="${myresources}/ngs_resources"
+#myresources=`dirname ${PROJECT_DIR}`
+#NGSResources="${myresources}/ngs_resources"
 
 ## run trimmomatic
 #
 logger_ngseasy "[${NGSEASY_STEP}]:[cmd]: ILLUMINACLIP:${adapter_fa}:2:30:10:5:true LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 AVGQUAL:2 MINLEN:75 " ${LOGFILE}
 logger_ngseasy "bsub -J '${job_name}.a' -q docker_queue -o '${LOGFILE}.out' -e '${LOGFILE}.err' -w '${dependency}'..." ${LOGFILE}
 
-LSB_DOCKER_IMAGE=compbio/ngseasy-trimmomatic:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -v ${NGSResources}:/home/pipeman/ngs_resources:ro -t"  bsub \
+LSB_DOCKER_IMAGE=compbio/ngseasy-trimmomatic:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t"  bsub \
 -J "${job_name}.a" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" -w "${dependency}" java -XX:ParallelGCThreads=1 -jar /usr/local/pipeline/Trimmomatic-0.32/trimmomatic-0.32.jar \
 	PE \
 	-threads ${NCPU} \
@@ -504,7 +504,7 @@ logger_ngseasy "[${NGSEASY_STEP}]:FastQC post Trimmomatic" ${LOGFILE}
 ##  compbio/ngseasy-fastqc
 #
 LSB_DOCKER_IMAGE=compbio/ngseasy-fastqc:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t"  bsub \
--J "${job_name}" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" -w "done('${job_name}.a')" /usr/local/pipeline/FastQC/fastqc \
+-J "${job_name}" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" -w "ended('${job_name}.a')" /usr/local/pipeline/FastQC/fastqc \
 	--threads 4 \
 	--extract \
 	--quiet \
@@ -549,7 +549,7 @@ logger_ngseasy "[${NGSEASY_STEP}]:TRIM set to [$TRIM] - basic trim. Just read qu
 
 logger_ngseasy "bsub -J '${job_name}.a' -q docker_queue -o '${LOGFILE}.out' -e '${LOGFILE}.err' -w '${dependency}'..." ${LOGFILE}
 
-LSB_DOCKER_IMAGE=compbio/ngseasy-trimmomatic:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -v ${NGSResources}:/home/pipeman/ngs_resources:ro -t"  bsub \
+LSB_DOCKER_IMAGE=compbio/ngseasy-trimmomatic:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t"  bsub \
 -J "${job_name}.a" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" -w "${dependency}" java -XX:ParallelGCThreads=1 -jar /usr/local/pipeline/Trimmomatic-0.32/trimmomatic-0.32.jar \
 	PE \
 	-threads ${NCPU} \
@@ -568,7 +568,7 @@ logger_ngseasy "[${NGSEASY_STEP}]:START FastQC post Trimmomatic" ${LOGFILE}
 ##  compbio/ngseasy-fastqc
 #
 LSB_DOCKER_IMAGE=compbio/ngseasy-fastqc:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t"  bsub \
--J "${job_name}" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" -w "done('${job_name}.a')" /usr/local/pipeline/FastQC/fastqc \
+-J "${job_name}" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" -w "ended('${job_name}.a')" /usr/local/pipeline/FastQC/fastqc \
 	--threads 4 \
 	--threads 4 \
 	--extract \

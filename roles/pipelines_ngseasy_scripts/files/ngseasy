@@ -316,30 +316,72 @@ batchfiles=`ls | grep batch`
 ###########################################################################################
 
 logger_ngseasy "[ngseasy]:START FASTQC LOOP" ${config_run_log}
+timestamp=`date "+%w%H%M%S"`
 
 for MYBATCH in `ls $batchfiles`
 do
-	logger_ngseasy "[ngseasy]:[cmd]:ngseasy_fastqc -c ${MYBATCH} -d ${project_directory}" ${config_run_log}
+    RAND=`perl -e "print int(rand()*10);"`
+    logger_ngseasy "[ngseasy]:[cmd]:ngseasy_fastqc -c ${MYBATCH} -d ${project_directory}" ${config_run_log}
 
-###########################################################################################
-## call ngseasy_fastqc
-###########################################################################################
-    job_name="fastqc_${USER}_${MYBATCH}_$(date +%s)"
+    ###########################################################################################
+    ## call ngseasy_fastqc
+    ###########################################################################################
+    #job_name="fastqc_${USER}_${MYBATCH}_$(date +%s)"
+    #job_name="${USER}_${MYBATCH}_${timestamp}_fastqc"    by job name
+    job_name="${timestamp}${RAND}fq"
 
     logger_ngseasy "[ngseasy]:Calling -c ${MYBATCH} -d ${project_directory} -j ${job_name}" ${config_run_log}
 
-	/bin/bash  ngseasy_fastqc -c ${MYBATCH} -d ${project_directory} -j ${job_name}   2>&1 | tee -a  ${config_run_log}.log
+    /bin/bash  ngseasy_fastqc -c ${MYBATCH} -d ${project_directory} -j ${job_name} 2>&1 | tee -a  ${config_run_log}.log
 
     sleep 1s
+
+    ###################################################################################
+    ## Quality Trimming
+    ###################################################################################
+    dependency_string="ended('${job_name}')" 
+    job_name="${timestamp}${RAND}tr"
+
+    logger_ngseasy "[ngseasy]:Calling -c ${MYBATCH} -d ${project_directory} -j ${job_name}" ${config_run_log}
+
+    /bin/bash  ngseasy_trimmomatic -c ${MYBATCH} -d ${project_directory} -j ${job_name} -w ${dependency_string} 2>&1 | tee -a  ${config_run_log}.log
+  
+    sleep 1s
+
+    ###################################################################################
+    ## Alignment
+    ###################################################################################
+    dependency_string="ended('${job_name}')" 
+    job_name="${timestamp}${RAND}al"
+
+    logger_ngseasy "[ngseasy]:Calling -c ${MYBATCH} -d ${project_directory} -j ${job_name}" ${config_run_log}
+
+    /bin/bash  ngseasy_alignment -c ${MYBATCH} -d ${project_directory} -j ${job_name} -w ${dependency_string} 2>&1 | tee -a  ${config_run_log}.log
+
+    sleep 1s
+
+    ###################################################################################
+    ## Indel realignment
+    ###################################################################################
+    #dependency_string="done('${job_name}')" 
+    #job_name="${USER}_${MYBATCH}_${timestamp}_realignment"
+
+    #logger_ngseasy "[ngseasy]:Calling -c ${MYBATCH} -d ${project_directory} -j ${job_name}" ${config_run_log}
+
+    #/bin/bash  ngseasy_alignment -c ${MYBATCH} -d ${project_directory} -j ${job_name} -w ${dependency_string} 2>&1 | tee -a  ${config_run_log}.log
+
+    #sleep 1s
+
+
 done
 
-logger_ngseasy "[ngseasy]:END ngseasy_fastqc" ${config_run_log}
+#logger_ngseasy "[ngseasy]:END ngseasy_fastqc" ${config_run_log}
 
 ###################################################################################
 ## Quality Trimming
 ###################################################################################
 
-logger_ngseasy "[ngseasy]:Calling ngseasy_trimmomatic" ${config_run_log}
+#logger_ngseasy "[ngseasy]:Calling ngseasy_trimmomatic" ${config_run_log}
     
 #job_name="trimmomatic_${USER}_${config_tsv}_$(date +%s)"
 
@@ -351,7 +393,7 @@ logger_ngseasy "[ngseasy]:Calling ngseasy_trimmomatic" ${config_run_log}
 ## Alignment
 ###################################################################################
 
-logger_ngseasy  "[ngseasy]:Calling ngseasy_alignment"  ${config_run_log}
+#logger_ngseasy  "[ngseasy]:Calling ngseasy_alignment"  ${config_run_log}
 
 #job_name="alignment_${config_tsv}_$(date +%s)"
 
@@ -365,7 +407,7 @@ logger_ngseasy  "[ngseasy]:Calling ngseasy_alignment"  ${config_run_log}
 ## Indel realignment
 ###################################################################################
 
-logger_ngseasy  "[ngseasy]:Calling ngseasy_realn"  ${config_run_log}
+#logger_ngseasy  "[ngseasy]:Calling ngseasy_realn"  ${config_run_log}
 
 #job_name="realn_${config_tsv}_$(date +%s)"
 
@@ -377,7 +419,7 @@ logger_ngseasy  "[ngseasy]:Calling ngseasy_realn"  ${config_run_log}
 ## Base Quality Score Recalibration
 ###################################################################################
 
-logger_ngseasy  "[ngseasy]:Calling ngseasy_bsqr"  ${config_run_log}
+#logger_ngseasy  "[ngseasy]:Calling ngseasy_bsqr"  ${config_run_log}
 
 #job_name="bsqr_${config_tsv}_$(date +%s)"
 
@@ -389,7 +431,7 @@ logger_ngseasy  "[ngseasy]:Calling ngseasy_bsqr"  ${config_run_log}
 ## Variant calling
 ###################################################################################
 
-job_name="variant_calling_${config_tsv}_$(date +%s)"
+#job_name="variant_calling_${config_tsv}_$(date +%s)"
 
 #logger_ngseasy  "[ngseasy]:Calling ngseasy_variant_calling"  ${config_run_log}
 
