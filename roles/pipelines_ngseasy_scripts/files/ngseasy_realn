@@ -46,7 +46,7 @@ KNOWN_SNPS_b138=""
 ########################################################################################################
 ## test if docker is intsalled and exit if not
 ########################################################################################################
-## command -v docker >/dev/null 2>&1 || { echo "I require Docker...but it's not installed.  Aborting." >&2; exit 1; }
+command -v docker >/dev/null 2>&1 || { echo "I require Docker...but it's not installed.  Aborting." >&2; exit 1; }
 
 ########################################################################################################
 ## Set version and run date
@@ -58,8 +58,7 @@ NGSEASY_STEP="ngseasy_realn"
 ########################################################################################################
 ## docker run command
 ########################################################################################################
-## DOCKER_RUN="docker run -P -w /home/pipeman -e HOME=/home/pipeman -e USER=pipeman --user pipeman"
-DOCKER_OPTS="--rm -P -w /home/pipeman -e HOME=/home/pipeman"
+DOCKER_RUN="docker run -P -w /home/pipeman -e HOME=/home/pipeman -e USER=pipeman"
 
 ########################################################################################################
 ## global logging fuction
@@ -71,14 +70,6 @@ function logger_ngseasy() {
  echo -e [`date`]":[NGSEASY:${NGSEASYVERSION}]:"${message}":[${USER}]:[`uname -a`]"
 }
 
-function touch_file() {
-  file=${1}
-  if [ ! -e "${file}" ]
-  then
-     touch ${file}
-  fi
-  echo "${file}"
-}
 ########################################################################################################
 ## global usage
 ########################################################################################################
@@ -110,10 +101,10 @@ fi
 ########################################################################################################
 ## get options for command line args
 ########################################################################################################
-  while  getopts "hc:d:j:w:" opt
+  while  getopts "hc:d:" opt
   do
 
-    case ${opt} in
+      case ${opt} in
     h)
     ngseasy_realn_usage #print help
     exit 0
@@ -126,15 +117,7 @@ fi
     d)
     project_directory=${OPTARG}
     ;;
-    
-    j)
-    job_name=${OPTARG}
-    ;;
-
-    w)
-    dependency=${OPTARG}
-    ;;
-    esac
+      esac
   done
 
 ########################################################################################################
@@ -194,26 +177,26 @@ fi
 
 ## check ${config_tsv}. is this a batch file or the orginal config file
 #
-logger_ngseasy "[${NGSEASY_STEP}]:Checking [${config_tsv}] format" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+logger_ngseasy "[${NGSEASY_STEP}]:Checking [${config_tsv}] format" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
 
 hasheader=`sed 1q ${config_tsv} | grep PROJECT_ID | wc -l | awk '{print $1}'`
 
 if [[ "${config_tsv}" == *.batch.* ]]
 then
-  logger_ngseasy "[${NGSEASY_STEP}]:[${config_tsv}] is a BACTH file ie a subset of the original config file" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[ngseasy_trimmomatic}:[${config_tsv}] is a BACTH file ie a subset of the original config file" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
   RUNFILE="${config_tsv}"
-  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[ngseasy_trimmomatic}:Setting RUNFILE to [${RUNFILE}]" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
 elif [[ "$hasheader" -eq 1 ]]
 then
-  logger_ngseasy "[${NGSEASY_STEP}]:[${config_tsv}] header present. Removing this" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
-  logger_ngseasy "[${NGSEASY_STEP}]:[cmd]:sed 1d \${config_tsv} > ${config_tsv}.tmp" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:[${config_tsv}] header present. Removing this" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:[cmd]:sed 1d \${config_tsv} > ${config_tsv}.tmp" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
   sed 1d ${config_tsv} > ${config_tsv}.tmp
   RUNFILE="${config_tsv}.tmp"
-  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
 else
   RUNFILE="${config_tsv}"
-  logger_ngseasy "[${NGSEASY_STEP}]:[${RUNFILE}] is seemingly perfect" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
-  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${HOME}/ngseasy_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:[${RUNFILE}] is seemingly perfect" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
+  logger_ngseasy "[${NGSEASY_STEP}]:Setting RUNFILE to [${RUNFILE}]" ${project_directory}/run_logs/ngseasy.${config_tsv}.${RUNDATE}
 fi
 
 ########################################################################################################
@@ -297,8 +280,6 @@ fi
 ########################################################################################################
 LOGFILE="${PROJECT_DIR}/${PROJECT_ID}/run_logs/${SAMPLE_ID}.${TRIM}.${BSQR}.${REALN}.${ALIGNER}.${RUNDATE}.${NGSEASY_STEP}"
 
-LOG_DIR="${PROJECT_DIR}/${PROJECT_ID}/run_logs"
-
 ########################################################################################################
 ## check and make logfile
 ########################################################################################################
@@ -367,7 +348,7 @@ if [[ "${GENOMEBUILD}" == "b37" ]]; then
   KNOWN_SNPS_OMNI=""
   KNOWN_SNPS_b138=""
 
-  REFDIR="/home/pipeman/ngs_projects/reference_genomes_b37"
+  REFDIR="/home/pipeman/ngs_projects/ngseasy_resources/reference_genomes_b37"
   GENOMEINDEX="${REFDIR}/human_g1k_v37"
   REFFASTA="${REFDIR}/human_g1k_v37.fasta"
   DBSNPb37="${REFDIR}/dbsnp_138.b37.recab"
@@ -394,7 +375,7 @@ elif [[ "${GENOMEBUILD}" == "hg19" ]]; then
   KNOWN_SNPS_OMNI=""
   KNOWN_SNPS_b138=""
 
-  REFDIR="/home/pipeman/ngs_projects/reference_genomes_hg19"
+  REFDIR="/home/pipeman/ngs_projects/ngseasy_resources/reference_genomes_hg19"
   GENOMEINDEX="${REFDIR}/ucsc.hg19"
   REFFASTA="${REFDIR}/ucsc.hg19.fasta"
   DBSNPhg19="${REFDIR}/dbsnp_138.hg19.recab"
@@ -443,16 +424,13 @@ elif [[ "${REALN}" == "no-realn" ]]; then
 
   logger_ngseasy "[${NGSEASY_STEP}]:Skipping Indel Realignment" ${LOGFILE}
 
-  # submit an empty job 
-  bsub -J "${job_name}" -w "${dependency}" date
-
 ########################################################################################################
 ## bam-realn using glia
 #
 elif [[ "${REALN}" == "bam-realn" ]]; then
 
-  BAMIN=${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.bam
-  BAMOUT=${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam
+      BAMIN=${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.bam
+      BAMOUT=${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam
 
   logger_ngseasy "[${NGSEASY_STEP}]:START Indel Realignment using glia" ${LOGFILE}
   sleep 1s
@@ -486,51 +464,47 @@ chroms=""
 chroms=$(cut -f 1 ${SOUT}/reports/${BAM_PREFIX}.dupemk.bed | uniq | transpose)
 logger_ngseasy "[${NGSEASY_STEP}]:chroms [${chroms}]" ${LOGFILE}
 
-CMDFILE=$(touch_file "${LOG_DIR}/realn.cmd")
-
-eecho "#!/bin/bash
+# docker run. note flags
+  time ${DOCKER_RUN} \
+  -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
+  -v ${PROJECT_DIR}/ngseasy_resources:/home/pipeman/ngs_projects/ngseasy_resources \
+  --name glia_realn_${BAM_PREFIX} \
+  -t compbio/ngseasy-glia:${NGSEASYVERSION} /bin/bash -c \
+  "sambamba view -t ${NCPU} -f bam -F \"not (unmapped or mate_is_unmapped) and mapping_quality >=0\" ${BAMIN} ${chroms} | \
+  glia -Rru -w 1000 -S 100 -Q 100 -G 4 -f ${REFFASTA} -v ${KNOWN_INDELS} | \
+  sambamba sort -t ${NCPU} -m 2GB --tmpdir=${SOUTDocker}/tmp -o ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam /dev/stdin && \
+  sambamba index ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam && \
+  sambamba flagstat -t ${NCPU} ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam > ${SOUTDocker}/reports/${BAM_PREFIX}.dupemk.${REALN}.bam.flagstat && \
+  bedtools bamtobed -i ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam | bedtools merge > ${SOUTDocker}/reports/${BAM_PREFIX}.dupemk.${REALN}.bed && \
+  rm -rf ${SOUTDocker}/tmp/*"
+  wait
+  sleep 1s
+## log docker run
 #
-#BSUB -J ${job_name}             
-#BSUB -q docker_queue               
-#BSUB -o ${LOGFILE}.out
-#BSUB -e ${LOGFILE}.err
-
-/bin/bash -c \"sambamba view -t ${NCPU} -f bam -F 'not (unmapped or mate_is_unmapped) and mapping_quality >=0' ${BAMIN} ${chroms} | \
-glia -Rru -w 1000 -S 100 -Q 100 -G 4 -f ${REFFASTA} -v ${KNOWN_INDELS} | \
-sambamba sort -t ${NCPU} -m 2GB --tmpdir=${SOUTDocker}/tmp -o ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam /dev/stdin && \
-sambamba index ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam && \
-sambamba flagstat -t ${NCPU} ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam > ${SOUTDocker}/reports/${BAM_PREFIX}.dupemk.${REALN}.bam.flagstat && \
-bedtools bamtobed -i ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam | bedtools merge > ${SOUTDocker}/reports/${BAM_PREFIX}.dupemk.${REALN}.bed && \
-rm -rf ${SOUTDocker}/tmp/*\"" > ${CMDFILE}
-
-LSB_DOCKER_IMAGE=compbio/ngseasy-glia:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t" bsub  -w "${dependency}" < ${CMDFILE}
+ docker logs glia_realn_${BAM_PREFIX} >> ${LOGFILE}.log
+ docker rm -f glia_realn_${BAM_PREFIX}
 
 ########################################################################################################
 ## GATK BaseRecalibrator and PrintReads
 #
 elif [[ "${REALN}" == "gatk-realn"  ]]; then
 
-BAMIN=${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.bam
-BAMOUT=${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam
+      BAMIN=${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.bam
+      BAMOUT=${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam
 
-logger_ngseasy "[${NGSEASY_STEP}]:START Indel Realignment using GATK" ${LOGFILE}
-  
+  logger_ngseasy "[${NGSEASY_STEP}]:START Indel Realignment using GATK" ${LOGFILE}
   #chroms=""
   #chroms=$(cut -f 1 ${SOUT}/reports/${BAM_PREFIX}.dupemk.bed | uniq | transpose)
   #logger_ngseasy "[${NGSEASY_STEP}]:chroms [${chroms}]" ${LOGFILE}
 
-awk '{print $1":"$2"-"$3}' ${SOUT}/reports/${BAM_PREFIX}.dupemk.bed > ${SOUT}/reports/${BAM_PREFIX}.dupemk.bed.intervals
+  awk '{print $1":"$2"-"$3}' ${SOUT}/reports/${BAM_PREFIX}.dupemk.bed > ${SOUT}/reports/${BAM_PREFIX}.dupemk.bed.intervals
 
-CMDFILE=$(touch_file "${LOG_DIR}/realn.cmd")
-
-echo "#!/bin/bash
-#
-#BSUB -J ${job_name}             
-#BSUB -q docker_queue               
-#BSUB -o ${LOGFILE}.out
-#BSUB -e ${LOGFILE}.err
-
-/bin/bash -c \"time java -Xmx12g -Djava.io.tmpdir=${SOUTDocker}/tmp -jar /usr/local/bin/GenomeAnalysisTK.jar \
+ time ${DOCKER_RUN} \
+  -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
+  -v ${PROJECT_DIR}/ngseasy_resources:/home/pipeman/ngs_projects/ngseasy_resources \
+  --name gatk_realn_${BAM_PREFIX} \
+  -t compbio/ngseasy-gatk:${NGSEASYVERSION} /bin/bash -c \
+  "time java -Xmx12g -Djava.io.tmpdir=${SOUTDocker}/tmp -jar /usr/local/bin/GenomeAnalysisTK.jar \
   -T RealignerTargetCreator \
   -nt ${NCPU} \
   -R ${REFFASTA} \
@@ -558,9 +532,13 @@ echo "#!/bin/bash
   sambamba index ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam
   sambamba flagstat -t ${NCPU} ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam > ${SOUTDocker}/reports/${BAM_PREFIX}.dupemk.${REALN}.bam.flagstat && \
   bedtools bamtobed -i ${SOUTDocker}/alignments/${BAM_PREFIX}.dupemk.${REALN}.bam | bedtools merge > ${SOUTDocker}/reports/${BAM_PREFIX}.dupemk.${REALN}.bed && \
-  rm -rf ${SOUTDocker}/tmp/*\"" > ${CMDFILE}
-
-LSB_DOCKER_IMAGE=compbio/ngseasy-gatk:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t" bsub  -w "${dependency}" < ${CMDFILE}
+  rm -rf ${SOUTDocker}/tmp/*"
+  wait
+  sleep 1s
+## log docker run
+#
+ docker logs gatk_realn_${BAM_PREFIX} >> ${LOGFILE}.log
+ docker rm -f gatk_realn_${BAM_PREFIX}
 
 else
   logger_ngseasy "[${NGSEASY_STEP}]:ERROR: Do not recognise REALN option [${REALN}]. This should be one or [bam-realn] [gatk-realn] or [no-realn]. Exiting" ${LOGFILE}
@@ -572,7 +550,7 @@ fi
 ########################################################################################################
 ## permissions
 #
-##chmod -R 777 ${SOUT}/*
+chmod -R 777 ${SOUT}/*
 
 ## END ##
 done < ${RUNFILE}

@@ -80,18 +80,17 @@ echo -e "#######################################################################
 ########################################################################################################
 ## test if docker is intsalled and exit if not
 ########################################################################################################
-## command -v docker >/dev/null 2>&1 || { echo "I require Docker...but it's not installed.  Aborting." >&2; sleep 1s; exit 1; }
+command -v docker >/dev/null 2>&1 || { echo "I require Docker...but it's not installed.  Aborting." >&2; sleep 1s; exit 1; }
 
 ########################################################################################################
 ## test if image is intsalled and exit if not
 ########################################################################################################
-## docker images | grep ngseasy-trimmomatic 2>&1 || { echo "compbio/ngseasy-trimmomatic:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
+docker images | grep ngseasy-trimmomatic 2>&1 || { echo "compbio/ngseasy-trimmomatic:${NGSEASYVERSION} not installed.  Aborting." >&2; exit 1; }
 
 ########################################################################################################
 ## docker run command
 ########################################################################################################
-##DOCKER_RUN="docker run -P -w /home/pipeman -e HOME=/home/pipeman -e USER=pipeman --user pipeman"
-DOCKER_OPTS="--rm -P -w /home/pipeman -e HOME=/home/pipeman"
+DOCKER_RUN="docker run -P -w /home/pipeman -e HOME=/home/pipeman -e USER=pipeman"
 
 ########################################################################################################
 ## global logging fuction
@@ -126,7 +125,7 @@ ngseasy_trimmomatic sets up the NGSeasy docker Trimmomatic container compbio/ngs
 ########################################################################################################
 ## get options for command line args
 ########################################################################################################
-  while  getopts "hc:d:j:w:" opt
+  while  getopts "hc:d:" opt
   do
       case ${opt} in
 	  h)
@@ -141,14 +140,6 @@ ngseasy_trimmomatic sets up the NGSeasy docker Trimmomatic container compbio/ngs
 	  d)
 	  project_directory=${OPTARG}
 	  ;;
-
-	  j)
-      job_name=${OPTARG}
-      ;;
-
-      w)
-      dependency=${OPTARG}
-      ;;
       esac
   done
 
@@ -418,7 +409,15 @@ fi
 ########################################################################################################
 # adapter_fa : check of this is in palce and exit if not
 ########################################################################################################
-adapter_fa="/home/pipeman/ngs_projects/ngseasy_resources/reference_genomes_b37/contaminant_list.fa"
+if [[ ${GENOMEBUILD} == "b37" ]]; then
+    adapter_fa="/home/pipeman/ngs_projects/ngseasy_resources/reference_genomes_b37/contaminant_list.fa"
+elif [[ ${GENOMEBUILD} == "hg19" ]]; then
+    adapter_fa="/home/pipeman/ngs_projects/ngseasy_resources/reference_genomes_hg19/contaminant_list.fa"
+elif [[ "${GENOMEBUILD}" == "hs37d5" ]]; then
+    adapter_fa="/home/pipeman/ngs_projects/ngseasy_resources/reference_genomes_hs37d5/contaminant_list.fa"
+elif [[ "${GENOMEBUILD}" == "hs38DH" ]]; then
+    adapter_fa="/home/pipeman/ngs_projects/ngseasy_resources/reference_genomes_hs38DH/contaminant_list.fa"
+fi
 logger_ngseasy "[${NGSEASY_STEP}]:setting adaptor list docker dir [$adapter_fa]" ${LOGFILE}
 
 ########################################################################################################
@@ -463,48 +462,47 @@ if [ -s "${SOUT}/fastq/${SAMPLE_ID}.${NGS_TYPE}.${DNA_PREP_LIBRARY_ID}.${TRIM}_1
 then
 	logger_ngseasy "[${NGSEASY_STEP}]:PE Trimmed Data already exists...skipping [${NGSEASY_STEP}]" ${LOGFILE}
 
-	# submit an empty job 
-	bsub -J "${job_name}" -w "${dependency}" date
-
+########################################################################################################
+## atrim
 elif [[ "$TRIM" == "atrim" ]]; then
 	logger_ngseasy "[${NGSEASY_STEP}]:Trimmomatic not run yet" ${LOGFILE}
 
 ########################################################################################################
 ## run compbio/ngseasy-trimmomatic
-#
+########################################################################################################
 logger_ngseasy "[${NGSEASY_STEP}]:START qc of raw fastq files" ${LOGFILE}
 logger_ngseasy "[${NGSEASY_STEP}]:TRIM set to [$TRIM] - adaptor trim. Adaptor and read quality trimming" ${LOGFILE}
-
-## get ngs_resource mapping
-#myresources=`dirname ${PROJECT_DIR}`
-#NGSResources="${myresources}/ngs_resources"
-
-## run trimmomatic
-#
 logger_ngseasy "[${NGSEASY_STEP}]:[cmd]: ILLUMINACLIP:${adapter_fa}:2:30:10:5:true LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 AVGQUAL:2 MINLEN:75 " ${LOGFILE}
-logger_ngseasy "bsub -J '${job_name}.a' -q docker_queue -o '${LOGFILE}.out' -e '${LOGFILE}.err' -w '${dependency}'..." ${LOGFILE}
 
-LSB_DOCKER_IMAGE=compbio/ngseasy-trimmomatic:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t"  bsub \
--J "${job_name}.a" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" -w "${dependency}" java -XX:ParallelGCThreads=1 -jar /usr/local/pipeline/Trimmomatic-0.32/trimmomatic-0.32.jar \
-	PE \
-	-threads ${NCPU} \
-	${SOUTDocker}/fastq/${FQ1} \
-	${SOUTDocker}/fastq/${FQ2} \
-	${qcPEFQ1} ${qcSEFQ1} \
-	${qcPEFQ2} ${qcSEFQ2} \
-	ILLUMINACLIP:${adapter_fa}:2:30:10:5:true \
-	LEADING:3 \
-	TRAILING:3 \
-	SLIDINGWINDOW:4:15 \
-	AVGQUAL:2 \
-	MINLEN:75
+${DOCKER_RUN} \
+    --rm=true \
+    -v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
+    -v ${PROJECT_DIR}/ngseasy_resources:/home/pipeman/ngs_projects/ngseasy_resources \
+    --name trimmomatic_${BAM_PREFIX} \
+    -t compbio/ngseasy-trimmomatic:${NGSEASYVERSION} java -XX:ParallelGCThreads=1 -jar /usr/local/pipeline/Trimmomatic-0.32/trimmomatic-0.32.jar \
+    PE \
+    -threads ${NCPU} \
+    ${SOUTDocker}/fastq/${FQ1} \
+    ${SOUTDocker}/fastq/${FQ2} \
+    ${qcPEFQ1} ${qcSEFQ1} \
+    ${qcPEFQ2} ${qcSEFQ2} \
+    ILLUMINACLIP:${adapter_fa}:2:30:10:5:true \
+    LEADING:3 \
+    TRAILING:3 \
+    SLIDINGWINDOW:4:15 \
+    AVGQUAL:2 \
+    MINLEN:75
 
 logger_ngseasy "[${NGSEASY_STEP}]:FastQC post Trimmomatic" ${LOGFILE}
 
+########################################################################################################
 ##  compbio/ngseasy-fastqc
-#
-LSB_DOCKER_IMAGE=compbio/ngseasy-fastqc:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t"  bsub \
--J "${job_name}" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" -w "ended('${job_name}.a')" /usr/local/pipeline/FastQC/fastqc \
+########################################################################################################
+	${DOCKER_RUN} \
+	--rm=true \
+	-v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
+  	--name fastqc_post_trimm_${BAM_PREFIX} \
+	-t compbio/ngseasy-fastqc:${NGSEASYVERSION} /usr/local/pipeline/FastQC/fastqc \
 	--threads 4 \
 	--extract \
 	--quiet \
@@ -517,40 +515,22 @@ LSB_DOCKER_IMAGE=compbio/ngseasy-fastqc:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${
 
 ########################################################################################################
 ## Just QC FASTQ NO ADAPTOR TRIM
-# btrim is basic qc-trim
-#
+## btrim is basic qc-trim
+########################################################################################################
 elif [[ "$TRIM" == "btrim" ]]; then
 
 logger_ngseasy "[${NGSEASY_STEP}]:START qc of raw fastq files" ${LOGFILE}
 logger_ngseasy "[${NGSEASY_STEP}]:TRIM set to [$TRIM] - basic trim. Just read quality trimming. No adaptor trimming" ${LOGFILE}
 
-#if [[ ! -s ${SOUT}/fastq/${FQ1}.art_filt.gz  ]] && [[ ! -s ${SOUT}/fastq/${FQ2}.art_filt.gz ]]; then
-## make parallel cmd
-#
-#echo -e "
-#zcat ${SOUTDocker}/fastq/${FQ1} | fastx_artifacts_filter -Q33 -i - -z -o ${SOUTDocker}/fastq/${FQ1}.art_filt.gz
-#zcat ${SOUTDocker}/fastq/${FQ2} | fastx_artifacts_filter -Q33 -i - -z -o ${SOUTDocker}/fastq/${FQ2}.art_filt.gz
-#" > ${SOUT}/parallel_fastx.cmd
-#
-## run fastx_artifacts_filter
-#
-#logger_ngseasy "[${NGSEASY_STEP}]:[cmd]: fastx_artifacts_filter. Removing Homopolymer reads" ${LOGFILE}
-#
-#	${DOCKER_RUN} \
-#	--rm=true \
-#	-v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
-#	--name fastx_artifacts_filter_${BAM_PREFIX} \
-#	-t compbio/ngseasy-trimmomatic:${NGSEASYVERSION} /bin/bash -c "cat ${SOUTDocker}/parallel_fastx.cmd | parallel -j 2 --no-notice"
-#fi
-
-
-## run trimmomatic
-#
-
-logger_ngseasy "bsub -J '${job_name}.a' -q docker_queue -o '${LOGFILE}.out' -e '${LOGFILE}.err' -w '${dependency}'..." ${LOGFILE}
-
-LSB_DOCKER_IMAGE=compbio/ngseasy-trimmomatic:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t"  bsub \
--J "${job_name}.a" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" -w "${dependency}" java -XX:ParallelGCThreads=1 -jar /usr/local/pipeline/Trimmomatic-0.32/trimmomatic-0.32.jar \
+########################################################################################################
+## run trimmomatic btrim
+########################################################################################################
+	${DOCKER_RUN} \
+	--rm=true \
+	-v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
+        -v ${PROJECT_DIR}/ngseasy_resources:/home/pipeman/ngs_projects/ngseasy_resources \
+	--name trimmomatic_${BAM_PREFIX} \
+	-t compbio/ngseasy-trimmomatic:${NGSEASYVERSION} java -XX:ParallelGCThreads=1 -jar /usr/local/pipeline/Trimmomatic-0.32/trimmomatic-0.32.jar \
 	PE \
 	-threads ${NCPU} \
 	${SOUTDocker}/fastq/${FQ1} \
@@ -565,11 +545,14 @@ LSB_DOCKER_IMAGE=compbio/ngseasy-trimmomatic:${NGSEASYVERSION} LSB_DOCKER_OPTION
 
 logger_ngseasy "[${NGSEASY_STEP}]:START FastQC post Trimmomatic" ${LOGFILE}
 
+########################################################################################################
 ##  compbio/ngseasy-fastqc
-#
-LSB_DOCKER_IMAGE=compbio/ngseasy-fastqc:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${DOCKER_OPTS} -v ${PROJECT_DIR}:/home/pipeman/ngs_projects -t"  bsub \
--J "${job_name}" -q docker_queue -o "${LOGFILE}.out" -e "${LOGFILE}.err" -w "ended('${job_name}.a')" /usr/local/pipeline/FastQC/fastqc \
-	--threads 4 \
+########################################################################################################
+	${DOCKER_RUN} \
+	--rm=true \
+	-v ${PROJECT_DIR}:/home/pipeman/ngs_projects \
+	--name fastqc_post_trimm_${BAM_PREFIX} \
+	-t compbio/ngseasy-fastqc:${NGSEASYVERSION} /usr/local/pipeline/FastQC/fastqc \
 	--threads 4 \
 	--extract \
 	--quiet \
@@ -580,7 +563,7 @@ LSB_DOCKER_IMAGE=compbio/ngseasy-fastqc:${NGSEASYVERSION} LSB_DOCKER_OPTIONS="${
 	${qcSEFQ1} \
 	${qcSEFQ2}
 
-elif [[ "${TRIM}" == "notrim" ]]; then
+elif [[ "${TRIM}" == "no-trim" ]]; then
 	logger_ngseasy "[${NGSEASY_STEP}]:Skipping quality control of raw fastq reads. NOT RECOMMENDED" ${LOGFILE}
 else
 	logger_ngseasy "[${NGSEASY_STEP}]:ERROR Do not recognise TRIM option. Should be one of [atrim] [btrim] or [no-trim]" ${LOGFILE}
@@ -590,7 +573,7 @@ fi
 ###########################################################################################
 ## permissions
 ###########################################################################################
-### chmod -R 776 ${SOUT}/*
+chmod -R 776 ${SOUT}/*
 
 ###########################################################################################
 ## THE END

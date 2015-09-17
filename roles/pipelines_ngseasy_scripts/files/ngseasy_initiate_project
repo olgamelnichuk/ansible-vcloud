@@ -71,11 +71,8 @@ function ngseasy_initiate_project_usage() {
 Program: ngseasy_initiate_project
 Version 1.0-r001
 Author: Stephen Newhouse (stephen.j.newhouse@gmail.com)
-
 ngseasy_initiate_project sets up the project file directories. You only need to run this once per project
-
 usage:   ngseasy_initiate_project -c <config_file> -d <project_directory>
-
 options: -h  show this message
 	 -c   Config pipeline file
 	 -d   Base directory for [ngs_projects](fastq_raw, run_logs, config_files)

@@ -30,6 +30,7 @@ set -o errexit
 ###########################################################################################
 NGSEASYVERSION="1.0-r001"
 RUNDATE=`date +"%d%m%y"`
+HOME=/nfs/users/
 
 echo -e "\n\n###########################################################################################"
 echo -e "#"
@@ -45,6 +46,17 @@ echo -e "# see the GNU General Public License for details."
 echo -e "#"
 echo -e "###########################################################################################\n\n"
 
+###########################################################################################
+## test if docker is intsalled and exit if not
+###########################################################################################
+
+command -v docker >/dev/null 2>&1 || { echo -e "\n\nDocker not installed.\n\nAborting....." >&2; exit 1; }
+echo -e "Docker Installed ok"
+echo -e "Checking Docker Version and Info\n"
+DOCKERVERSION=`docker version`
+DOCKERINFO=`docker info`
+
+echo -e "\n----\nDocker Version\n----\n${DOCKERVERSION}\n----\n"Docker Info"\n----\n${DOCKERINFO}\n----\n"
 echo -e [`date`]":[NGSEASY:${NGSEASYVERSION}]:"[Log:START]":[${USER}]:[`uname -a`]"
 sleep 1s
 
@@ -68,9 +80,7 @@ function usage_ngseasy() {
 Program: ngseasy
 Version 1.0-r001
 Author: Stephen Newhouse (stephen.j.newhouse@gmail.com)
-
 usage:   ngseasy -c <config_file> -d <project_directory>
-
 options:  -c  STRING	configuration file
           -d  STRING	project directory
           -h  NULL	show this message
@@ -83,6 +93,7 @@ options:  -c  STRING	configuration file
 
 config_tsv=""
 project_directory=""
+MYBATCH=""
 
 ###########################################################################################
 ## get options for command line args
@@ -242,17 +253,17 @@ fi
 
 
 ###########################################################################################
-## Set up Project Dir and Fastq Files
+## 0. Set up Project Dir and Fastq Files
 ###########################################################################################
 
 logger_ngseasy "[ngseasy]:Calling ngseasy_initiate_project" ${config_run_log}
 
-	/bin/bash  ngseasy_initiate_project -c ${config_tsv} -d ${project_directory}  2>&1 | tee -a  ${config_run_log}.log
+	/nfs/ngseasy/bin/ngseasy_initiate_project -c ${config_tsv} -d ${project_directory}  2>&1 | tee -a  ${config_run_log}.log
 	wait
 
 logger_ngseasy "[ngseasy]:Calling ngseasy_initiate_fastq" ${config_run_log}
 
-	/bin/bash  ngseasy_initiate_fastq -c ${config_tsv} -d ${project_directory}  2>&1 | tee -a  ${config_run_log}.log
+	/nfs/ngseasy/bin/ngseasy_initiate_fastq -c ${config_tsv} -d ${project_directory}  2>&1 | tee -a  ${config_run_log}.log
 	wait
 
 ###########################################################################################
@@ -269,7 +280,7 @@ hasheader=`sed 1q ${config_tsv} | grep PROJECT_ID | wc -l | awk '{print $1}'`
 if [[ "${config_tsv}" == *.batch.* ]]
 then
 	logger_ngseasy "[ngseasy]:[${config_tsv}] is a BACTH file ie a subset of the original config file" ${config_run_log}
-	CONFIG=${config_tsv}
+	FILE=${config_tsv}
 
 ###########################################################################################
 ## if header present then remove it
@@ -279,127 +290,143 @@ then
 	logger_ngseasy "[ngseasy]:[${config_tsv}] header present...gonna remove this" ${config_run_log}
 	logger_ngseasy "[ngseasy]:[cmd]:sed 1d ${config_tsv} > ${config_tsv}.tmp" ${config_run_log}
 	sed 1d ${config_tsv} > ${config_tsv}.tmp
-	CONFIG=${config_tsv}.tmp
+	FILE=${config_tsv}.tmp
 else
 	logger_ngseasy "[ngseasy]:[${config_tsv}] is seemingly perfect. Well Done" ${config_run_log}
-	CONFIG=${config_tsv}
+	FILE=${config_tsv}
 fi
 
 ###########################################################################################
 ## number of samples to run ####
 ###########################################################################################
-numsamples=`wc -l ${CONFIG} | awk '{print $1}'`
+numsamples=`wc -l ${config_tsv}.tmp | awk '{print $1}'`
 logger_ngseasy "[ngseasy]:Number of samples [$numsamples]" ${config_run_log}
 
-batchsize=$(( numsamples / 20 ))
+###########################################################################################
+## number of cores available
+###########################################################################################
+# mincpuallowed=8
+numcores=`nproc`
+logger_ngseasy "[ngseasy]:Number of available cores [$numcores]" ${config_run_log}
 
-batchsize=$(( batchsize == 0 ? 1 : batchsize ))
+###########################################################################################
+## check if number of cpu less than 2 and exit if so
+###########################################################################################
 
-logger_ngseasy "[ngseasy]:Sample batchsize: ${batchsize}" ${RUNLOG}
+if [[ "$numcores" -lt 2 ]]; then
+	logger_ngseasy "[ngseasy]:Number of available cores less than 2. Exiting " ${config_run_log}
+	sleep 1s
+	exit 1;
+fi
+
+###########################################################################################
+## muber of jobs fastqc calls allowed to run at the same  ####
+###########################################################################################
+numjobsallowed=$(expr $numcores / 2)
+logger_ngseasy "[ngseasy]:Number of FastQC Jobs allowed [$numjobsallowed] ie 2 cores per sample" ${config_run_log}
 
 ###########################################################################################
 ## split config file into batches : N samples per batch. N samples == njobs
 ###########################################################################################
-logger_ngseasy "[ngseasy]:splitting config file in to batches of at most [${batchsize}] samples" ${config_run_log}
-logger_ngseasy "[ngseasy]:[cmd]:split -d -l ${batchsize} --additional-suffix=\".batch.config.tmp\" ${config_tsv}.tmp" ${config_run_log}
-split -d -l ${batchsize} --additional-suffix=".batch.${config_tsv}.tmp" ${config_tsv}.tmp
+if [[ "$numsamples"  -gt "$numjobsallowed" ]]; then
+	logger_ngseasy "[ngseasyc]:Number samples [$numsamples] greater than number of cpu jobs allowed [$numjobsallowed]" ${config_run_log}
+	logger_ngseasy "[ngseasy]:splitting config file in to batches of at most [${numjobsallowed}] samples" ${config_run_log}
+	logger_ngseasy "[ngseasy]:[cmd]:split -d -l ${numjobsallowed} --additional-suffix=\".batch.config.tmp\" ${config_tsv}.tmp" ${config_run_log}
+	split -d -l ${numjobsallowed} --additional-suffix=".batch.${config_tsv}.tmp" ${config_tsv}.tmp
+else
+	logger_ngseasy "[ngseasy]:Number of jobs to run [$numsamples]" ${config_run_log}
+	logger_ngseasy "[ngseasy]:making [original.batch.${config_tsv}.tmp]" ${config_run_log}
+	cp -v ${config_tsv}.tmp original.batch.${config_tsv}.tmp
+fi
 
 ###########################################################################################
 ## get file names to process
 ###########################################################################################
-
+#
 logger_ngseasy "[ngseasy]: Getting config file names to process " ${config_run_log}
-batchfiles=`ls | grep batch`
+batchfiles=`ls | grep batch.${config_tsv}`
+
+###########################################################################################
+## set num running jobs counter to 0 ####
+###########################################################################################
+ndockerjobs=0
 
 ###########################################################################################
 ## loop through config files and run fastqc ####
 ###########################################################################################
 
 logger_ngseasy "[ngseasy]:START FASTQC LOOP" ${config_run_log}
-timestamp=`date "+%w%H%M%S"`
 
 for MYBATCH in `ls $batchfiles`
 do
-    RAND=`perl -e "print int(rand()*10);"`
-    logger_ngseasy "[ngseasy]:[cmd]:ngseasy_fastqc -c ${MYBATCH} -d ${project_directory}" ${config_run_log}
+	logger_ngseasy "[ngseasy]:[cmd]:ngseasy_fastqc -c ${MYBATCH} -d ${project_directory}" ${config_run_log}
 
-    ###########################################################################################
-    ## call ngseasy_fastqc
-    ###########################################################################################
-    #job_name="fastqc_${USER}_${MYBATCH}_$(date +%s)"
-    #job_name="${USER}_${MYBATCH}_${timestamp}_fastqc"    by job name
-    job_name="${timestamp}${RAND}fq"
+###########################################################################################
+## call ngseasy_fastqc
+###########################################################################################
+logger_ngseasy "[ngseasy]:Calling ngseasy_fastqc" ${config_run_log}
 
-    logger_ngseasy "[ngseasy]:Calling -c ${MYBATCH} -d ${project_directory} -j ${job_name}" ${config_run_log}
+	/nfs/ngseasy/bin/ngseasy_fastqc -c ${MYBATCH} -d ${project_directory}  2>&1 | tee -a  ${config_run_log}.log
 
-    /bin/bash  ngseasy_fastqc -c ${MYBATCH} -d ${project_directory} -j ${job_name} 2>&1 | tee -a  ${config_run_log}.log
+###########################################################################################
+## get number of jobs running in background
+###########################################################################################
+ndockerjobs=`docker ps -a | grep fastqc | grep Up | wc -l`;
 
-    sleep 1s
+logger_ngseasy "[ngseasy]:Number of Docker FastQC jobs started [$ndockerjobs]" ${config_run_log}
+sleep 1s
 
-    ###################################################################################
-    ## Quality Trimming
-    ###################################################################################
-    dependency_string="ended('${job_name}')" 
-    job_name="${timestamp}${RAND}tr"
+###########################################################################################
+## while jobs still running ie not equal to 0 then sleep for 10 seconds
+###########################################################################################
+#
+logger_ngseasy "[ngseasy]:Checking for the number of running Docker FastQC jobs every 1 minute" ${config_run_log}
+logger_ngseasy "[ngseasy]:When the number of running Docker FastQC jobs hits [0], the next batch will begin" ${config_run_log}
 
-    logger_ngseasy "[ngseasy]:Calling -c ${MYBATCH} -d ${project_directory} -j ${job_name}" ${config_run_log}
+logger_ngseasy "[ngseasy]:Number of Docker FastQC jobs running [$ndockerjobs]" ${config_run_log}
+sleep 1s
 
-    /bin/bash  ngseasy_trimmomatic -c ${MYBATCH} -d ${project_directory} -j ${job_name} -w ${dependency_string} 2>&1 | tee -a  ${config_run_log}.log
-  
-    sleep 1s
-
-    ###################################################################################
-    ## Alignment
-    ###################################################################################
-    dependency_string="ended('${job_name}')" 
-    job_name="${timestamp}${RAND}al"
-
-    logger_ngseasy "[ngseasy]:Calling -c ${MYBATCH} -d ${project_directory} -j ${job_name}" ${config_run_log}
-
-    /bin/bash  ngseasy_alignment -c ${MYBATCH} -d ${project_directory} -j ${job_name} -w ${dependency_string} 2>&1 | tee -a  ${config_run_log}.log
-
-    sleep 1s
-
-    ###################################################################################
-    ## Indel realignment
-    ###################################################################################
-    #dependency_string="done('${job_name}')" 
-    #job_name="${USER}_${MYBATCH}_${timestamp}_realignment"
-
-    #logger_ngseasy "[ngseasy]:Calling -c ${MYBATCH} -d ${project_directory} -j ${job_name}" ${config_run_log}
-
-    #/bin/bash  ngseasy_alignment -c ${MYBATCH} -d ${project_directory} -j ${job_name} -w ${dependency_string} 2>&1 | tee -a  ${config_run_log}.log
-
-    #sleep 1s
-
-
+while [ "${ndockerjobs}" -gt 0 ]; do
+	sleep 60s;
+	ndockerjobs=`docker ps -a | grep fastqc | grep Up | wc -l`;
+	logger_ngseasy "[ngseasy]:Number of Docker FastQC jobs running [$ndockerjobs]"
+done
 done
 
-#logger_ngseasy "[ngseasy]:END ngseasy_fastqc" ${config_run_log}
+###########################################################################################
+## remove docker Exited containers ####
+###########################################################################################
+ndockerjobs_running=`docker ps -a | grep fastqc | grep Exited | wc -l`;
+
+if [ "${ndockerjobs_running}" -gt 0 ]; then
+
+  logger_ngseasy "[ngseasy]:cleaning up compbio/ngseasy-fastqc:${NGSEASYVERSION} container images" ${config_run_log}
+  logger_ngseasy "[ngseasy]:[cmd]:docker rm -f \$(docker ps -a | grep fastqc  | grep Exited | awk '{print \$1}')" ${config_run_log}
+
+  docker rm -f $(docker ps -a | grep fastqc  | grep Exited | awk '{print $1}')
+
+fi
+
+logger_ngseasy "[ngseasy]:END ngseasy_fastqc" ${config_run_log}
+
 
 ###################################################################################
 ## Quality Trimming
 ###################################################################################
 
-#logger_ngseasy "[ngseasy]:Calling ngseasy_trimmomatic" ${config_run_log}
-    
-#job_name="trimmomatic_${USER}_${config_tsv}_$(date +%s)"
+logger_ngseasy "[ngseasy]:Calling ngseasy_trimmomatic" ${config_run_log}
 
-#/bin/bash  ngseasy_trimmomatic -c ${config_tsv} -d ${project_directory} -j ${job_name} -w "done('fastqc_${USER}_*')" 2>&1 | tee -a  ${config_run_log}.log
+	/nfs/ngseasy/bin/ngseasy_trimmomatic -c ${config_tsv} -d ${project_directory} 2>&1 | tee -a  ${config_run_log}.log
 
-#dependency_string="done('${job_name}')"
 
 ###################################################################################
 ## Alignment
 ###################################################################################
 
-#logger_ngseasy  "[ngseasy]:Calling ngseasy_alignment"  ${config_run_log}
+logger_ngseasy  "[ngseasy]:Calling ngseasy_alignment"  ${config_run_log}
 
-#job_name="alignment_${config_tsv}_$(date +%s)"
+	/nfs/ngseasy/bin/ngseasy_alignment -c ${config_tsv} -d ${project_directory} 2>&1 | tee -a  ${config_run_log}.log
 
-#/bin/bash  ngseasy_alignment -c ${config_tsv} -d ${project_directory} -j ${job_name} -w ${dependency_string} 2>&1 | tee -a  ${config_run_log}.log
-
-#ependency_string="done('${job_name}')"
 
 ## to add: option if NCPU less than nproc or 8, 16 then call mulitple alignments at the same
 
@@ -407,37 +434,27 @@ done
 ## Indel realignment
 ###################################################################################
 
-#logger_ngseasy  "[ngseasy]:Calling ngseasy_realn"  ${config_run_log}
+logger_ngseasy  "[ngseasy]:Calling ngseasy_realn"  ${config_run_log}
 
-#job_name="realn_${config_tsv}_$(date +%s)"
+	/nfs/ngseasy/bin/ngseasy_realn -c ${config_tsv} -d ${project_directory} 2>&1 | tee -a  ${config_run_log}.log
 
-#/bin/bash ngseasy_realn -c ${config_tsv} -d ${project_directory} -j ${job_name} -w ${dependency_string} 2>&1 | tee -a  ${config_run_log}.log
-
-#dependency_string="done('${job_name}')"
 
 ###################################################################################
 ## Base Quality Score Recalibration
 ###################################################################################
 
-#logger_ngseasy  "[ngseasy]:Calling ngseasy_bsqr"  ${config_run_log}
+logger_ngseasy  "[ngseasy]:Calling ngseasy_bsqr"  ${config_run_log}
 
-#job_name="bsqr_${config_tsv}_$(date +%s)"
+	/nfs/ngseasy/bin/ngseasy_bsqr -c ${config_tsv} -d ${project_directory} 2>&1 | tee -a  ${config_run_log}.log
 
-#/bin/bash ngseasy_bsqr -c ${config_tsv} -d ${project_directory} -j ${job_name} -w ${dependency_string} 2>&1 | tee -a  ${config_run_log}.log
-
-#dependency_string="done('${job_name}')"
 
 ##################################################################################
 ## Variant calling
 ###################################################################################
 
-#job_name="variant_calling_${config_tsv}_$(date +%s)"
+logger_ngseasy  "[ngseasy]:Calling ngseasy_variant_calling"  ${config_run_log}
 
-#logger_ngseasy  "[ngseasy]:Calling ngseasy_variant_calling"  ${config_run_log}
-
-#/bin/bash ngseasy_variant_calling -c ${config_tsv} -d ${project_directory} -j ${job_name} -w ${dependency_string} 2>&1 | tee -a  ${config_run_log}.log
-
-#dependency_string="done('${job_name}')"
+  /nfs/ngseasy/bin/ngseasy_variant_calling -c ${config_tsv} -d ${project_directory} 2>&1 | tee -a  ${config_run_log}.log
 
 ###################################################################################
 ## Alignment statistics
