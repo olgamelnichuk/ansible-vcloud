@@ -133,11 +133,16 @@ function submit_job {
     #-R  "span[ptile=$THREADS]"
     #-R "rusage[mem=$MEM] span[hosts=1]"
     MAX_MEM=`get_maxmem $MEM`
-    p_info "bsub $IRAP_LSF_PARAMS -q $QUEUE -n $THREADS -M $MAX_MEM -R 'span[hosts=1]'  -w '$WAIT_FOR_ID'  -o '`get_path2logfile`/$jobname-%J.out' -e '`get_path2logfile`/$jobname-%J.err' -J $jobname $cmd2e max_threads=$THREADS data_dir=$DATA_DIR max_mem=$MEM\""
+    p_info "LSB_DOCKER_IMAGE=nunofonseca/irap_ubuntu:v0.7.0p1 LSB_DOCKER_OPTIONS=\"-v $DATA_DIR:$DATA_DIR\" bsub $IRAP_LSF_PARAMS -q $QUEUE -n $THREADS -M $MAX_MEM -R 'span[hosts=1]'  -w '$WAIT_FOR_ID'  -o '`get_path2logfile`/$jobname-%J.out' -e '`get_path2logfile`/$jobname-%J.err' -J $jobname $cmd2e max_threads=$THREADS data_dir=$DATA_DIR max_mem=$MEM\""
 
     if [ "$WAIT_FOR_IDS-" != "-" ]; then
+	$ECHO LSB_DOCKER_IMAGE=\"nunofonseca/irap_ubuntu:v0.7.0p1\"
+	$ECHO LSB_DOCKER_OPTIONS=\"-v $DATA_DIR:$DATA_DIR\"		
 	$ECHO bsub $IRAP_LSF_PARAMS -q $QUEUE -n $THREADS -M $MAX_MEM -R "span[hosts=1]"  -w "$WAIT_FOR_IDS" -o "`get_path2logfile`/$jobname-%J.out" -e "`get_path2logfile`/$jobname-%J.err" -J $jobname $cmd2e max_threads=$THREADS data_dir=$DATA_DIR max_mem=$MEM\"
     else
+	$ECHO LSB_DOCKER_IMAGE=\"nunofonseca/irap_ubuntu:v0.7.0p1\"
+	$ECHO LSB_DOCKER_OPTIONS=\"-v $DATA_DIR:$DATA_DIR\"
 	$ECHO bsub $IRAP_LSF_PARAMS -q $QUEUE  $GROUP -n $THREADS -M $MAX_MEM -R "span[hosts=1]"  -o "`get_path2logfile`/$jobname-%J.out" -e "`get_path2logfile`/$jobname-%J.err" -J $jobname $cmd2e max_threads=$THREADS  data_dir=$DATA_DIR max_mem=$MEM\"	
+
     fi
 }

@@ -1,0 +1,326 @@
+#!/usr/bin/env bash
+set -o errexit
+################################################################
+# Program: ngseasy_initiate_project
+# Version 1.0-r001
+# Author: Stephen Newhouse (stephen.j.newhouse@gmail.com); Amos Folarin (amosfolarin@gmail.com)
+###########################################################################################
+#
+#    Copyright (C) 2015  Stephen Jeffrey Newhouse
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+###########################################################################################
+
+###########################################################################################
+## Set version and run date
+###########################################################################################
+NGSEASYVERSION="1.0-r001"
+RUNDATE=`date +"%d%m%y"`
+NGSEASY_STEP="ngseasy_initiate_project"
+
+echo -e "\n\n###########################################################################################"
+echo -e "#"
+echo -e "# Program: ${NGSEASY_STEP}"
+echo -e "# Version ${NGSEASYVERSION}"
+echo -e "# Authors: Stephen Newhouse (stephen.j.newhouse@gmail.com); Amos Folarin (amosfolarin@gmail.com)"
+echo -e "#"
+echo -e "# Copyright (C) 2015  Stephen Jeffrey Newhouse and Amos Folarin"
+echo -e "# NGSeasy (aka ngseasy) Version ${NGSEASYVERSION} comes with ABSOLUTELY NO WARRANTY;"
+echo -e "# for details see the GNU General Public License."
+echo -e "# This is free software, and you are welcome to redistribute it under certain conditions;"
+echo -e "# see the GNU General Public License for details."
+echo -e "#"
+echo -e "###########################################################################################\n\n"
+
+###########################################################################################
+## default options
+###########################################################################################
+
+config_tsv=""
+project_directory=""
+
+###########################################################################################
+## global logging fuction
+###########################################################################################
+
+function logger_ngseasy() {
+ message=${1}
+ mylogfile=${2}
+ echo -e [`date`]":[NGSEASY:${NGSEASYVERSION}]:"${message}":[${USER}]:[`uname -a`]" >> ${mylogfile}.log;
+ echo -e [`date`]":[NGSEASY:${NGSEASYVERSION}]:"${message}":[${USER}]:[`uname -a`]"
+}
+
+###########################################################################################
+## global usage
+###########################################################################################
+function ngseasy_initiate_project_usage() {
+    echo "
+Program: ngseasy_initiate_project
+Version 1.0-r001
+Author: Stephen Newhouse (stephen.j.newhouse@gmail.com)
+
+ngseasy_initiate_project sets up the project file directories. You only need to run this once per project
+
+usage:   ngseasy_initiate_project -c <config_file> -d <project_directory>
+
+options: -h  show this message
+	 -c   Config pipeline file
+	 -d   Base directory for [ngs_projects](fastq_raw, run_logs, config_files)
+"
+}
+
+###########################################################################################
+## get options for command line args
+###########################################################################################
+while  getopts "hc:d:" opt
+do
+
+    case ${opt} in
+        h)
+        usage #print help
+        exit 0
+        ;;
+
+        c)
+        config_tsv=${OPTARG}
+        ;;
+
+        d)
+        project_directory=${OPTARG}
+        ;;
+
+    esac
+done
+
+###########################################################################################
+## Check options passed in.
+###########################################################################################
+
+if [[ -z "$config_tsv" ]]; then
+    echo -e "ERROR: No options were passed. Exiting"
+    sleep 1s
+	ngseasy_initiate_project_usage
+	sleep 1s
+	exit 1
+fi
+
+###########################################################################################
+## check ${project_directory} exists.
+###########################################################################################
+logger_ngseasy "[${NGSEASY_STEP}]:Check if project dir [${project_directory}] exists"
+
+if [[ ! -d "${project_directory}" ]]
+  then
+      usage_ngseasy;
+      logger_ngseasy "[${NGSEASY_STEP}]:ERROR:${project_directory} does not exist. Exiting."
+      sleep 2s
+      exit 1;
+fi
+
+###########################################################################################
+## Make log file ##
+###########################################################################################
+
+## strip path if user enters config with full path specified
+configfile_name=`basename ${config_tsv}`
+
+# set logile name and make it if it does not exist
+config_run_log="${project_directory}/run_logs/ngseasy.${NGSEASYVERSION}.${configfile_name}.${RUNDATE}"
+
+if [[ ! -e "${config_run_log}.log" ]]
+then
+    logger_ngseasy "[${NGSEASY_STEP}]:Making log file [${config_run_log}.log]"
+
+    touch ${config_run_log}.log
+
+    logger_ngseasy "[${NGSEASY_STEP}]:Log file [${config_run_log}.log]"
+
+else
+    logger_ngseasy "[${NGSEASY_STEP}]:Log file [${config_run_log}.log]"
+
+fi
+
+###########################################################################################
+## check config_tsv exists.
+###########################################################################################
+
+# find out where we are running from
+my_current_dirctory=`pwd`
+
+logger_ngseasy "[${NGSEASY_STEP}]:Current working directory [${my_current_dirctory}]" ${config_run_log}
+logger_ngseasy "[${NGSEASY_STEP}]:Config file set as [${config_tsv}]" ${config_run_log}
+sleep 1s
+
+## check if user has used full path to specify config_tsv
+# strip path if user enters config with full path specified
+# and the move to the dir containing the config_tsv
+#
+config_directory_path=`dirname ${config_tsv}`
+
+if [[ "${config_directory_path}" == "." ]]; then
+    working_dir="${my_current_dirctory}"
+    logger_ngseasy "[${NGSEASY_STEP}]:Path to config file directory detected as [${working_dir}]" ${config_run_log}
+    logger_ngseasy "[${NGSEASY_STEP}]:Setting Path to config file" ${config_run_log}
+    logger_ngseasy "[${NGSEASY_STEP}]:Config file location set to [${working_dir}]" ${config_run_log}
+    logger_ngseasy "[${NGSEASY_STEP}]:Moving to Config file location [${working_dir}] to make life easy" ${config_run_log}
+
+    # move to location of config file
+    cd ${working_dir}
+
+    # check if file exists
+    configfile_name=`basename ${config_tsv}`
+
+if [[ ! -e "./${configfile_name}" ]]; then
+    logger_ngseasy "[${NGSEASY_STEP}]:ERROR:Config file [${config_tsv}] does not exist. Exiting" ${config_run_log}
+    sleep 1s
+    exit 1
+else
+    logger_ngseasy "[${NGSEASY_STEP}]:Config file name [${configfile_name}] detected" ${config_run_log}
+fi
+
+else
+    working_dir="${config_directory_path}"
+    logger_ngseasy "[${NGSEASY_STEP}]:Path to config file directory detected as [${working_dir}]" ${config_run_log}
+    logger_ngseasy "[${NGSEASY_STEP}]:Setting Path to config file" ${config_run_log}
+    logger_ngseasy "[${NGSEASY_STEP}]:Config file location set to [${working_dir}]" ${config_run_log}
+    logger_ngseasy "[${NGSEASY_STEP}]:Moving to Config file location [${working_dir}] to make life easy" ${config_run_log}
+
+    # move to location of config file
+    cd ${working_dir}
+
+    # check if file exists
+    configfile_name=`basename ${config_tsv}`
+
+if [[ ! -e "./${configfile_name}" ]]; then
+    logger_ngseasy "[${NGSEASY_STEP}]:ERROR:Config file [${config_tsv}] does not exist. Exiting" ${config_run_log}
+    sleep 1s
+    exit 1
+else
+    logger_ngseasy "[${NGSEASY_STEP}]:Config file name [${configfile_name}] detected" ${config_run_log}
+fi
+
+fi
+
+###########################################################################################
+## project list
+###########################################################################################
+# config_tsv=config_file
+#
+logger_ngseasy "[${NGSEASY_STEP}]:CMD: awk 'NR >1 {print $5"/"$1}' ${config_tsv} | sort | uniq > ${HOME}/ngseasy_tmp/Project_list" ${config_run_log}
+#awk 'NR >1 {print $5"/"$1}' ${config_tsv} | sort | uniq > ${HOME}/ngseasy_tmp/Project_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+
+#while read -f PROJECTNAME
+while read PROJECTNAME
+do
+
+    if [[ ! -d "${PROJECTNAME}" ]]; then
+
+        mkdir -p ${PROJECTNAME}
+
+        chmod -R 776 ${PROJECTNAME}
+
+        logger_ngseasy "[${NGSEASY_STEP}]:Making [${PROJECTNAME}] project directory" ${config_run_log}
+
+    else
+        logger_ngseasy "[${NGSEASY_STEP}]:Project directory [${PROJECTNAME}] Exists" ${config_run_log}
+
+    fi
+
+done < ${HOME}/ngseasy_tmp/Project_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+wait
+
+###########################################################################################
+## sample list
+###########################################################################################
+## PROJECT_DIR/PROJECT_ID/SAMPLE_ID
+#
+logger_ngseasy "[${NGSEASY_STEP}]:making [${HOME}/ngseasy_tmp/ProjectBySample_list]" ${config_run_log}
+
+#awk 'NR >1 {print $5"/"$1"/"$2}' ${config_tsv} | sort | uniq > ${HOME}/ngseasy_tmp/ProjectBySample_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+
+## Read project_list
+#
+while read f1
+do
+
+PROJECT_SAMPLE_DIRS=$f1
+
+    if [[ ! -d "${PROJECT_SAMPLE_DIRS}" ]]
+        then
+
+        logger_ngseasy "[${NGSEASY_STEP}]:${PROJECT_SAMPLE_DIRS} Does Not Exist" ${config_run_log}
+
+        # start making project and sample dirs
+            logger_ngseasy "[${NGSEASY_STEP}]:Making Project Directories..." ${config_run_log}
+
+        # make sample dir
+            logger_ngseasy "[${NGSEASY_STEP}]:CMD: mkdir -p ${PROJECT_SAMPLE_DIRS}" ${config_run_log}
+
+            mkdir -p ${PROJECT_SAMPLE_DIRS}
+
+        # make sample fastq dir
+            logger_ngseasy "[${NGSEASY_STEP}]:CMD: mkdir -p ${PROJECT_SAMPLE_DIRS}/fastq" ${config_run_log}
+
+            mkdir -p ${PROJECT_SAMPLE_DIRS}/fastq
+
+        # make sample tmp dir
+            logger_ngseasy "[${NGSEASY_STEP}]:CMD: mkdir -p ${PROJECT_SAMPLE_DIRS}/tmp" ${config_run_log}
+
+            mkdir -p ${PROJECT_SAMPLE_DIRS}/tmp
+
+        # make sample alignments dir
+            logger_ngseasy "[${NGSEASY_STEP}]:CMD: mkdir -p ${PROJECT_SAMPLE_DIRS}/alignments" ${config_run_log}
+
+            mkdir -p ${PROJECT_SAMPLE_DIRS}/alignments
+
+        # make sample vcf dir
+            logger_ngseasy "[${NGSEASY_STEP}]:CMD: mkdir -p ${PROJECT_SAMPLE_DIRS}/vcf" ${config_run_log}
+
+            mkdir -p ${PROJECT_SAMPLE_DIRS}/vcf
+
+        # make sample reports dir
+            logger_ngseasy "[${NGSEASY_STEP}]:CMD: mkdir -p ${PROJECT_SAMPLE_DIRS}/reports" ${config_run_log}
+
+            mkdir -p ${PROJECT_SAMPLE_DIRS}/reports
+
+        # make sample config_files dir
+            logger_ngseasy "[${NGSEASY_STEP}]:CMD: mkdir -p ${PROJECT_SAMPLE_DIRS}/fastq" ${config_run_log}
+
+            mkdir -p ${PROJECT_SAMPLE_DIRS}/config_files
+
+        # make sample run_logs dir
+            logger_ngseasy "[${NGSEASY_STEP}]:CMD: mkdir -p ${PROJECT_SAMPLE_DIRS}/run_logs" ${config_run_log}
+
+            mkdir -p ${PROJECT_SAMPLE_DIRS}/run_logs
+
+        else
+            logger_ngseasy "[${NGSEASY_STEP}]:${PROJECT_SAMPLE_DIRS}] Exist" ${config_run_log}
+    fi
+
+done < ${HOME}/ngseasy_tmp/ProjectBySample_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+wait
+
+###########################################################################################
+## open it up to all
+###########################################################################################
+chmod -R 775 ${project_directory}/
+
+###########################################################################################
+## remove lists
+###########################################################################################
+rm ${HOME}/ngseasy_tmp/ProjectBySample_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+rm ${HOME}/ngseasy_tmp/Project_list_${NGSEASYVERSION}.${configfile_name}.${RUNDATE}
+sleep 1s

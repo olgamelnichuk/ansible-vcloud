@@ -1,0 +1,85 @@
+#bwa
+sudo docker run \
+	--volume /nfs/ngseasy/ngs_resources/reference_genomes_hg19:/home/pipeman/ngs_projects/reference_genomes_hg19 \
+	--name bwa_indexing \
+	--rm=true \
+	-i -t compbio/ngseasy-bwa:1.0-r001 \
+	 /bin/bash -c \
+        "/usr/local/pipeline/bwa-0.7.12/bwa index \
+        -a bwtsw \
+        /home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19.fasta"
+
+#bowtie2
+sudo docker run \
+--volume /nfs/ngseasy/ngs_resources/reference_genomes_hg19:/home/pipeman/ngs_projects/reference_genomes_hg19 \
+--name bowtie2_indexing \
+-d \
+-t compbio/ngseasy-bowtie2:1.0-r001 \
+/bin/bash -c \
+"/usr/local/pipeline/bowtie2-2.2.4/bowtie2-build \
+/home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19.fasta \
+/home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19"
+
+
+#novo ???? can't find image
+sudo docker run \
+--volume /nfs/ngseasy/ngs_resources/reference_genomes_hg19:/home/pipeman/ngs_projects/reference_genomes_hg19 \
+--name novoalign_indexing \
+--rm=true \
+-i -t compbio/ngseasy-novoalign:1.0-r001 \
+/bin/bash -c \
+"/usr/local/pipeline/novocraft/novoindex \
+-k 13 \
+-s 4 \
+/home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19.fasta.novoindex \
+/home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19.fasta"
+
+#snap
+sudo docker run \
+--volume /nfs/ngseasy/ngs_resources/reference_genomes_hg19:/home/pipeman/ngs_projects/reference_genomes_hg19 \
+--name snap_indexing \
+--rm=true \
+-i -t compbio/ngseasy-snap:1.0-r001 \
+ /bin/bash -c \
+"/usr/local/pipeline/snap/snap-aligner index \
+/home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19.fasta \
+/home/pipeman/ngs_projects/reference_genomes_hg19/ -hg19"
+
+sudo docker run \
+--volume /nfs/ngseasy/ngs_resources/reference_genomes_hg19:/home/pipeman/ngs_projects/reference_genomes_hg19 \
+--name stampy_indexing \
+--rm=true \
+-e USER=pipeman \
+--user=pipeman \
+-i -t compbio/ngseasy-stampy:1.0-r001 \
+/bin/bash -c \
+"python  \
+/usr/local/pipeline/stampy-1.0.23/stampy.py \
+-G /home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19 \
+/home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19.fasta && \
+chmod -R 777 /home/pipeman/ngs_projects/reference_genomes_hg19/* && \
+python  \
+/usr/local/pipeline/stampy-1.0.23/stampy.py \
+-g home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19 \
+-H /home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19 && \
+chmod -R 777 /home/pipeman/ngs_projects/reference_genomes_hg19/*"
+
+
+chmod -R 777 /nfs/ngseasy/ngs_resources/reference_genomes_hg19/*
+
+sudo dockercmd run \
+	--volume /nfs/ngseasy/ngs_resources/reference_genomes_hg19:/home/pipeman/ngs_projects/reference_genomes_hg19 \
+	--name bwa_indexing \
+	--rm=true \
+	-e USER=pipeman \
+	--user=pipeman \
+	-i -t compbio/ngseasy-bwa:1.0-r001 \
+	 /bin/bash -c \
+        "/usr/local/pipeline/bwa-0.7.12/bwa index \
+        -a bwtsw \
+        /home/pipeman/ngs_projects/reference_genomes_hg19/ucsc.hg19.fasta"
+
+
+
+
+

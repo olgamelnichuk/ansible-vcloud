@@ -11,9 +11,8 @@
   - 'ngseasy_realn'
   - 'ngseasy_trimmomatic'
   - 'ngseasy_variant_calling'
-  - 'ngseasy_lsf'
 
-#- name: place ngseasy scripts to NFS server  
-#  copy: src=local/{{ item }} dest=/export/ngseasy/bin/{{ item }} owner=root group=root mode=0755
-#  with_items: 
-#  - 'ngseasy_fastqc_local'
+- name: place ngseasy scripts to NFS server  
+  copy: src=local/{{ item }} dest=/export/ngseasy/bin/{{ item }} owner=root group=root mode=0755
+  with_items: 
+  - 'ngseasy_fastqc_local'

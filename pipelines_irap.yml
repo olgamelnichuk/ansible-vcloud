@@ -1,18 +1,15 @@
 ---
 - name: place scripts
   hosts: nfs_server
-  remote_user: ansible
+  sudo: true
   roles: 
     - pipelines_irap_scripts
   tags: scripts
-  sudo: true
 
 - name: pull docker image
   hosts: docker_openlava_nodes
-  remote_user: ansible
+  sudo: true
   roles: 
     - pipelines_irap_image
   tags: image
-  sudo: true
-
 

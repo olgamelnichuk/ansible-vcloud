@@ -64,7 +64,8 @@
     dest: /etc/sudoers 
     state: present 
     regexp: "^ALL.*" 
-    line: "ALL ALL=NOPASSWD: /usr/local/bin/dockercmd"
+    line: "ALL ALL=NOPASSWD: /usr/local/bin/dockercmd, /nfs/ngseasy/bin/ngseasy"
+  tags: update_dockercmd
 
 - name: restart openlava
   service: name=openlava state=restarted
