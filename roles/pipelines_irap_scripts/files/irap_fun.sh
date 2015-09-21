@@ -186,12 +186,12 @@ function irap_init_job {
  # Submit jobs
  p_info " * Initialization "
  # save variables
- bash -c "$cmd_docker conf=$conf $IRAP_PARAMS save_cache \""
+ bash -c "$cmd_docker conf=$conf $IRAP_PARAMS save_cache \"'"
 
  #load the file with the variables already computed
  export IRAP_PARAMS="$IRAP_PARAMS use_cached_vars=y"
  p_info " * Starting initial job"
- p_info "${jobname_prefix}i $cmd_docker conf=$conf setup_dirs $IRAP_PARAMS\""
+ p_info "${jobname_prefix}i $cmd_docker conf=$conf setup_dirs $IRAP_PARAMS\"'"
  CUR_STAGE=stage0
  submit_job "${jobname_prefix}i" $cmd conf=$conf setup_dirs $IRAP_PARAMS
  stop_job  "${jobname_prefix}i"
@@ -202,7 +202,7 @@ function irap_init_job {
 
 function stage0_jobs {
     waitfor=$1
-    stage0_targets=`bash -c "$cmd_docker conf=$conf $IRAP_PARAMS print_stage0_files\"|tail -n 1"`
+    stage0_targets=`bash -c "$cmd_docker conf=$conf $IRAP_PARAMS print_stage0_files\"'|tail -n 1"`
     let i=1
     p_info "* Stage 0..." 
     for f in $stage0_targets; do    
@@ -304,7 +304,7 @@ function stage3_jobs {
 
 function stage4_jobs {
     waitfor=$1
-    targets=`bash -c "$cmd_docker conf=$conf $IRAP_PARAMS print_stage4_files\"|tail -n 1"`
+    targets=`bash -c "$cmd_docker conf=$conf $IRAP_PARAMS print_stage4_files\"'|tail -n 1"`
     if [ "$targets-" == "-" ]; then
 	DEPS=$1
     else
@@ -322,7 +322,7 @@ function stage4_jobs {
 
 function stage5_jobs {
     waitfor=$1
-    targets=`bash -c "$cmd_docker conf=$conf $IRAP_PARAMS print_stage5_files\"|tail -n 1"`
+    targets=`bash -c "$cmd_docker conf=$conf $IRAP_PARAMS print_stage5_files\"'|tail -n 1"`
     if [ "$targets-" == "-" ]; then
 	DEPS=$1
     else

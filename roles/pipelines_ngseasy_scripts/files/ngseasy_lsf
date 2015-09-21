@@ -24,7 +24,8 @@ set -o errexit
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 ###########################################################################################
-
+# example of usage:
+#  /nfs/ngseasy/bin/ngseasy_lsf -c /nfs/users/testuser/ngs_projects/config_files/NGS_1000.tsv -d /nfs/users/testuser/ngs_projects/
 ###########################################################################################
 ## global logging fuction
 ###########################################################################################

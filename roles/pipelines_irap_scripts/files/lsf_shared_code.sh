@@ -137,11 +137,11 @@ function submit_job {
 
     if [ "$WAIT_FOR_IDS-" != "-" ]; then
 	export LSB_DOCKER_IMAGE=nunofonseca/irap_ubuntu:v0.7.0p1
-	export LSB_DOCKER_OPTIONS="-v $DATA_DIR:$DATA_DIR"	
+	export LSB_DOCKER_OPTIONS="-v $DATA_DIR:$DATA_DIR -v /nfs/users/testuser/irap_projects/reference:/nfs/iRAP/reference"	
 	$ECHO bsub $IRAP_LSF_PARAMS -q $QUEUE -n $THREADS -M $MAX_MEM -R "span[hosts=1]"  -w "$WAIT_FOR_IDS" -o "`get_path2logfile`/$jobname-%J.out" -e "`get_path2logfile`/$jobname-%J.err" -J $jobname $cmd2e max_threads=$THREADS data_dir=$DATA_DIR max_mem=$MEM\"
     else
 	export LSB_DOCKER_IMAGE=nunofonseca/irap_ubuntu:v0.7.0p1
-	export LSB_DOCKER_OPTIONS="-v $DATA_DIR:$DATA_DIR"
+	export LSB_DOCKER_OPTIONS="-v $DATA_DIR:$DATA_DIR -v /nfs/users/testuser/irap_projects/reference:/nfs/iRAP/reference"
 	$ECHO bsub $IRAP_LSF_PARAMS -q $QUEUE  $GROUP -n $THREADS -M $MAX_MEM -R "span[hosts=1]"  -o "`get_path2logfile`/$jobname-%J.out" -e "`get_path2logfile`/$jobname-%J.err" -J $jobname $cmd2e max_threads=$THREADS  data_dir=$DATA_DIR max_mem=$MEM\"	
 
     fi

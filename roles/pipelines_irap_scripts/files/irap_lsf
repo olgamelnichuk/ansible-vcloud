@@ -31,11 +31,11 @@
 # load shared code
 MEM=15000
 QUEUE=docker_queue
-THREADS=5
+THREADS=6
 LSF_CMD=irap_lsf
 source /nfs/iRAP/bin/irap_fun.sh
 cmd="bash -c \"source /irap_install/irap_setup.sh && cd $data_dir && irap "
-cmd_docker="sudo dockercmd run -v $data_dir:$data_dir nunofonseca/irap_ubuntu:v0.7.0p1 bash -c \"source /irap_install/irap_setup.sh && cd $data_dir && irap "
+cmd_docker="sudo dockercmd run -v $data_dir:$data_dir -v /nfs/users/testuser/irap_projects/reference:/nfs/iRAP/reference nunofonseca/irap_ubuntu:v0.7.0p1 bash -c '\"source /irap_install/irap_setup.sh && cd $data_dir && irap "
 source /nfs/iRAP/bin/lsf_shared_code.sh
 
 echo "Init"
