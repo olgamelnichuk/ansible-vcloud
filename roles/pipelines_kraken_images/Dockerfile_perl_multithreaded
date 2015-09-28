@@ -62,11 +62,11 @@ RUN Rscript -e "install.packages('bitops')"
 RUN Rscript -e "install.packages('hwriter')"
 RUN Rscript -e "install.packages('latticeExtra')"
 RUN Rscript -e "install.packages('gplots')"
-RUN Rscript -e "install.packages('BiocInstaller', repos='http://bioconductor.org/packages/3.1/bioc')"
-RUN Rscript -e "install.packages('S4Vectors', repos='http://bioconductor.org/packages/3.1/bioc')"
-RUN Rscript -e "install.packages('IRanges', repos='http://bioconductor.org/packages/3.1/bioc')"
-RUN Rscript -e "install.packages('GenomicRanges', repos='http://bioconductor.org/packages/3.1/bioc')"
-RUN Rscript -e "install.packages('ShortRead', repos='http://bioconductor.org/packages/3.1/bioc')"
+RUN Rscript -e "install.packages('BiocInstaller', repos='http://bioconductor.org/packages/release/bioc')"
+RUN Rscript -e "install.packages('S4Vectors', repos='http://bioconductor.org/packages/release/bioc')"
+RUN Rscript -e "install.packages('IRanges', repos='http://bioconductor.org/packages/release/bioc')"
+RUN Rscript -e "install.packages('GenomicRanges', repos='http://bioconductor.org/packages/release/bioc')"
+RUN Rscript -e "install.packages('ShortRead', repos='http://bioconductor.org/packages/release/bioc')"
 
 RUN mkdir /kraken
 WORKDIR /kraken
