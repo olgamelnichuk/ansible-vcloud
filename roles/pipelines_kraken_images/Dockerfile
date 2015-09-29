@@ -3,7 +3,10 @@ MAINTAINER Matthew Davis email: matdavis at ebi.ac.uk
 # Initially created by Natalja Kurbatova
 # Update the image with the latest packages (recommended)
 # and install missing packages
+
 ENV DEBIAN_FRONTEND=noninteractive
+
+# install ubuntu dependencies
 RUN apt-get update && apt-get install -y \ 
 	build-essential \     
         libcurl4-openssl-dev \
@@ -12,15 +15,16 @@ RUN apt-get update && apt-get install -y \
         wget \
         perl \
         samtools \
-        bowtie
+        bowtie  && apt-get clean
 
+# install R
 RUN sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
 RUN gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
 RUN gpg -a --export E084DAB9 | sudo apt-key add -
-RUN apt-get update
-RUN apt-get -y install r-base
+RUN apt-get update \
+    && apt-get -y install r-base && apt-get clean
 
-#setup R configs
+# install R packages 
 RUN echo "r <- getOption('repos'); r['CRAN'] <- 'http://cran.us.r-project.org'; options(repos = r);" > ~/.Rprofile
 RUN Rscript -e "install.packages('R.utils')"
 RUN Rscript -e "install.packages('RColorBrewer')"
@@ -30,35 +34,32 @@ RUN Rscript -e "install.packages('bitops')"
 RUN Rscript -e "install.packages('hwriter')"
 RUN Rscript -e "install.packages('latticeExtra')"
 RUN Rscript -e "install.packages('gplots')"
-RUN Rscript -e "install.packages('BiocInstaller', repos='http://bioconductor.org/packages/release/bioc')"
 RUN Rscript -e "install.packages('S4Vectors', repos='http://bioconductor.org/packages/release/bioc')"
 RUN Rscript -e "install.packages('IRanges', repos='http://bioconductor.org/packages/release/bioc')"
 RUN Rscript -e "install.packages('GenomicRanges', repos='http://bioconductor.org/packages/release/bioc')"
 RUN Rscript -e "install.packages('ShortRead', repos='http://bioconductor.org/packages/release/bioc')"
 
+# install Kraken
 RUN mkdir /kraken
 WORKDIR /kraken
-RUN wget ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/SequenceImp/src/seqimp-latest.tgz
-RUN tar -xzf seqimp-latest.tgz
-RUN wget ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/reaper/binaries/reaper-15-065/linux/tally-15-065
-RUN wget ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/reaper/binaries/reaper-15-065/linux/swan-15-065
-RUN wget ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/reaper/binaries/reaper-15-065/linux/reaper-15-065
-RUN wget ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/reaper/binaries/reaper-15-065/linux/minion-15-065
-RUN mv /kraken/reaper-15-065 /usr/bin/reaper
-RUN mv /kraken/tally-15-065 /usr/bin/tally
-RUN mv /kraken/swan-15-065 /usr/bin/swan
-RUN mv /kraken/minion-15-065 /usr/bin/minion
-RUN mv /kraken/seqimp*/ /kraken/seqimp
+RUN wget ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/SequenceImp/src/seqimp-latest.tgz \
+    && tar -xzf seqimp-latest.tgz \
+    && wget ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/reaper/binaries/reaper-15-065/linux/tally-15-065 \
+    && wget ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/reaper/binaries/reaper-15-065/linux/swan-15-065 \
+    && wget ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/reaper/binaries/reaper-15-065/linux/reaper-15-065 \
+    && wget ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/reaper/binaries/reaper-15-065/linux/minion-15-065 \
+    && mv /kraken/reaper-15-065 /usr/bin/reaper \
+    && mv /kraken/tally-15-065 /usr/bin/tally \
+    && mv /kraken/swan-15-065 /usr/bin/swan \
+    && mv /kraken/minion-15-065 /usr/bin/minion \
+    && mv /kraken/seqimp*/ /kraken/seqimp
 
-RUN chmod 771 /usr/bin/reaper
-RUN chmod 771 /usr/bin/tally
-RUN chmod 771 /usr/bin/swan
-RUN chmod 771 /usr/bin/minion
+RUN chmod 771 /usr/bin/reaper \
+    && chmod 771 /usr/bin/tally \
+    && chmod 771 /usr/bin/swan \
+    && chmod 771 /usr/bin/minion 
+
 ENV PATH /kraken/seqimp/bin:$PATH
 
-RUN /kraken/seqimp/bin/imp_commandline.pl --system-check
-
-# Annotations 9.7 GB ftp://ftp.ebi.ac.uk/pub/contrib/enrightlab/kraken/annotation/Annotation-12-164.tgz
-# ftp.ebi.ac.uk - 193.62.192.4 (28/09/2015)
-
-#ENTRYPOINT ["kraken"]
+# check Kraken
+CMD ["/kraken/seqimp/bin/imp_commandline.pl", "--system-check"]
