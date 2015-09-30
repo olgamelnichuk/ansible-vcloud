@@ -2,10 +2,10 @@
 - name: include additional variables
   include_vars: ../../ssh_key_vars.yml
 
-- name: upgrade all packages (RedHat)
-  yum: name=* state=latest
-  sudo: true
-  when: ansible_os_family == "RedHat"
+#- name: upgrade all packages (RedHat)
+#  yum: name=* state=latest
+#  sudo: true
+#  when: ansible_os_family == "RedHat"
 
 - name: install SELinux-Python (RedHat)
   yum: name=libselinux-python state=present
