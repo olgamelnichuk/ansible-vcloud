@@ -95,6 +95,7 @@ def get_argparser():
     parser_run.add_argument('--volumes-from', dest='--volumes-from',  action=DefaultAction)
     parser_run.add_argument('--rm', dest='--rm',  nargs=0, action=DefaultAction)
     parser_run.add_argument('-t', '--tty', dest='-t',  nargs=0, action=DefaultAction)
+    parser_run.add_argument('-i', dest='-i',  nargs=0, action=DefaultAction)
     parser_run.add_argument('--read-only', dest='--read-only',  nargs=0, action=DefaultAction)
     parser_run.add_argument('-p', '--publish', dest='-p',  action=DefaultAction)
     parser_run.add_argument('-P', '--publish-all', nargs=0, dest='-P',  action=DefaultAction)
