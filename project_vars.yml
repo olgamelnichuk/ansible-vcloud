@@ -58,7 +58,6 @@ irods_db_backup_dir: /var/lib/autopostgresqlbackup
 irods_db_backup_hostname: backup.example.com
 irods_db_backaup_enabled: true
 irods_ies_hostname: irods-01.example.com
-irods_gateway_hostname: irods.example.com
 
 irods_pam_auth_enabled: true
 irods_ssl_self_signed_cert_subj: "/C=UK/ST=Cambridge/L=Cambridge/O=EMBL/OU=EMBL-EBI/CN={{ irods_ies_hostname }}"
