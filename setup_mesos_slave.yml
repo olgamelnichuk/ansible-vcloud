@@ -1,7 +1,0 @@
----
-- name: set up mesos slave node
-  hosts: [mesos_slave]
-  roles: [docker_ubuntu,mesos_ubuntu]
-  sudo: true
-  vars:
-    is_master: false

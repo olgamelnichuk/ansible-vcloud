@@ -1,7 +1,0 @@
----
-- name: set up mesos master node
-  hosts: [mesos_master]
-  roles: [mesos_ubuntu]
-  sudo: true
-  vars:
-    is_master: true
