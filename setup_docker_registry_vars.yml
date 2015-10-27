@@ -1,6 +1,0 @@
----
-cert_country: _two_letter_country_code_
-cert_province: _province_
-cert_city: _city_
-cert_org: _org_
-cert_cn: _hostname_or_ipaddress_

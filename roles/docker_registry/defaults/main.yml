@@ -1,0 +1,6 @@
+---
+registry_data_dir: "/data"
+registry_name: "docker-registry"
+registry_user: "reguser"
+registry_password: "regpassword"
+registry_hostname: "{{ registry_name }}.exmaple.com"

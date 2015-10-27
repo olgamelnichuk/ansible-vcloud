@@ -1,0 +1,47 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=present
+  with_items:
+  - python-pip 
+  - python-dev 
+  - openssl
+  - nginx
+
+- name: pip install docker-py
+  pip: name=docker-py version=1.1.0
+
+- name: pip install passlib
+  pip: name=passlib version=1.6.5
+
+- name: create registry data directory
+  file: path={{ registry_data_dir }} state=directory
+
+- name: run the registry container
+  docker:
+    name: "registry_name" 
+    image: "registry:2.0"
+    ports:
+    - "5000:5000"
+    volumes: 
+    - "{{ registry_data_dir }}:/tmp/registry-dev"
+    state: running
+
+- name: create .htpasswd file
+  htpasswd: path=/etc/nginx/.htpasswd name={{ registry_user }} password={{ registry_password }}
+
+- name: create required directotries
+  file: path=/etc/nginx/ssl/{{ public_hostname }} state=directory
+
+- name: create self-signed SSL cert for public use
+  command: openssl req -new -nodes -x509 -subj "/C=UK/ST=Cambridgeshire/L=Cambridge/O=IT/CN={{ public_hostname }}" -days 3650 -keyout /etc/nginx/ssl/{{ public_hostname }}/server.key -out /etc/nginx/ssl/{{ public_hostname }}/server.crt -extensions v3_ca
+  args:
+    creates: /etc/nginx/ssl/{{ public_hostname }}/server.crt
+
+- name: copy nginx.conf
+  template: src="nginx.conf" dest="/etc/nginx/nginx.conf"
+
+- name: restart nginx
+  service: name=nginx state=restarted 

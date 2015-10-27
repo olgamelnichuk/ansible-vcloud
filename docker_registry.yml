@@ -1,5 +1,5 @@
 ---
 - name: Set up docker registry on a vm 
   hosts: [docker_registry]
-  roles: [docker_ubuntu, docker_registry_ubuntu]
+  roles: [docker_ubuntu, docker_registry]
   sudo: true
