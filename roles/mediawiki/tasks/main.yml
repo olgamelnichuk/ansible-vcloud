@@ -1,0 +1,48 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - apache2
+  - mysql-server
+  - php5
+  - php5-mysql
+  - libapache2-mod-php5
+  - php5-ldap
+  - php-apc
+  - php-intl
+  - imagemagick
+  - phpmyadmin
+  - php-cli
+  - vsftpd
+  
+- name: downloads mediawiki tar
+  get_url: url={{ mediawiki_tar_url }} dest=/tmp
+  register: mediawiki_tar
+  
+- name: downloads mediawiki tar
+  unarchive: src={{ mediawiki_tar_url }} dest=/tmp copy=no 
+  
+- name: creates mediawiki directory
+  file: path=/var/lib/mediawiki state=directory  
+  
+- name: copy mediawiki into /var/lib/mediawiki
+  shell: mv /tmp/mediawiki-* /var/lib/mediawiki  
+
+- name: create mediawiki softlink for apache
+  shell: ln -s /var/lib/mediawiki mediawiki
+  args:
+     chdir: /var/www/html  
+  
+- name: download ldap tar
+  unarchive: src={{ ldap_authentication_tar_url }} dest=/var/lib/mediawiki/extensions copy=no   
+  
+- name: update mediawiki by using maintenance php script
+  shell: php maintenance/update.php  
+  args:
+     chdir: /var/lib/mediawiki/     
+  
+- name: copy LocalSettings.php config
+  template: src=LocalSettings.php dest=/var/lib/mediawiki/LocalSettings.php

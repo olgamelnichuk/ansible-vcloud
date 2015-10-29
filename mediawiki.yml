@@ -1,0 +1,7 @@
+---
+- name: Set up MediaWiki on a vm 
+  hosts: [wiki]
+  roles: 
+    - { role: ldap_client }
+    - { role: mediawiki }
+  sudo: true
