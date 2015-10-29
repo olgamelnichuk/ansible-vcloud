@@ -11,7 +11,7 @@
   shell: 'openssl dhparam -2 -out /tmp/dhparams.pem 2048'
 
 - name: fetch generated files to local temporary directory
-  fetch: src='/tmp/{{ item. src }}' dest='{{ local_tmp }}/{{ item.dest }}' flat=true
+  fetch: src='/tmp/{{ item.src }}' dest='{{ local_tmp }}/{{ item.dest }}' flat=true
   with_items:
   - { src: 'server.key', dest: 'irods_server.key' }
   - { src: 'chain.pem', dest: 'irods_chain.pem' }
