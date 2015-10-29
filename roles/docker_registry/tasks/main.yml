@@ -8,7 +8,16 @@
   - python-pip 
   - python-dev 
   - openssl
-  - nginx
+  - software-properties-common
+
+- name: add nginx stable repository
+  shell: "{{ item }}"
+  with_items:
+  - "add-apt-repository ppa:nginx/development -y"
+  - "apt-get update"
+
+- name: install latest nginx
+  apt: pkg=nginx state=latest
 
 - name: pip install docker-py
   pip: name=docker-py version=1.1.0
@@ -16,32 +25,38 @@
 - name: pip install passlib
   pip: name=passlib version=1.6.5
 
-- name: create registry data directory
-  file: path={{ registry_data_dir }} state=directory
+- name: create required directories
+  file: path={{ item }} state=directory
+  with_items:
+  - "{{ registry_data_dir }}"
 
 - name: run the registry container
   docker:
     name: "registry_name" 
-    image: "registry:2.0"
+    image: "registry:2"
     ports:
-    - "5000:5000"
+    - "127.0.0.1:5000:5000"
     volumes: 
-    - "{{ registry_data_dir }}:/tmp/registry-dev"
+    - "{{ registry_data_dir }}:/data"
     state: running
+    restart_policy: always
+    env:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
 
-- name: create .htpasswd file
-  htpasswd: path=/etc/nginx/.htpasswd name={{ registry_user }} password={{ registry_password }}
+- name: create htpasswd file
+  htpasswd: path=/etc/nginx/conf.d/htpasswd name={{ registry_user }} password={{ registry_password }}
 
-- name: create required directotries
-  file: path=/etc/nginx/ssl/{{ public_hostname }} state=directory
+- name: copy nginx config
+  template: src="nginx.conf.http" dest=/etc/nginx/nginx.conf 
 
-- name: create self-signed SSL cert for public use
-  command: openssl req -new -nodes -x509 -subj "/C=UK/ST=Cambridgeshire/L=Cambridge/O=IT/CN={{ public_hostname }}" -days 3650 -keyout /etc/nginx/ssl/{{ public_hostname }}/server.key -out /etc/nginx/ssl/{{ public_hostname }}/server.crt -extensions v3_ca
-  args:
-    creates: /etc/nginx/ssl/{{ public_hostname }}/server.crt
+- name: configure nginx to be used externally
+  include: nginx_server.yml server_name={{ public_hostname }}
 
-- name: copy nginx.conf
-  template: src="nginx.conf" dest="/etc/nginx/nginx.conf"
+- name: configure nginx to be used locally
+  include: nginx_server.yml server_name={{ registry_hostname }}
+
+- name: unlink default server config
+  file: path=/etc/nginx/sites-enabled/default state=absent
 
 - name: restart nginx
-  service: name=nginx state=restarted 
+  service: name=nginx state=restarted

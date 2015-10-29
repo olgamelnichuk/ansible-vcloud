@@ -1,0 +1,6 @@
+---
+registry_root_ca_dir: "/etc/docker-registry" 
+registry_root_ca_key: "{{ registry_root_ca_dir }}/rootCA.key" 
+registry_root_ca_crt: "{{ registry_root_ca_dir }}/rootCA.crt" 
+local_tmp: "{{ playbook_dir }}/tmp"
+registry_root_ca_crt_local: "{{ local_tmp }}/registry_root_ca.crt"

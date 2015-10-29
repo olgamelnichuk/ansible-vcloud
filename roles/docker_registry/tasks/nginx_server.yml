@@ -1,0 +1,16 @@
+---
+- name: create unsigned SSL certificate
+  command: openssl req -new -nodes -subj "/C=UK/ST=Cambridgeshire/L=Cambridge/O=IT/CN={{ server_name }}" -days 3650 -keyout /etc/nginx/conf.d/{{ server_name }}.key -out /etc/nginx/conf.d/{{ server_name }}.req
+  args:
+    creates: /etc/nginx/conf.d/{{ server_name }}.req
+
+- name: sign the certificate
+  command: openssl x509 -req -in /etc/nginx/conf.d/{{ server_name }}.req -CA {{ registry_root_ca_crt }} -CAkey {{ registry_root_ca_key }} -CAcreateserial -out /etc/nginx/conf.d/{{ server_name }}.crt -days 3650 -extensions v3_ca
+  args:
+    creates: /etc/nginx/conf.d/{{ server_name }}.crt
+
+- name: copy nginx.conf
+  template: src="nginx.conf" dest="/etc/nginx/sites-available/{{ server_name}}"
+
+- name: create soft link from enabled to sites-available
+  file: src=/etc/nginx/sites-available/{{ server_name }} dest=/etc/nginx/sites-enabled/{{ server_name }} state=link

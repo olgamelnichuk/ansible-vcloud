@@ -3,3 +3,16 @@
   hosts: [docker_registry]
   roles: [docker_ubuntu, docker_registry]
   sudo: true
+  tags: server
+
+- name: Copy docker registry certificate to a vm
+  hosts: [docker_registry]
+  roles: [docker_registry_crt]
+  sudo: true
+  tags: cert
+
+- name: Copy docker registry certificate to a vm
+  hosts: [docker_registry_users]
+  roles: [docker_registry_client]
+  sudo: true
+  tags: cert

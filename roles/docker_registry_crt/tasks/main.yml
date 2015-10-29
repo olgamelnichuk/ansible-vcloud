@@ -1,0 +1,20 @@
+---
+- set_fact: is_registry_host={{ "docker_registry" in group_names }}
+
+- debug: var=is_registry_host
+
+- name: create required directories
+  file: path={{ item }} state=directory
+  with_items:
+  - "{{ registry_root_ca_dir }}"
+  when: is_registry_host
+
+- name: create root CA key and certificate
+  command: openssl req -new -nodes -x509 -subj "/C=UK/ST=Cambridgeshire/L=Cambridge/O=IT/CN=Just Me" -days 3650 -keyout {{ registry_root_ca_key }} -out {{ registry_root_ca_crt }} -extensions v3_ca
+  args:
+    creates: "{{ registry_root_ca_crt }}"
+  when: is_registry_host
+
+- name: fetch the root certificate
+  fetch: src="{{ registry_root_ca_crt }}" dest="{{ registry_root_ca_crt_local }}" flat=true
+  when: is_registry_host
