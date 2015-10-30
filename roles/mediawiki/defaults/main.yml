@@ -1,3 +1,5 @@
 ---
+mediawiki_version: mediawiki-1.24.2
 mediawiki_tar_url: http://releases.wikimedia.org/mediawiki/1.24/mediawiki-1.24.2.tar.gz
-ldap_authentication_tar_url: https://extdist.wmflabs.org/dist/extensions/LdapAuthentication-REL1_25-d4db6f0.tar.gz
+ldap_authentication_plugin_url: https://extdist.wmflabs.org/dist/extensions/LdapAuthentication-REL1_25-d4db6f0.tar.gz
+wikiforum_plugin_url: https://extdist.wmflabs.org/dist/extensions/WikiForum-REL1_25-96fe03c.tar.gz

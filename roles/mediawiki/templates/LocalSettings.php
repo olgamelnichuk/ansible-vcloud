@@ -17,10 +17,10 @@ $wgEnotifUserTalk = false; # UPO
 $wgEnotifWatchlist = false; # UPO
 $wgEmailAuthentication = false;
 $wgDBtype = "mysql";
-$wgDBserver = "localhost";
+$wgDBserver = "127.0.0.1";
 $wgDBname = "emif";
-$wgDBuser = "root";
-$wgDBpassword = "*****";
+$wgDBuser = "****";
+$wgDBpassword = "****";
 $wgDBprefix = "";
 $wgDBTableOptions = "ENGINE=InnoDB, DEFAULT CHARSET=binary";
 $wgDBmysql5 = true;
@@ -32,8 +32,8 @@ $wgImageMagickConvertCommand = "/usr/bin/convert";
 $wgUseInstantCommons = false;
 $wgShellLocale = "en_US.utf8";
 $wgLanguageCode = "en";
-$wgSecretKey = "******";
-$wgUpgradeKey = "******";
+$wgSecretKey = "****";
+$wgUpgradeKey = "****";
 $wgRightsPage = ""; # Set to the title of a wiki page that describes your license/copyright
 $wgRightsUrl = "";
 $wgRightsText = "";
@@ -44,6 +44,9 @@ $wgGroupPermissions['*']['edit'] = false;
 #$wgGroupPermissions['*']['read'] = false;
 $wgDefaultSkin = "vector";
 $wgDebugLogFile = "/var/lib/mediawiki/logs/debug.log";
+
+require_once "$IP/extensions/LdapAuthentication/LdapAuthentication.php";
+require_once "$IP/includes/AuthPlugin.php";
 
 $wgLDAPDebug = 1;
 $wgDebugLogGroups['ldap'] = '/var/lib/mediawiki/logs/ldapdebug.log';
@@ -91,8 +94,6 @@ $wgLDAPGroupsPrevail = array(
   'emif_ebi_dev' => true,
 );
 
-require_once "$IP/extensions/LdapAuthentication/LdapAuthentication.php";
-require_once "$IP/includes/AuthPlugin.php";
 require_once "$IP/skins/CologneBlue/CologneBlue.php";
 require_once "$IP/skins/Modern/Modern.php";
 require_once "$IP/skins/MonoBook/MonoBook.php";
