@@ -5,7 +5,7 @@
   when: "ansible_distribution_version not in ['14.04', '14.10']"
 
 - name: install the latest docker 
-  shell: curl -sSL https://get.docker.com/ | sed 's/lxc-docker/lxc-docker-{{ docker_version }}/' | sh
+  shell: curl -sSL https://get.docker.com/ | sh
 
 - name: enable port forwarding
   lineinfile: 
@@ -33,7 +33,28 @@
 
 - name: test docker installation
   shell: docker run hello-world
-  
+
+- name: local docker registry - add into hosts
+  lineinfile: 
+    dest: /etc/hosts
+    line: '192.168.1.34 EMIFdockerReg'
+    backup: yes
+  with_items: 
+    - '{{ groups.docker_openlava_nodes }}'
+  tags: docker_registry
+
+- name: local docker registry - add into docker config
+  lineinfile: 
+    dest: /etc/default/docker
+    line: 'DOCKER_OPTS="--insecure-registry EMIFdockerReg:5000"'
+    backup: yes
+  with_items: 
+    - '{{ groups.docker_openlava_nodes }}'
+  tags: docker_registry
+
+- name: local docker registry - restart docker
+  shell: restart docker
+  tags: docker_registry
 #- name: remove local docker group 
 #  shell: groupdel docker
 #  when: ldap_installed=="yes"
