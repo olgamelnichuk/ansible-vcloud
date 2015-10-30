@@ -16,6 +16,10 @@
   - phpmyadmin
   - vsftpd
   - python-mysqldb 
+<<<<<<< HEAD
+  - gzip
+=======
+>>>>>>> ee3e16e681cb84937e91bf79d6e834171e3feaca
   
 - name: download mediawiki tar
   get_url: url={{ mediawiki_tar_url }} dest=/tmp
@@ -44,6 +48,84 @@
 - name: download wikiforum plugin
   get_url: url={{ wikiforum_plugin_url }} dest=/tmp
   register: wikiforum_plugin_tar	 
+<<<<<<< HEAD
+  
+- debug: var=wikiforum_plugin_tar.dest  
+      
+- name: open wikiforum plugin 
+  unarchive: src={{ wikiforum_plugin_tar.dest }} dest=/var/lib/mediawiki/extensions copy=no 
+    
+- name: copy LocalSettings.php
+  template: src=LocalSettings.php dest=/var/lib/mediawiki/LocalSettings.php 
+
+- name: generate random 64-character string
+  shell: "date +%s | sha256sum | base64 | head -c 64 ; echo"
+  register: secret_key
+
+- debug: var=secret_key.stdout
+
+- name: update LocalSettings.php
+  lineinfile:
+    dest: /var/lib/mediawiki/LocalSettings.php
+    line: "{{ item.line }}"
+    regexp: "{{ item.regexp }}" 
+    state: "{{ item.state }}"
+    backup: no
+  with_items:
+  - { regexp: "^\\$wgServer*", line: "$wgServer = \"{{ wgServer }}\";", state: present }
+  - { regexp: "^\\$wgLogo*", line: "$wgLogo = \"$wgScriptPath/resources/assets/{{ logo_file }}\";", state: present }
+  - { regexp: "^\\$wgEmergencyContact*", line: "$wgEmergencyContact = \"{{ wgEmergencyContact }}\";", state: present }
+  - { regexp: "^\\$wgDBname*", line: "$wgDBname = \"{{ wgDBname }}\";", state: present }
+  - { regexp: "^\\$wgDBuser*", line: "$wgDBuser = \"{{ mysql_login_user }}\";", state: present }
+  - { regexp: "^\\$wgDBpassword*", line: "$wgDBpassword = \"{{ mysql_login_password }}\";", state: present }
+  - { regexp: "^\\$wgSecretKey*", line: "$wgSecretKey = \"{{ secret_key.stdout }}\";", state: present }
+  - { regexp: "^\\$wgSitename*", line: "$wgSitename = \"{{ wgSitename }}\";", state: present }
+  - { regexp: "^\\$wgMetaNamespace*", line: "$wgMetaNamespace = \"{{ wgMetaNamespace }}\";", state: present }
+  when: wgServer is defined and 
+        logo_file is defined and 
+        wgEmergencyContact is defined and 
+        wgDBname is defined and 
+        mysql_login_user is defined and 
+        mysql_login_password is defined and 
+        secret_key is defined and
+        wgSitename is defined and
+        wgMetaNamespace is defined 
+
+- name: copy DB
+  copy: src={{ mysql_wiki_db_dump }} dest=/tmp 
+  when: mysql_wiki_db_dump is defined
+
+- name: set password
+  shell: mysqladmin -u {{ mysql_login_user }} password {{ mysql_login_password }}
+
+- name: create mediawiki DB  
+  mysql_db: name={{ wgDBname }} state=present login_user={{ mysql_login_user }} login_password={{ mysql_login_password }}
+  when: wgDBname is defined and 
+        mysql_login_user is defined and 
+        mysql_login_password is defined
+  
+- name: import mediawiki DB
+  mysql_db: name={{ wgDBname }} target=/tmp/{{ mysql_wiki_db_dump }} state=import login_user={{ mysql_login_user }} login_password={{ mysql_login_password }}
+  when: wgDBname is defined and 
+        mysql_login_user is defined and 
+        mysql_login_password is defined and 
+        mysql_wiki_db_dump is defined 
+  
+- name: update mediawiki by using maintenance php script
+  shell: cd /var/lib/mediawiki/ && php maintenance/update.php 
+
+- name: copy logo
+  copy: src={{ logo_file }} dest=/var/lib/mediawiki/resources/assets mode=0644
+  when: logo_file is defined
+
+- name: copy wiki images
+  copy: src={{ wiki_images }} dest=/var/lib/mediawiki
+  when: wiki_images is defined
+
+- name: place wiki images
+  unarchive: src=/var/lib/mediawiki/{{ wiki_images }} dest=/var/lib/mediawiki/ copy=no
+  when: wiki_images is defined
+=======
   
 - debug: var=wikiforum_plugin_tar.dest  
       
@@ -64,5 +146,6 @@
   
 - name: update mediawiki by using maintenance php script
   shell: cd /var/lib/mediawiki/ && php maintenance/update.php  
+>>>>>>> ee3e16e681cb84937e91bf79d6e834171e3feaca
  
  
