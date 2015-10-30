@@ -1,0 +1,9 @@
+- name: reload ufw
+  service: name=ufw state=restarted
+
+- name: reboot vm
+  command: shutdown -r now "Ansible updates triggered"
+  async: 0
+  poll: 0
+  ignore_errors: true
+  sudo: true
