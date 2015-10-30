@@ -43,8 +43,8 @@
     env:
       REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
 
-- name: create htpasswd file
-  htpasswd: path=/etc/nginx/conf.d/htpasswd name={{ registry_user }} password={{ registry_password }}
+#- name: create htpasswd file
+#  htpasswd: path=/etc/nginx/conf.d/htpasswd name={{ registry_user }} password={{ registry_password }}
 
 - name: copy nginx config
   template: src="nginx.conf.http" dest=/etc/nginx/nginx.conf 
