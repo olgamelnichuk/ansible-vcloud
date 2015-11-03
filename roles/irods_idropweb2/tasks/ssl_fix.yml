@@ -1,0 +1,35 @@
+---
+- name: install required packages
+  apt: pkg={{ item }}  state=latest
+  with_items:
+    - software-properties-common 
+
+- name: installing openjdk-8 
+  shell: "{{ item }}"
+  with_items:
+  - "add-apt-repository ppa:openjdk-r/ppa -y"
+  - "apt-get update"
+  - "apt-get install openjdk-8-jdk"
+
+- name: updating alternatives (java)
+  alternatives: name=java path=/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+
+- name: updating alternatives (javac)
+  alternatives: name=javac path=/usr/lib/jvm/java-8-openjdk-amd64/bin/javac
+
+- name: setting java8 as default
+  file: src=/usr/lib/jvm/java-8-openjdk-amd64 dest=/usr/lib/jvm/default-java state=link
+
+- name: converting irods certificate into der format
+  shell: openssl x509 -outform der -in /etc/irods/chain.pem -out /tmp/irods.crt.der
+
+- name: create java trust store
+  shell: keytool -importcert -file /tmp/irods.crt.der -alias irods_crt -keystore /etc/tomcat7/truststore.jks -storepass changeit -noprompt
+  args:
+    creates: /etc/tomcat7/truststore.jks
+
+- name: adding JAVA_OPTS to catalina
+  copy: src=setenv.sh dest=/usr/share/tomcat7/bin/setenv.sh
+
+- name: restart tomcat7
+  service: name=tomcat7 state=restarted
