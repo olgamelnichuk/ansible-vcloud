@@ -1,0 +1,22 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items:
+  - rrdtool
+  - gmetad
+  - ganglia-webfrontend
+
+- name: copy apache config
+  shell: cp /etc/ganglia-webfrontend/apache.conf /etc/apache2/sites-enabled/ganglia.conf
+
+- name: copy gmetad.conf
+  template: src=gmetad.conf.j2 dest=/etc/ganglia/gmetad.conf
+
+- name: restart gmetad
+  service: name=gmetad state=restarted
+
+- name: restart apache2
+  service: name=apache2 state=restarted
