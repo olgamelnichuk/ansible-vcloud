@@ -16,10 +16,7 @@
   - phpmyadmin
   - vsftpd
   - python-mysqldb 
-<<<<<<< HEAD
   - gzip
-=======
->>>>>>> ee3e16e681cb84937e91bf79d6e834171e3feaca
   
 - name: download mediawiki tar
   get_url: url={{ mediawiki_tar_url }} dest=/tmp
@@ -29,6 +26,7 @@
   
 - name: open mediawiki tar
   unarchive: src={{ mediawiki_tar.dest }} dest=/tmp copy=no 
+  when: mediawiki_tar.dest is defined
   
 - name: copy mediawiki into /var/lib/mediawiki
   shell: mkdir /var/lib/mediawiki && cd /tmp && mv mediawiki-*/* /var/lib/mediawiki  
@@ -43,17 +41,18 @@
 - debug: var=ldap_authentication_tar.dest  
       
 - name: open ldap_authentication plugin
-  unarchive: src={{ ldap_authentication_tar.dest }} dest=/var/lib/mediawiki/extensions copy=no     
+  unarchive: src={{ ldap_authentication_tar.dest }} dest=/var/lib/mediawiki/extensions copy=no 
+  when: ldap_authentication_tar.dest is defined    
   
 - name: download wikiforum plugin
   get_url: url={{ wikiforum_plugin_url }} dest=/tmp
   register: wikiforum_plugin_tar	 
-<<<<<<< HEAD
   
 - debug: var=wikiforum_plugin_tar.dest  
       
 - name: open wikiforum plugin 
   unarchive: src={{ wikiforum_plugin_tar.dest }} dest=/var/lib/mediawiki/extensions copy=no 
+  when: wikiforum_plugin_tar.dest is defined
     
 - name: copy LocalSettings.php
   template: src=LocalSettings.php dest=/var/lib/mediawiki/LocalSettings.php 
@@ -97,6 +96,8 @@
 
 - name: set password
   shell: mysqladmin -u {{ mysql_login_user }} password {{ mysql_login_password }}
+  when: mysql_login_user is defined and 
+        mysql_login_password is defined
 
 - name: create mediawiki DB  
   mysql_db: name={{ wgDBname }} state=present login_user={{ mysql_login_user }} login_password={{ mysql_login_password }}
@@ -125,27 +126,4 @@
 - name: place wiki images
   unarchive: src=/var/lib/mediawiki/{{ wiki_images }} dest=/var/lib/mediawiki/ copy=no
   when: wiki_images is defined
-=======
   
-- debug: var=wikiforum_plugin_tar.dest  
-      
-- name: open wikiforum plugin 
-  unarchive: src={{ wikiforum_plugin_tar.dest }} dest=/var/lib/mediawiki/extensions copy=no 
-    
-- name: copy LocalSettings.php
-  template: src=LocalSettings.php dest=/var/lib/mediawiki/LocalSettings.php 
-
-- name: copy DB
-  copy: src=emif.sql.gz dest=/tmp 
-
-- name: create mediawiki DB  
-  mysql_db: name=emif state=present login_user=**** login_password=****
-  
-- name: import mediawiki DB
-  mysql_db: name=emif target=/tmp/emif.sql.gz state=import login_user=**** login_password=****
-  
-- name: update mediawiki by using maintenance php script
-  shell: cd /var/lib/mediawiki/ && php maintenance/update.php  
->>>>>>> ee3e16e681cb84937e91bf79d6e834171e3feaca
- 
- 
