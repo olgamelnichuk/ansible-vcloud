@@ -1,5 +1,6 @@
 .DS_store
 .vagrant
+.pyc
 keys
 hosts
 
