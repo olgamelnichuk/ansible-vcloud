@@ -65,6 +65,9 @@
 - name: ensure nginx starts on a fresh reboot
   service: name=nginx state=started enabled=yes
 
+# fixing irods-web2 tsl version bug (needed to run PAM auth)
+- include: ssl_fix.yml
+  tags: ssl_fix
 
 #- name: copy server.xml to /etc/tomcat7
 #  copy: src=server.xml dest=/etc/tomcat7/server.xml

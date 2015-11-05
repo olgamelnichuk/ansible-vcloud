@@ -1,0 +1,27 @@
+---
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items:
+  - ganglia-monitor
+
+- set_fact: cluster_name="{{ group_names | intersect(ganglia_clusters) | first }}"
+
+- debug: var=cluster_name
+
+- set_fact: data_receiver_host="{{ hostvars | fetchlistfromdict(groups[cluster_name]) | selectattr('data_receiver', 'equalto','yes') | map(attribute='ansible_default_ipv4.address') | first }}"
+
+- debug: var=data_receiver_host
+
+- name: copy gmond-receiver.conf
+  template: src=gmond-receiver.conf.j2 dest=/etc/ganglia/gmetad.conf
+  when: data_receiver is defined
+
+- name: copy gmond.conf
+  template: src=gmond.conf.j2 dest=/etc/ganglia/gmetad.conf
+  when: data_receiver is not defined
+
+- name: restart ganglia-monitor
+  service: name=ganglia-monitor state=restarted

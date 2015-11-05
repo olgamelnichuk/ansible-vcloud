@@ -1,0 +1,14 @@
+---
+- name: Set up ganglia server
+  hosts: ganglia_server
+  sudo: true
+  roles: 
+    - ganglia_server
+  tags: server
+
+- name: Set up ganglia cluster nodes
+  hosts: "{{ ganglia_clusters }}"
+  sudo: true
+  roles: 
+    - ganglia_cluster_node
+  tags: cluster_node
