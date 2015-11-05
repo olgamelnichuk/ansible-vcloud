@@ -34,7 +34,7 @@ host {
    used to only support having a single channel */ 
 udp_send_channel { 
 # mcast_join = 239.2.11.71
-  host = {{ monitor_host }} 
+  host = {{ data_receiver_host }} 
   port = 8649 
   ttl = 1 
 } 

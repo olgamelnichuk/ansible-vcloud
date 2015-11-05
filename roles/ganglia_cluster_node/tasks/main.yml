@@ -11,19 +11,16 @@
 
 - debug: var=cluster_name
 
-#- debug: var=hostvars | fetchlistfromdict(groups[cluster_name]) | selectattr('data_receiver') | map(attribute='ansible_default_ipv4.address')
-
-
 - set_fact: data_receiver_host="{{ hostvars | fetchlistfromdict(groups[cluster_name]) | selectattr('data_receiver', 'equalto','yes') | map(attribute='ansible_default_ipv4.address') | first }}"
 
 - debug: var=data_receiver_host
 
 - name: copy gmond-receiver.conf
-  template: src=gmetad-receiver.conf.j2 dest=/etc/ganglia/gmetad.conf
+  template: src=gmond-receiver.conf.j2 dest=/etc/ganglia/gmetad.conf
   when: data_receiver is defined
 
 - name: copy gmond.conf
-  template: src=gmetad.conf.j2 dest=/etc/ganglia/gmetad.conf
+  template: src=gmond.conf.j2 dest=/etc/ganglia/gmetad.conf
   when: data_receiver is not defined
 
 - name: restart ganglia-monitor
