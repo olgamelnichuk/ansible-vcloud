@@ -51,37 +51,37 @@ $wgLDAPDebug = 1;
 $wgDebugLogGroups['ldap'] = '/var/lib/mediawiki/logs/ldapdebug.log';
 $wgAuth = new LdapAuthenticationPlugin();
 $wgLDAPLowerCaseUsername = array(
-  'emif_ebi_dev' => true,
+  '{{ ldap_domain }}' => true,
 );
 
 $wgLDAPDomainNames = array(
-  'emif_ebi_dev',
+  '{{ ldap_domain }}',
 );
 $wgLDAPServerNames = array(
-  'emif_ebi_dev' => 'ldap',
+  '{{ ldap_domain }}' => 'ldap',
 );
 
 $wgLDAPEncryptionType = array(
-  'emif_ebi_dev' => 'clear',
+  '{{ ldap_domain }}' => 'clear',
 );
 
 $wgLDAPSearchAttributes = array(
-  'emif_ebi_dev' => 'uid'
+  '{{ ldap_domain }}' => 'uid'
 );
 $wgLDAPBaseDNs = array(
-  'emif_ebi_dev' => 'dc=emif,dc=ebi,dc=dev',
+  '{{ ldap_domain }}' => '{{ ldap_base }}',
 );
 // Pull LDAP groups a user is in, and update local wiki security group.
 // Default: false
 $wgLDAPUseLDAPGroups = array(
-  'emif_ebi_dev' => true,
+  '{{ ldap_domain }}' => true,
 );
 
 // A list of groups that won't automatically have their members
 // removed, but will have them added. The sysop, bureaucrat, and bot
 // groups are always considered locally managed.
 $wgLDAPLocallyManagedGroups = array(
-  'emif_ebi_dev' => array( 'adtestgroup', 'adtestgroup2' ),
+  '{{ ldap_domain }}' => array( 'adtestgroup', 'adtestgroup2' ),
 );
 
 // Get every group from LDAP, and add it to $wgGroupPermissions. This
@@ -90,7 +90,7 @@ $wgLDAPLocallyManagedGroups = array(
 // environments.
 // Default: false
 $wgLDAPGroupsPrevail = array(
-  'emif_ebi_dev' => true,
+  '{{ ldap_domain }}' => true,
 );
 
 require_once "$IP/skins/CologneBlue/CologneBlue.php";
