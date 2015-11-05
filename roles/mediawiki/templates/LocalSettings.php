@@ -17,13 +17,8 @@ $wgEnotifUserTalk = false; # UPO
 $wgEnotifWatchlist = false; # UPO
 $wgEmailAuthentication = false;
 $wgDBtype = "mysql";
-<<<<<<< HEAD
 $wgDBserver = "localhost";
 $wgDBname = "****";
-=======
-$wgDBserver = "127.0.0.1";
-$wgDBname = "emif";
->>>>>>> ee3e16e681cb84937e91bf79d6e834171e3feaca
 $wgDBuser = "****";
 $wgDBpassword = "****";
 $wgDBprefix = "";
@@ -38,10 +33,6 @@ $wgUseInstantCommons = false;
 $wgShellLocale = "en_US.utf8";
 $wgLanguageCode = "en";
 $wgSecretKey = "****";
-<<<<<<< HEAD
-=======
-$wgUpgradeKey = "****";
->>>>>>> ee3e16e681cb84937e91bf79d6e834171e3feaca
 $wgRightsPage = ""; # Set to the title of a wiki page that describes your license/copyright
 $wgRightsUrl = "";
 $wgRightsText = "";
