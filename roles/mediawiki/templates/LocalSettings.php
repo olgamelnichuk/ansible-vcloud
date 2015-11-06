@@ -51,37 +51,30 @@ $wgLDAPDebug = 1;
 $wgDebugLogGroups['ldap'] = '/var/lib/mediawiki/logs/ldapdebug.log';
 $wgAuth = new LdapAuthenticationPlugin();
 $wgLDAPLowerCaseUsername = array(
-  '{{ ldap_wiki_domain }}' => true,
+  'CloudLDAPServer' => true,
 );
 
 $wgLDAPDomainNames = array(
-  '{{ ldap_wiki_domain }}',
+  'CloudLDAPServer',
 );
 $wgLDAPServerNames = array(
-  '{{ ldap_wiki_domain }}' => 'ldap',
+  'CloudLDAPServer' => 'ldap',
 );
 
 $wgLDAPEncryptionType = array(
-  '{{ ldap_wiki_domain }}' => 'clear',
+  'CloudLDAPServer' => 'clear',
 );
 
 $wgLDAPSearchAttributes = array(
-  '{{ ldap_wiki_domain }}' => 'uid'
+  'CloudLDAPServer' => 'uid'
 );
 $wgLDAPBaseDNs = array(
-  '{{ ldap_wiki_domain }}' => '{{ ldap_base }}',
+  'CloudLDAPServer' => '{{ ldap_base }}',
 );
 // Pull LDAP groups a user is in, and update local wiki security group.
 // Default: false
 $wgLDAPUseLDAPGroups = array(
-  '{{ ldap_wiki_domain }}' => true,
-);
-
-// A list of groups that won't automatically have their members
-// removed, but will have them added. The sysop, bureaucrat, and bot
-// groups are always considered locally managed.
-$wgLDAPLocallyManagedGroups = array(
-  '{{ ldap_wiki_domain }}' => array( 'adtestgroup', 'adtestgroup2' ),
+  'CloudLDAPServer' => true,
 );
 
 // Get every group from LDAP, and add it to $wgGroupPermissions. This
@@ -90,7 +83,7 @@ $wgLDAPLocallyManagedGroups = array(
 // environments.
 // Default: false
 $wgLDAPGroupsPrevail = array(
-  '{{ ldap_wiki_domain }}' => true,
+  'CloudLDAPServer' => true,
 );
 
 require_once "$IP/skins/CologneBlue/CologneBlue.php";

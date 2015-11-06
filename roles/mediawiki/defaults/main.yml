@@ -6,6 +6,5 @@ wikiforum_plugin_url: https://extdist.wmflabs.org/dist/extensions/WikiForum-REL1
 mysql_login_user: root 
 mysql_login_password: test
 wgServer: http://localhost:8080
-ldap_wiki_domain: test_org_dev
 ldap_base: dc=test,dc=org,dc=dev
 
