@@ -17,43 +17,43 @@
   - vsftpd
   - python-mysqldb 
   - gzip
-  
+
 - name: download mediawiki tar
   get_url: url={{ mediawiki_tar_url }} dest=/tmp
   register: mediawiki_tar
-  
+
 - debug: var=mediawiki_tar.dest  
-  
+
 - name: open mediawiki tar
-  unarchive: src={{ mediawiki_tar.dest }} dest=/tmp copy=no 
+  unarchive: src={{ mediawiki_tar.dest }} dest=/tmp copy=no
   when: mediawiki_tar.dest is defined
-  
+
 - name: copy mediawiki into /var/lib/mediawiki
   shell: mkdir /var/lib/mediawiki && cd /tmp && mv mediawiki-*/* /var/lib/mediawiki  
 
 - name: create mediawiki softlink for apache
   shell: cd /var/www/html/ && ln -s /var/lib/mediawiki mediawiki
-  
+
 - name: download ldap_authentication tar
   get_url: url={{ ldap_authentication_plugin_url }} dest=/tmp
   register: ldap_authentication_tar	 
-  
+
 - debug: var=ldap_authentication_tar.dest  
-      
+
 - name: open ldap_authentication plugin
-  unarchive: src={{ ldap_authentication_tar.dest }} dest=/var/lib/mediawiki/extensions copy=no 
+  unarchive: src={{ ldap_authentication_tar.dest }} dest=/var/lib/mediawiki/extensions copy=no
   when: ldap_authentication_tar.dest is defined    
-  
+
 - name: download wikiforum plugin
   get_url: url={{ wikiforum_plugin_url }} dest=/tmp
   register: wikiforum_plugin_tar	 
-  
+
 - debug: var=wikiforum_plugin_tar.dest  
-      
+
 - name: open wikiforum plugin 
-  unarchive: src={{ wikiforum_plugin_tar.dest }} dest=/var/lib/mediawiki/extensions copy=no 
+  unarchive: src={{ wikiforum_plugin_tar.dest }} dest=/var/lib/mediawiki/extensions copy=no
   when: wikiforum_plugin_tar.dest is defined
-    
+
 - name: copy LocalSettings.php
   template: src=LocalSettings.php dest=/var/lib/mediawiki/LocalSettings.php 
 
@@ -81,17 +81,17 @@
   - { regexp: "^\\$wgSitename*", line: "$wgSitename = \"{{ wgSitename }}\";", state: present }
   - { regexp: "^\\$wgMetaNamespace*", line: "$wgMetaNamespace = \"{{ wgMetaNamespace }}\";", state: present }
   when: wgServer is defined and 
-        logo_file is defined and 
-        wgEmergencyContact is defined and 
-        wgDBname is defined and 
-        mysql_login_user is defined and 
-        mysql_login_password is defined and 
+        logo_file is defined and
+        wgEmergencyContact is defined and
+        wgDBname is defined and
+        mysql_login_user is defined and
+        mysql_login_password is defined and
         secret_key is defined and
         wgSitename is defined and
-        wgMetaNamespace is defined 
+        wgMetaNamespace is defined
 
 - name: copy DB
-  copy: src={{ mysql_wiki_db_dump }} dest=/tmp 
+  copy: src={{ mysql_wiki_db_dump }} dest=/tmp
   when: mysql_wiki_db_dump is defined
 
 - name: set password
@@ -102,18 +102,18 @@
 - name: create mediawiki DB  
   mysql_db: name={{ wgDBname }} state=present login_user={{ mysql_login_user }} login_password={{ mysql_login_password }}
   when: wgDBname is defined and 
-        mysql_login_user is defined and 
+        mysql_login_user is defined and
         mysql_login_password is defined
-  
+
 - name: import mediawiki DB
   mysql_db: name={{ wgDBname }} target=/tmp/{{ mysql_wiki_db_dump }} state=import login_user={{ mysql_login_user }} login_password={{ mysql_login_password }}
   when: wgDBname is defined and 
-        mysql_login_user is defined and 
-        mysql_login_password is defined and 
-        mysql_wiki_db_dump is defined 
-  
+        mysql_login_user is defined and
+        mysql_login_password is defined and
+        mysql_wiki_db_dump is defined
+
 - name: update mediawiki by using maintenance php script
-  shell: cd /var/lib/mediawiki/ && php maintenance/update.php 
+  shell: cd /var/lib/mediawiki/ && php maintenance/update.php
 
 - name: copy logo
   copy: src={{ logo_file }} dest=/var/lib/mediawiki/resources/assets mode=0644
@@ -126,4 +126,3 @@
 - name: place wiki images
   unarchive: src=/var/lib/mediawiki/{{ wiki_images }} dest=/var/lib/mediawiki/ copy=no
   when: wiki_images is defined
-  
