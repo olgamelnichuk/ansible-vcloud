@@ -69,7 +69,7 @@ $wgLDAPSearchAttributes = array(
   'CloudLDAPServer' => 'uid'
 );
 $wgLDAPBaseDNs = array(
-  'CloudLDAPServer' => '{{ ldap_base }}',
+  'CloudLDAPServer' => '{{ wiki_ldap_base }}',
 );
 // Pull LDAP groups a user is in, and update local wiki security group.
 // Default: false
