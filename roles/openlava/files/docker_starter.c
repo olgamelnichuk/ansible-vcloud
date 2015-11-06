@@ -103,14 +103,14 @@ int main(int argc, char **argv)
      * to be run.
      */
 
-    mounts = get_nfs_mounts();
+    /* mounts = get_nfs_mounts();
 
     fprintf(fp, "%d:%d:%d:%d:%d mounts: %s\n",
             tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,
             tm->tm_min, tm->tm_sec, mounts);
 
-
-    sprintf(buf, "sudo dockercmd run -v /tmp:/tmp --name=%s %s %s %s %s", jobId, mounts, (options != NULL ? options : ""), image, cmd);
+    */
+    sprintf(buf, "sudo dockercmd run -v /tmp:/tmp --name=%s %s %s %s", jobId, (options != NULL ? options : ""), image, cmd);
 
     fprintf(fp, "%d:%d:%d:%d:%d starter runs: %s\n",
             tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,
