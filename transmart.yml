@@ -1,0 +1,9 @@
+---
+- name: tranSMART 1.2 setup
+  hosts: transmart
+  sudo: true
+  roles: 
+    - transmart
+#  tags: transmart_1.2
+
+
