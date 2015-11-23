@@ -2,100 +2,8 @@
 # Based on https://wiki.transmartfoundation.org/pages/viewpage.action?pageId=6619205
 # transmart will be available on http://localhost:8080/transmart/ with admin/admin 
 # on Cloud appropriate ports have to be opened and redirected 
-- name: step1 - add The Hyve package repository
-  shell: "{{ item }}"
-  with_items:
-  - "apt-key adv --keyserver keyserver.ubuntu.com --recv 3375DA21"
-  - "echo deb http://apt.thehyve.net/internal/ trusty main | tee /etc/apt/sources.list.d/hyve_internal.list"
-  - "apt-get update" 
 
-- name: upgrade all packages
-  apt: update_cache=yes
-
-- name: step2 - install required packages
-  apt: pkg={{ item }} state=latest
-  with_items:
-  - make
-  - curl
-  - git
-  - openjdk-7-jdk  
-  - groovy
-  - php5-cli
-  - php5-json
-  - postgresql 
-  - postgresql-contrib
-  - autopostgresqlbackup
-  - python-psycopg2 
-  - apache2
-  - tomcat7 
-  - libtcnative-1 
-  - transmart-r
-#  - postgresql-9.3 
-
-- name: make sure postgres is running
-  service: name=postgresql state=started enabled=yes
-
-- name: step3 - get transmart-data
-  shell: git clone https://github.com/transmart/transmart-data.git
-  sudo: no
-
-- name: step 4 - configure transmart-data
-  shell: cd transmart-data && php env/vars-ubuntu.php > vars && source vars 
-  sudo: no
-
-- name: step5 - create transmart database table-spaces and schema
-  shell: cd transmart-data && source vars && sudo -u postgres bash -c "source vars; PGSQL_BIN=/usr/bin/ PGDATABASE=template1 make -C ddl/postgres/GLOBAL tablespaces" && make postgres warn=no
-  sudo: no
-  args:
-     executable: /bin/bash
-
-- name: step 6 - copy transmart configuration file
-  shell: cd transmart-data && bash -c "source vars; TSUSER_HOME=~tomcat7/ make -C config/ install"
-
-- name: step7a - install and run solr
-  shell: cd transmart-data && source vars && make -C solr solr_home
-  sudo: no
-  args:
-     executable: /bin/bash
-
-- name: step7b - chown to tomcat7
-  shell: cd transmart-data && chown -R tomcat7 solr/solr
-
-- name: step 7c - copy solr config 
-  template: src=solr.xml dest=/etc/tomcat7/Catalina/localhost/
-  sudo_user: tomcat7
-
-- name: step7d - tomcat7 start
-  service: name=tomcat7 state=started
-
-- pause: minutes=2
-
-- name: step7e - tomcat7 stop
-  service: name=tomcat7 state=stopped
-
-- name: step7f - copy libs
-  shell: cp -a /home/ansible/transmart-data/solr/lib/ext/. /var/lib/tomcat7/webapps/solr/WEB-INF/lib/
-  sudo_user: tomcat7 
-
-- name: step7g - mkdir classes
-  file: path=/var/lib/tomcat7/webapps/solr/WEB-INF/classes state=directory
-  sudo_user: tomcat7 
-
-- name: step7h - copy classes
-  shell: cp /home/ansible/transmart-data/solr/resources/log4j.properties /var/lib/tomcat7/webapps/solr/WEB-INF/classes
-  sudo_user: tomcat7 
-
-- name: step8 - configure and start Rserve
-  shell: echo 'USER=tomcat7' | sudo tee /etc/default/rserve && sudo service rserve start
-  sudo: no 
-
-- name: step9a - deploy tomcat7 web application on Tomcat
-  shell: sudo service tomcat7 stop && echo 'JAVA_OPTS="-Xmx4096M -XX:MaxPermSize=1024M"' | sudo tee /usr/share/tomcat7/bin/setenv.sh && sudo wget -P /var/lib/tomcat7/webapps/ https://ci.transmartfoundation.org/browse/DEPLOY-TRAPP/latestSuccessful/artifact/shared/transmart.war/transmart.war
-  sudo: no 
-
-- name: step9b - tomcat7 start
-  service: name=tomcat7 state=started
-
+# Load examples
 - name: step10 - prepare ETL environment
   shell: cd transmart-data && source vars && make -C env/ data-integration && make -C env/ update_etl
   sudo: no
@@ -107,6 +15,14 @@
   sudo: no
   args:
      executable: /bin/bash
+
+
+
+
+
+
+
+
 
  
 
