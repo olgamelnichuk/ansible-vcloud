@@ -3,7 +3,7 @@
   hosts: transmart
   sudo: true
   roles: 
-    - transmart
+    - { role: transmart, transmart_source: true }
 #  tags: transmart_1.2
 
 

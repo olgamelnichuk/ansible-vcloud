@@ -71,6 +71,7 @@
 - name: step7d - tomcat7 start
   service: name=tomcat7 state=started
 
+# Wait to give time for solr initialization
 - pause: minutes=2
 
 - name: step7e - tomcat7 stop
@@ -92,40 +93,42 @@
   shell: echo 'USER=tomcat7' | sudo tee /etc/default/rserve && sudo service rserve start
   sudo: no 
 
-# Download Web Application
-- name: step9b - Download Web Application
-  shell: git clone https://github.com/transmart/transmartApp.git && cd transmartApp && git fetch --tags && git checkout v1.2.0
-  sudo: no
-
-- name: step9c - Download Core Application
-  shell: git clone https://github.com/transmart/transmart-core-api.git && cd transmart-core-api && git fetch --tags && git checkout v1.2.0
-  sudo: no
-
 - name: step9a - deploy tomcat7 web application on Tomcat
   shell: sudo service tomcat7 stop && echo 'JAVA_OPTS="-Xmx4096M -XX:MaxPermSize=1024M"' | sudo tee /usr/share/tomcat7/bin/setenv.sh && sudo wget -P /var/lib/tomcat7/webapps/ https://ci.transmartfoundation.org/browse/DEPLOY-TRAPP/latestSuccessful/artifact/shared/transmart.war/transmart.war
   sudo: no 
-  tags: transmart_war
+  when: not transmart_source
 
 - name: step9 prep - Grails SDK
   shell: curl -s get.gvmtool.net | bash
-  tags: transmart_source
+  when: transmart_source
 
 - name: step9 prep - Grails install
   shell: source /root/.sdkman/bin/sdkman-init.sh && yes|sdk install grails 2.3.7
   args:
      executable: /bin/bash
-  tags: transmart_source
+  when: transmart_source
+
+# Download Web Application
+- name: step9 prep - Download Web Application
+  shell: git clone https://github.com/transmart/transmartApp.git && cd transmartApp && git fetch --tags && git checkout v1.2.0
+  sudo: no
+  when: transmart_source
+
+- name: step9 prep - Download Core Application
+  shell: git clone https://github.com/transmart/transmart-core-api.git && cd transmart-core-api && git fetch --tags && git checkout v1.2.0
+  sudo: no
+  when: transmart_source
 
 - name: step9 prep - create transmartApp war
   shell: cd /home/ansible/transmart-data && bash -c "source vars; TSUSER_HOME=~tomcat7/ make -C config/ install" && cd /home/ansible/transmartApp && source /root/.sdkman/bin/sdkman-init.sh && grails prod war
   args:
      executable: /bin/bash
-  tags: transmart_source
+  when: transmart_source
 
 - name: step9a - deploy tomcat7 web application on Tomcat
   shell: sudo service tomcat7 stop && echo 'JAVA_OPTS="-Xmx4096M -XX:MaxPermSize=1024M"' | sudo tee /usr/share/tomcat7/bin/setenv.sh && sudo cp /home/ansible/transmartApp/target/transmart.war /var/lib/tomcat7/webapps/
   sudo: no
-  tags: transmart_source 
+  when: transmart_source 
 
 - name: step9b - tomcat7 start
   service: name=tomcat7 state=started
