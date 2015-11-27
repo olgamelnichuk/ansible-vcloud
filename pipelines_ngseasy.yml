@@ -3,12 +3,4 @@
   hosts: docker_openlava_nodes
   sudo: true
   roles: 
-    - pipelines_ngseasy_image
-  tags: images
-
-- name: update ngseasy scritps
-  hosts: nfs_server
-  sudo: true
-  roles: 
-    - pipelines_ngseasy_scripts
-  tags: scripts
+    - pipelines_ngseasy

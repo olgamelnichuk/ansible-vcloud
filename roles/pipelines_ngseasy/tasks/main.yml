@@ -1,0 +1,53 @@
+---
+- name: pull ngseasy docker images
+  shell: 'docker pull {{ item }}:{{ ngseasy_version }}'
+  with_items:
+  - "compbio/ngseasy-base"
+  - "compbio/ngseasy-fastqc"
+  - "compbio/ngseasy-trimmomatic"
+  - "compbio/ngseasy-snap"
+  - "compbio/ngseasy-bwa"
+  - "compbio/ngseasy-bowtie2"
+  - "compbio/ngseasy-stampy"
+  - "compbio/ngseasy-picardtools"
+  - "compbio/ngseasy-freebayes"
+  - "compbio/ngseasy-platypus"
+  - "compbio/ngseasy-glia"
+  - "compbio/ngseasy-delly"
+  - "compbio/ngseasy-lumpy"
+  - "compbio/ngseasy-bcbiovar"
+  - "compbio/ngseasy-cnmops"
+  - "compbio/ngseasy-mhmm"
+  - "compbio/ngseasy-exomedepth"
+  - "compbio/ngseasy-slope"
+  tags: images
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items:
+  - python-pip 
+  - python-dev 
+  - build-essential 
+
+- name: upgrade pip
+  shell: pip install --upgrade pip 
+
+- name: install docker-py
+  pip: name=docker-py
+
+- name: clone git repository
+  git: repo=https://github.com/olgamelnichuk/ngspyeasy.git dest=/tmp/ngspyeasy version=dev
+
+- name: install ngspyeasy
+  shell: /bin/bash /tmp/ngspyeasy/install.sh
+  args:
+    creates: /usr/sbin/ngspyeasy_tool
+
+- name: create docker group if it doesn't exists
+  group: name=docker state=present
+
+- name: chown g=docker to ngspyeasy_tool
+  shell: chown :docker /usr/sbin/ngspyeasy_tool
+
+- name: add setuid permissions to ngspyeasy_tool
+  shell: chmod g+s /usr/sbin/ngspyeasy_tool
