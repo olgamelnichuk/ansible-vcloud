@@ -1,0 +1,9 @@
+---
+- include: reference_genomes_b37.yml ref_dir={{ ngseasy_resources_dir }}
+  tags: b37
+
+- include: reference_genomes_hg19.yml ref_dir={{ ngseasy_resources_dir }}
+  tags: hg19
+
+- include: reference_genomes_hs37d5.yml ref_dir={{ ngseasy_resources_dir }}
+  tags: hs37d5
