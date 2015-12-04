@@ -59,12 +59,23 @@
   copy: src=dockercmd.py dest=/usr/local/bin/dockercmd mode=0750
   tags: update_dockercmd
 
-- name: allow users to run 'dockercmd' command
+- name: extract sudoer commands
+  shell:  "sudo cat /etc/sudoers | grep 'ALL ALL=NOPASSWD:' | awk '{ print $3 }'"
+  register: sudo_cat_out
+  tags: update_dockercmd
+
+- set_fact:
+    orig_commands: "{{ sudo_cat_out.stdout.split(',') }}"
+    more_commands:
+    - "/usr/local/bin/dockercmd"
+  tags: update_dockercmd
+
+- name: allow all users run ngspyeasy_tool
   lineinfile: 
     dest: /etc/sudoers 
     state: present 
     regexp: "^ALL.*" 
-    line: "ALL ALL=NOPASSWD: /usr/local/bin/dockercmd"
+    line: "ALL ALL=NOPASSWD: {{ orig_commands | union(more_commands) | join(',') }}"
   tags: update_dockercmd
 
 - name: restart openlava

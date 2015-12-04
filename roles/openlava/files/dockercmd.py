@@ -1,10 +1,15 @@
 #!/usr/bin/python
 
-import sys, os, subprocess, argparse, stat, logging, grp, pwd
+import sys, os, getpass, subprocess, argparse, stat, logging, grp, pwd
 
 logging.basicConfig(level = logging.INFO)
 
 logger = logging.getLogger(__name__)
+
+class IgnoreAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        # do nothing
+        pass
 
 class DefaultAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -89,7 +94,7 @@ def get_argparser():
 
     parser_run = subparsers.add_parser('run')
     parser_run.add_argument('-e', '--env', dest='-e', action=DefaultAction)
-    parser_run.add_argument('-u', '--user', dest='-u', action=DefaultAction)
+    parser_run.add_argument('-u', '--user', dest='-u', action=IgnoreAction)
     parser_run.add_argument('-w', '--workdir', dest='-w',  action=DefaultAction)
     parser_run.add_argument('-v', '--volume', dest='-v', action=create_check_volume_action(get_uid()))
     parser_run.add_argument('--volumes-from', dest='--volumes-from',  action=DefaultAction)
@@ -115,10 +120,16 @@ def get_argparser():
     return parser    
 
 def get_username():
-    return os.environ.get('SUDO_USER') 
+    username = os.environ.get('SUDO_USER') 
+    return getpass.getuser() if username is None else username
 
 def get_uid():
-    return os.environ.get('SUDO_UID') 
+    sudo_uid = os.environ.get('SUDO_UID')
+    return str(os.getuid()) if sudo_uid is None else sudo_uid
+
+def get_gid():
+    sudo_gid = os.environ.get('SUDO_GID') 
+    return str(os.getgid()) if sudo_gid is None else sudo_gid 
 
 def run_command(command):
     try:
@@ -154,6 +165,7 @@ def main(argv):
 
         ordered_args = reduce(lambda x, y: x + [y[0]] + (y[1] if isinstance(y[1], list) else [y[1]]), args.ordered_args, [])
         ordered_args = filter(lambda x: x not in [IMAGE_AND_COMMAND, CONTAINER], ordered_args)
+        ordered_args = ["-u", get_uid() + ":" + get_gid()] + ordered_args
 
         command = ' '.join(['docker', argv[0]] + ordered_args)
         logger.info('(uid=%s, command=[ %s ])', get_uid(), command)
