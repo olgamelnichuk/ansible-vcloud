@@ -93,11 +93,25 @@
   shell: echo 'USER=tomcat7' | sudo tee /etc/default/rserve && sudo service rserve start
   sudo: no 
 
+# deploy applicantion from pre-built WAR
+#
+
+# from the hyve latest build
+
 - name: step9a - deploy tomcat7 web application on Tomcat
   shell: sudo service tomcat7 stop && echo 'JAVA_OPTS="-Xmx4096M -XX:MaxPermSize=1024M"' | sudo tee /usr/share/tomcat7/bin/setenv.sh && sudo wget -P /var/lib/tomcat7/webapps/ https://ci.transmartfoundation.org/browse/DEPLOY-TRAPP/latestSuccessful/artifact/shared/transmart.war/transmart.war
   sudo: no 
-  when: not transmart_source
+  when: not transmart_source and not rcloud_support
 
+# from EBI pre-built WAR v1.2.0 with R Cloud support
+
+- name: step9a - deploy tomcat7 web application on Tomcat
+  shell: sudo service tomcat7 stop && echo 'JAVA_OPTS="-Xmx4096M -XX:MaxPermSize=1024M"' | sudo tee /usr/share/tomcat7/bin/setenv.sh && sudo wget -P /var/lib/tomcat7/webapps/ http://www.ebi.ac.uk/~andrew/transmart.war
+  sudo: no 
+  when: not transmart_source and not rcloud_support
+
+# compile and deploy application from sources
+#
 - name: step9 prep - Grails SDK
   shell: curl -s get.gvmtool.net | bash
   when: transmart_source
@@ -119,6 +133,13 @@
   sudo: no
   when: transmart_source
 
+# fetch modified RDC module with R Cloud support
+#
+- name: step9 prep - Download RDC module
+  shell: cd ~/.grails/2.3.7/projects/transmart/plugins/ && git clone https://github.com/andrewtikhonov/Rmodules.git && mv Rmodules rdc-rmodules-1.2.0 && cd rdc-rmodules-1.2.0 && git fetch --tags && git checkout v1.2.0.RCloud
+  sudo: no
+  when: transmart_source and rcloud_support
+
 - name: step9 prep - create transmartApp war
   shell: cd /home/ansible/transmart-data && bash -c "source vars; TSUSER_HOME=~tomcat7/ make -C config/ install" && cd /home/ansible/transmartApp && source /root/.sdkman/bin/sdkman-init.sh && grails prod war
   args:
@@ -129,6 +150,13 @@
   shell: sudo service tomcat7 stop && echo 'JAVA_OPTS="-Xmx4096M -XX:MaxPermSize=1024M"' | sudo tee /usr/share/tomcat7/bin/setenv.sh && sudo cp /home/ansible/transmartApp/target/transmart.war /var/lib/tomcat7/webapps/
   sudo: no
   when: transmart_source 
+
+# copy Config.groovy to enable R Cloud integration
+
+- name: step 7c - copy solr config 
+  template: src=Config.groovy dest=/usr/share/tomcat7/.grails/transmartConfig/
+  sudo_user: tomcat7
+  when: rcloud_support
 
 - name: step9b - tomcat7 start
   service: name=tomcat7 state=started
@@ -145,23 +173,4 @@
   sudo: no
   args:
      executable: /bin/bash
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-  
-
-
 

@@ -3,7 +3,7 @@
   hosts: transmart
   sudo: true
   roles: 
-    - { role: transmart, transmart_source: true }
+    - { role: transmart, transmart_source: true, rcloud_support: true }
 #  tags: transmart_1.2
 
 
