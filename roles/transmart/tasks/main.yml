@@ -98,17 +98,17 @@
 
 # from the hyve latest build
 
-- name: step9a - deploy tomcat7 web application on Tomcat
+- name: step9a1 - deploy tomcat7 web application on Tomcat
   shell: sudo service tomcat7 stop && echo 'JAVA_OPTS="-Xmx4096M -XX:MaxPermSize=1024M"' | sudo tee /usr/share/tomcat7/bin/setenv.sh && sudo wget -P /var/lib/tomcat7/webapps/ https://ci.transmartfoundation.org/browse/DEPLOY-TRAPP/latestSuccessful/artifact/shared/transmart.war/transmart.war
   sudo: no 
   when: not transmart_source and not rcloud_support
 
 # from EBI pre-built WAR v1.2.0 with R Cloud support
 
-- name: step9a - deploy tomcat7 web application on Tomcat
+- name: step9a2 - deploy tomcat7 web application on Tomcat
   shell: sudo service tomcat7 stop && echo 'JAVA_OPTS="-Xmx4096M -XX:MaxPermSize=1024M"' | sudo tee /usr/share/tomcat7/bin/setenv.sh && sudo wget -P /var/lib/tomcat7/webapps/ http://www.ebi.ac.uk/~andrew/transmart.war
   sudo: no 
-  when: not transmart_source and not rcloud_support
+  when: not transmart_source and rcloud_support
 
 # compile and deploy application from sources
 #
@@ -135,7 +135,7 @@
 
 # fetch modified RDC module with R Cloud support
 #
-- name: step9 prep - Download RDC module
+- name: step9 prep - Download RDC module with R Cloud integration
   shell: cd ~/.grails/2.3.7/projects/transmart/plugins/ && git clone https://github.com/andrewtikhonov/Rmodules.git && mv Rmodules rdc-rmodules-1.2.0 && cd rdc-rmodules-1.2.0 && git fetch --tags && git checkout v1.2.0.RCloud
   sudo: no
   when: transmart_source and rcloud_support
@@ -153,12 +153,29 @@
 
 # copy Config.groovy to enable R Cloud integration
 
-- name: step 7c - copy solr config 
+# make sure the path exists
+- name: step9b - remove transmart-data folder
+  file: path=/usr/share/tomcat7/.grails/transmartConfig/ state=directory
+  sudo_user: tomcat7
+
+- name: step9c - copy transmart config 
   template: src=Config.groovy dest=/usr/share/tomcat7/.grails/transmartConfig/
   sudo_user: tomcat7
   when: rcloud_support
 
-- name: step9b - tomcat7 start
+- name: step9d - mount transmart working directory
+  shell: mount {{ hostvars[item].ansible_default_ipv4.address }}:/export/rcloud/storage/tempdir /mnt/nfs/rcloud/storage/tempdir
+  sudo: no
+  when: rcloud_support 
+  with_items:
+  - '{{ groups.nfsserver }}'
+
+- name: step9e - mkdir transmart working directory
+  file: path=/mnt/nfs/rcloud/storage/tempdir/transmart state=directory
+  sudo_user: tomcat7
+  when: rcloud_support 
+
+- name: step9f - tomcat7 start
   service: name=tomcat7 state=started
 
 # Load examples
