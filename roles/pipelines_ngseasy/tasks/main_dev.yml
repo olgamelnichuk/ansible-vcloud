@@ -35,16 +35,29 @@
 - name: install docker-py
   pip: name=docker-py
 
-- name: install ansible
-  pip: name=ansible
-
 - name: clone git repository
-  git: repo=https://github.com/olgamelnichuk/ngspyeasy.git dest=/tmp/ngspyeasy version=an_experiment
+  git: repo=https://github.com/olgamelnichuk/ngspyeasy.git dest=/tmp/ngspyeasy version=dev
 
 - name: install ngspyeasy
   shell: /bin/bash install.sh
   args: 
     chdir: /tmp/ngspyeasy
+
+- name: rename ngspyeasy_tool
+  shell: mv /usr/bin/ngspyeasy_tool /usr/bin/ngspyeasy_tool_wrapper
+
+- name: secure ngspyeasy_tool_wrapper
+  shell: chmod 0700 /usr/bin/ngspyeasy_tool_wrapper
+
+- name: create ngspyeasy_tool executable
+  lineinfile:
+    dest: /usr/bin/ngspyeasy_tool
+    line: "{{ item }}"
+    state: present
+    create: yes
+  with_items:
+  - "#!/usr/bin/env bash"
+  - "sudo /usr/bin/ngspyeasy_tool_wrapper \\\"$@\\\""
 
 - name: made ngspyeasy readable and executable
   shell: chmod 755 {{ item }}
@@ -57,3 +70,23 @@
   with_items:
   - "find /opt/ngspyeasy -type d -exec chmod 755 {} +"
   - "find /opt/ngspyeasy -type f -exec chmod 644 {} +"
+
+
+- name: extract sudoer commands
+  shell:  "sudo cat /etc/sudoers | grep 'ALL ALL=NOPASSWD:' | awk '{ print $3 }'"
+  register: sudo_cat_out
+  tags: sudoers
+
+- set_fact:
+    orig_commands: "{{ sudo_cat_out.stdout.split(',') }}"
+    more_commands:
+    - "/usr/bin/ngspyeasy_tool_wrapper"
+  tags: sudoers
+
+- name: allow all users run ngspyeasy_tool
+  lineinfile: 
+    dest: /etc/sudoers 
+    state: present 
+    regexp: "^ALL.*" 
+    line: "ALL ALL=NOPASSWD: {{ orig_commands | union(more_commands) | join(',') }}"
+  tags: sudoers
