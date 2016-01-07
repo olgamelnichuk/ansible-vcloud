@@ -36,7 +36,7 @@
   pip: name=docker-py
 
 - name: clone git repository
-  git: repo=https://github.com/olgamelnichuk/ngspyeasy.git dest=/tmp/ngspyeasy version=dev
+  git: repo=https://github.com/olgamelnichuk/ngspyeasy.git dest=/tmp/ngspyeasy version=2.0
 
 - name: install ngspyeasy
   shell: /bin/bash install.sh

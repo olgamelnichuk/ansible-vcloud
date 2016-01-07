@@ -39,7 +39,7 @@
   pip: name=ansible
 
 - name: clone git repository
-  git: repo=https://github.com/olgamelnichuk/ngspyeasy.git dest=/tmp/ngspyeasy version=an_experiment
+  git: repo=https://github.com/olgamelnichuk/ngspyeasy.git dest=/tmp/ngspyeasy version=dev
 
 - name: install ngspyeasy
   shell: /bin/bash install.sh
