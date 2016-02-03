@@ -2,6 +2,7 @@
 - name: tranSMART 1.2 setup
   hosts: transmart
   sudo: true
+  user: ansible
   roles: 
     - { role: transmart, transmart_source: true, rcloud_support: true }
 #  tags: transmart_1.2
