@@ -187,43 +187,41 @@
   sudo: no
   when: transmart_source 
 
-# copy Config.groovy to enable R Cloud integration
-
-# make sure the path exists
 - name: step9f - remove transmart-data folder
   file: path=/usr/share/tomcat7/.grails/transmartConfig/ state=directory
   sudo_user: tomcat7
 
-- name: step9g1 - copy transmart config 
+- name: step9g2 - copy transmart config to enable R Cloud integration
   copy: src=Config.groovy dest=/usr/share/tomcat7/.grails/transmartConfig/ owner=tomcat7 group=tomcat7 mode=0644
   sudo: yes
   when: rcloud_support
 
-- name: step9g2 - create transmart mount point
+- name: step9g3 - create transmart mount point
   shell: mkdir -p /mnt/nfs/rcloud/storage/tempdir
   sudo: yes
   ignore_errors: True
   when: rcloud_support 
   tags: "MOUNT"
 
-- name: step9g3 - check if /mnt/nfs/rcloud/storage/tempdir/transmart is mounted
+- name: step9g4 - check if /mnt/nfs/rcloud/storage/tempdir/transmart is mounted
   stat: path=/mnt/nfs/rcloud/storage/tempdir/transmart
   register: transmart_mounted_stat
 
-- name: step9g4 - mount transmart working directory
+- name: step9g5 - mount transmart working directory
   shell: mount {{groups.nfsserver[0]}}:/rcloud/storage/tempdir /mnt/nfs/rcloud/storage/tempdir
   sudo: yes
   when: rcloud_support and not transmart_mounted_stat.stat.exists
   tags: "MOUNT"
 
-- name: step9g5 - create transmart working directory
-  shell: mkdir -p /mnt/nfs/rcloud/storage/tempdir/transmart
+- name: step9g6 - create transmart working directory
+  file: path=/mnt/nfs/rcloud/storage/tempdir/transmart state=directory
   sudo: yes
+  sudo_user: tomcat7
   ignore_errors: True
   when: rcloud_support 
   tags: "MOUNT"
 
-- name: step9g6 - update fstab
+- name: step9g7 - update fstab
   lineinfile: 
     dest: "/etc/fstab"
     regexp: '^{{groups.nfsserver[0]}}:/rcloud.*'
@@ -232,12 +230,6 @@
   when: rcloud_support
   sudo: yes
   tags: "MOUNT"
-
-- name: step9g7 - mkdir transmart working directory
-  file: path=/mnt/nfs/rcloud/storage/tempdir/transmart state=directory
-  sudo_user: tomcat7
-  tags: "MOUNT"
-  when: rcloud_support 
 
 - name: step9h - tomcat7 start
   service: name=tomcat7 state=started
