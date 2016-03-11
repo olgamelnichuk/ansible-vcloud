@@ -2,7 +2,9 @@
 - name: tranSMART 1.2 setup
   hosts: transmart
   sudo: true
+  user: ansible
   roles: 
+    - { role: nfs_common, required_packages: ["nfs-common"], nfs_with_ldap: true }
     - { role: transmart, transmart_source: true, rcloud_support: true }
 #  tags: transmart_1.2
 
