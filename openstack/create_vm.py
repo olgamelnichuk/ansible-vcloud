@@ -9,7 +9,7 @@ import argparse, ConfigParser
 def str2bool(v):
   return v.lower() in ('yes', 'true')
 
-def get_nova_creds():
+def get_os_creds():
     try:
         d = {} 
         d['username'] = os.environ['OS_USERNAME']
@@ -21,21 +21,31 @@ def get_nova_creds():
         sys.exit(-1)
     return d
 
+def get_nova():
+    creds = get_os_creds()
+    nova = client.Client("2", **creds)
+    return nova
+
 def get_free_floating_ips(nova):
     return [x.ip for x in nova.floating_ips.list() if x.fixed_ip is None]
 
-def create_vm(vm_name, vm_image, vm_flavor, vm_keypair, floating_ip=False):
-    creds = get_nova_creds()
-    nova = client.Client("2", **creds)
-    
+def get_vm_by_name(nova, vm_name):
+    lst = [x for x in nova.servers.list() if x.name == vm_name]
+    return  lst[0] if lst else None
+
+def create_keypair(nova, vm_keypair):
     if not nova.keypairs.findall(name=vm_keypair):      
         with open(os.path.expanduser("~/.ssh/id_rsa.pub")) as pubkey:
             nova.keypairs.create(name=vm_keypair, public_key=pubkey.read())
 
+def create_vm(nova, vm_name, vm_image, vm_flavor, vm_keypair, vm_meta={}):
+    print ("creating '%s'..." % vm_name)
+    create_keypair(nova, vm_keypair)
+
     image = nova.images.find(name=vm_image)
     flavor = nova.flavors.find(name=vm_flavor)
 
-    instance = nova.servers.create(name=vm_name, image=image, flavor=flavor, key_name=vm_keypair, meta=dict(ansible_group="ansible_test"))
+    instance = nova.servers.create(name=vm_name, image=image, flavor=flavor, key_name=vm_keypair, meta=vm_meta)
     
     # Poll at 5 second intervals, until the status is no longer 'BUILD'
     status = instance.status
@@ -44,23 +54,39 @@ def create_vm(vm_name, vm_image, vm_flavor, vm_keypair, floating_ip=False):
         instance = nova.servers.get(instance.id)
         status = instance.status
     print "status: %s" % status
+    return instance
+
+def create_vm_command(d):
+    nova = get_nova()
+    
+    vm_name = d['name']
+    vm_image = d['image']
+    vm_flavor = d['flavor']
+    vm_keypair = d['keypair']
+    vm_meta = d['meta']
+    floating_ip = str2bool(d.get('floating_ip', 'no'))
+    
+    vm = get_vm_by_name(nova, vm_name)
+    if vm is None:
+        vm = create_vm(nova, vm_name, vm_image, vm_flavor, vm_keypair, vm_meta) 
 
     if floating_ip:
         free_ips = get_free_floating_ips(nova)
         if len(free_ips) > 0:
-            instance.add_floating_ip(free_ips[0])
+            vm.add_floating_ip(free_ips[0])
 
-
-def create_multiple_vms(d):
-    count = d.get('count', 1)
-    for i in range(count):
-        create_vm(d['name'], d['image'], d['flavor'], d['keypair'], floating_ip: str2bool(d.get('floating_ip', 'no')))
+def find_command(command):
+    return {
+        'create': create_vm_command
+    }.get(command)
 
 def do_command(command, d):
     print ("do command: %s, %s" % (command, d))
-    return {
-        'create': create_multiple_vms
-    }.get(command)(d)
+
+    cmd = find_command(command)
+    count = d.get('count', 1)
+    for i in range(count):
+        cmd(d)
 
 def conf_section_map(config, section):
     d = {}
@@ -73,6 +99,7 @@ def conf_section_map(config, section):
         except:
             print ("exception on %s: %s" % (option, sys.exc_info()[1]))
             d[option] = None
+    d['meta'] = dict(ansible_group=section)
     return d
 
 def default_config_path():
