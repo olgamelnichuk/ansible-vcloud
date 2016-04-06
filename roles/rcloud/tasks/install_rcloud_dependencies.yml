@@ -1,0 +1,19 @@
+---
+- name: init dpkg
+  shell: dpkg --configure -a
+
+- name: upgrade all packages
+  apt: update_cache=yes
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - gfortran
+  - libreadline-dev
+  - libx11-dev
+  - libxt-dev
+  - libcairo2
+  - libcairo2-dev
+  - libpixman-1-0
+  - libpixman-1-dev
+  - openjdk-7-jdk

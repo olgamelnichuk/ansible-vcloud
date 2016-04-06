@@ -1,0 +1,50 @@
+---
+- name: setup openlava cluster
+  hosts: rcloud
+  user: ansible
+  roles: 
+    - { role: ldap_client }
+    - { role: nfs_common, required_packages: ["nfs-common"], nfs_with_ldap: true }
+    - { role: openlava }
+  sudo: true
+  tags: "openlava"
+
+- name: setup ldap
+  hosts: rcloud
+  user: ansible
+  roles: 
+    - { role: ldap_client }
+  sudo: true
+  tags: "ldap"
+
+- name: setup rcloud nfs server
+  hosts: nfs_server
+  user: ansible
+  roles: 
+    - { role: rcloud, rcloud_nfs_server: true }
+  sudo: true
+  tags: "rcloud-cluster"
+
+- name: setup rcloud nfs clients
+  hosts: rcloud
+  user: ansible
+  roles: 
+    - { role: rcloud, rcloud_nfs_client: true }
+  sudo: true
+  tags: "rcloud-cluster"
+
+- name: setup rcloud master
+  hosts: rcloud_master
+  user: ansible
+  roles: 
+    - { role: rcloud, rcloud_master: true }
+  sudo: true
+  tags: "rcloud-cluster"
+
+- name: setup rcloud nodes
+  hosts: rcloud
+  user: ansible
+  roles: 
+    - { role: rcloud, rcloud_nodes: true }
+  sudo: true
+  tags: "rcloud-cluster"

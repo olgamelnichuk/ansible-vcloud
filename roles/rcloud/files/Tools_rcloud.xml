@@ -1,0 +1,2 @@
+<Context displayName="EBI EMIF R Workbench" docBase="/home/ansible/deployment/rcloud-web.war"  override="true" swallowOutput="true" allowLinking="true">
+</Context>

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+FILE=tmp.R
+
+echo 'message("testing: 2 + 2 = ", 2 + 2);' > ${FILE}
+echo 'message("test passed");' >> ${FILE}
+
+DBHOST="{{ rcloud_master_hostname }}"
+DBNAME="{{ rcloud_dbname }}"
+DBUSER="{{ rcloud_dbuser }}"
+DBPASSWORD="{{ rcloud_dbpassword }}"
+
+java -cp rcloud-rjob-1.4.0-rcloud-jar-with-dependencies.jar -Dnaming.mode=db -Dpools.dbmode.type=postgresql -Dpools.dbmode.name=${DBNAME} -Dpools.dbmode.host=${DBHOST} -Dpools.dbmode.port=5432 -Dpools.dbmode.user=${DBUSER} -Dpools.dbmode.password=${DBPASSWORD} -Dpoolname="EMIF_4G" rjob.RunRJob ${FILE}
+

@@ -1,0 +1,41 @@
+---
+
+#
+#   N F S
+#
+
+- include: install_rcloud_nfs_server.yml
+  when: rcloud_nfs_server
+
+- include: install_rcloud_nfs_client.yml
+  when: rcloud_nfs_client
+
+#
+#   M A S T E R
+#
+
+- debug: var=rcloud_master
+
+- include: install_rcloud_dependencies.yml
+  when: rcloud_master
+
+- include: install_rcloud_database.yml
+  when: rcloud_master
+
+- include: install_rcloud_webapp.yml
+  when: rcloud_master
+
+- include: install_rcloud_server.yml
+  when: rcloud_master
+
+#
+#   N O D E S
+#
+
+- debug: var=rcloud_nodes
+
+- include: install_rcloud_dependencies.yml
+  when: rcloud_nodes
+
+#- include: create_rcloud_users.yml
+#  when: not rcloud_master

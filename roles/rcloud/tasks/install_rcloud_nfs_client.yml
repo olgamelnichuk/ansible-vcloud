@@ -1,0 +1,19 @@
+---
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  - nfs-common
+
+- name: create mounted folder
+  file: path={{mounted_folder_name}} state=directory
+
+- name: mount the folder
+  mount: name={{mounted_folder_name}} src={{ groups.nfs_server[0] }}:{{exported_folder_name}} fstype=nfs  opts="rw,bg,hard" state=mounted
+
+- name: update fstab
+  lineinfile: 
+    dest: "/etc/fstab"
+    regexp: '^{{groups.nfs_server[0]}}:{{exported_folder_name}}.*'
+    line: "{{groups.nfs_server[0]}}:{{exported_folder_name}} {{mounted_folder_name}} nfs4 rw,bg,soft,intr,lock,ac,tcp,nfsvers=4,timeo=1800 0 0"
+    state: present
+  sudo: yes

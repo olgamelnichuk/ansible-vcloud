@@ -1,0 +1,20 @@
+---
+- name: start nfs service
+  service: name=nfs-kernel-server state=started
+  sudo: yes
+
+- name: create mounted folder
+  file: path=/export{{exported_folder_name}} state=directory owner=root group=root mode=755
+  sudo: yes
+
+- name: add the export to /etc/exports
+  lineinfile:
+    dest: /etc/exports
+    line: "/export{{exported_folder_name}}    *(rw,nohide,sync,insecure,root_squash,no_subtree_check)"
+    regexp: "^/export{{exported_folder_name}}.*"
+    state: present
+  sudo: yes
+
+- name: update exports
+  shell: exportfs -ra
+  sudo: yes

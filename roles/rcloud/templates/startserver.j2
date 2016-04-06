@@ -1,0 +1,47 @@
+#!/bin/bash
+
+BASE={{mounted_folder_name}}/local
+
+RCLOUDBASE={{mounted_folder_name}}/service
+STORAGEBASE={{mounted_folder_name}}/storage
+LOGFOLDER=${STORAGEBASE}/logs
+CLASSBASE=${RCLOUDBASE}/core
+CLASSPATH="${CLASSBASE}/rcloud-server-1.4.0-rcloud-jar-with-dependencies.jar"
+WORKINGDIR=${STORAGEBASE}/wdir
+
+export TMPDIR=${STORAGEBASE}/tempdir
+export R_HOME=${BASE}/lib/R
+export R_LIBS=${BASE}/lib/R/library
+
+export PATH=$PATH:{{mounted_folder_name}}/local/bin:{{mounted_folder_name}}/local/include
+export PATH=/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:$PATH
+
+export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
+export PATH=${BASE}/bin:$PATH
+export PATH=${R_HOME}/bin:$PATH
+export PATH=$JAVA_HOME/bin:$PATH
+
+export LD_LIBRARY_PATH=${BASE}/lib/R/lib:/lib:${BASE}/lib:${BASE}/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:{{mounted_folder_name}}/local/lib/R/lib:{{mounted_folder_name}}/local/lib:$LD_LIBRARY_PATH
+
+EXTPARMS=$@
+
+JOBPARMS=""
+#JOBPARMS="-Dnode=${node} -Dattr.lsf.processid=${attr.lsf.processid} -Djob.id=${job.id}"
+DEBUGPARMS=""
+#DEBUGPARMS="-Dcom.sun.management.jmxremote"
+
+DBHOST="{{ rcloud_master_hostname }}"
+DBNAME="{{ rcloud_dbname }}"
+DBUSER="{{ rcloud_dbuser }}"
+DBPASSWORD="{{ rcloud_dbpassword }}"
+
+DBPARMS="-Dnaming.mode=db -Ddb.type=postgresql -Ddb.name=${DBNAME} -Ddb.host=${DBHOST} -Ddb.port=5432 -Ddb.user=${DBUSER} -Ddb.password=${DBPASSWORD}"
+DBPARMS2="-Dpools.dbmode.defaultpool=EMIF_4G -Dpools.dbmode.type=postgresql -Dpools.dbmode.host=${DBHOST} -Dpools.dbmode.port=5432 -Dpools.dbmode.name=${DBNAME} -Dpools.dbmode.user=${DBUSER} -Dpools.dbmode.password=${DBPASSWORD}"
+SERVERPARMS="-Dpreprocess.help=true -Dservantclass=uk.ac.ebi.rcloud.server.RServantImpl -Dworking.dir.root=${WORKINGDIR} -Dlog.folder=${LOGFOLDER}"
+JAVAPARMS="-Djava.library.path=${R_LIBS}/rJava/jri -Xmx512m"
+CLASSNAME="uk.ac.ebi.rcloud.rpf.MainServer"
+
+java -cp ${CLASSPATH} ${JOBPARAMS} ${DEBUGPARMS} ${DBPARMS} ${DBPARMS2} ${SERVERPARMS} ${JAVAPARMS} ${EXTPARMS} ${CLASSNAME}
+
+wait

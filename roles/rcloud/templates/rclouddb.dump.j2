@@ -1,0 +1,378 @@
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: node_data; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
+--
+
+CREATE TABLE node_data (
+    node_name character varying(100) NOT NULL,
+    node_type character varying(50),
+    host_ip character varying(100) NOT NULL,
+    pool_prefix character varying(1000) NOT NULL,
+    host_name character varying(100),
+    login character varying(100),
+    pwd character varying(400),
+    install_dir character varying(400),
+    create_servant_command character varying(400),
+    kill_servant_command character varying(400),
+    os character varying(100),
+    servant_nbr_min integer NOT NULL,
+    servant_nbr_max integer NOT NULL,
+    process_counter integer NOT NULL,
+    step integer NOT NULL,
+    threshold integer NOT NULL,
+    basefolder character varying(400),
+    list_command character varying(400),
+    setup_profile_command character varying(400)
+);
+
+
+ALTER TABLE public.node_data OWNER TO postgres;
+
+--
+-- Name: options; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
+--
+
+CREATE TABLE options (
+    option_name character varying(500) NOT NULL,
+    option_value character varying(4000) NOT NULL
+);
+
+
+ALTER TABLE public.options OWNER TO postgres;
+
+--
+-- Name: pool_data; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
+--
+
+CREATE TABLE pool_data (
+    pool_name character varying(1000) NOT NULL,
+    timeout integer,
+    pool_prefixes character varying(1000) NOT NULL,
+    on_demand integer
+);
+
+
+ALTER TABLE public.pool_data OWNER TO postgres;
+
+--
+-- Name: projects; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
+--
+
+CREATE TABLE projects (
+    title character varying(400) NOT NULL,
+    folder character varying(400) NOT NULL,
+    owner character varying(100) NOT NULL,
+    status character varying(40) NOT NULL,
+    description character varying(4000),
+    created timestamp without time zone,
+    last_opened timestamp without time zone,
+    last_closed timestamp without time zone,
+    times_opened integer,
+    overall_time interval day to second,
+    basefolder character varying(400),
+    last_activity timestamp without time zone,
+    notified integer
+);
+
+
+ALTER TABLE public.projects OWNER TO postgres;
+
+--
+-- Name: servants; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
+--
+
+CREATE TABLE servants (
+    name character varying(1000) NOT NULL,
+    in_use integer NOT NULL,
+    ping_failures integer NOT NULL,
+    node_name character varying(100),
+    register_time timestamp without time zone,
+    process_id character varying(100),
+    host_name character varying(500),
+    host_ip character varying(100),
+    os character varying(100),
+    borrow_time timestamp without time zone,
+    borrow_process_id character varying(100),
+    borrow_host_name character varying(500),
+    borrow_host_ip character varying(100),
+    return_time timestamp without time zone,
+    return_process_id character varying(100),
+    return_host_name character varying(500),
+    return_host_ip character varying(100),
+    codebase character varying(500),
+    stub_hex character varying(4000) NOT NULL,
+    borrow_session_info_hex character varying(4000),
+    attributes_hex character varying(4000),
+    job_id character varying(100),
+    job_name character varying(100),
+    notify_email character varying(100),
+    notified integer,
+    owner character varying(100),
+    project character varying(1000),
+    master character varying(1000),
+    dont_monitor character varying(100)
+);
+
+
+ALTER TABLE public.servants OWNER TO postgres;
+
+--
+-- Name: site_data; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
+--
+
+CREATE TABLE site_data (
+    site_name character varying(500) NOT NULL,
+    cluster_pool_map character varying(4000) NOT NULL
+);
+
+
+ALTER TABLE public.site_data OWNER TO postgres;
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
+--
+
+CREATE TABLE users (
+    login character varying(100) NOT NULL,
+    pwd character varying(500) NOT NULL,
+    status character varying(40) NOT NULL,
+    fullname character varying(400) NOT NULL,
+    userfolder character varying(400) NOT NULL,
+    email character varying(200),
+    profile character varying(1000),
+    registered timestamp without time zone,
+    last_logged_in timestamp without time zone,
+    last_logged_out timestamp without time zone,
+    times_logged_in integer,
+    overall_time interval day to second,
+    poolname character varying(400),
+    supervisor character varying(40),
+    groupname character varying(100),
+    grouphead character varying(100)
+);
+
+
+ALTER TABLE public.users OWNER TO postgres;
+
+--
+-- Data for Name: node_data; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY node_data (node_name, node_type, host_ip, pool_prefix, host_name, login, pwd, install_dir, create_servant_command, kill_servant_command, os, servant_nbr_min, servant_nbr_max, process_counter, step, threshold, basefolder, list_command, setup_profile_command) FROM stdin;
+EMIF_4G	\N	{{rcloud_master_ip_address}}	EMIF_4G_	{{rcloud_master_hostname}}	rcloud_user	86EADE67B968A77D183CB133409A52D35C80F9737BE3E37E		bsub -J ${JOBNAME} -o {{mounted_folder_name}}/storage/lsflogs/${JOBNAME}.out -e {{mounted_folder_name}}/storage/lsflogs/${JOBNAME}.err {{mounted_folder_name}}/service/startserver -Dnode=${NODENAME} -Dattr.lsf.processid=${JOBNAME} -Djob.id=${JOBNAME} ${OPTIONS}	bkill -J ${attr.lsf.processid}	Linux	2	4	8825	2	2		bjobs -u rcloud_user -w	source /etc/profile.d/openlava.sh && sudo -E -u rcloud_user
+\.
+
+
+--
+-- Data for Name: options; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY options (option_name, option_value) FROM stdin;
+MAX_FREE_RESOURCE_LIFESPAN_HR	12
+MAX_TIMESLICE_NOTE_HR	144
+MAX_TIMESLICE_HR	168
+MAX_INACTIVITY_NOTE_HR	36
+MAX_INACTIVITY_HR	48
+SERVER_STARTUP_TIMEOUT_SEC	60
+USER_DEFAULT_FOLDER	{{mounted_folder_name}}/storage/wdir
+MAX_PING_FAILURES	3
+CLUSTERPOOLMAP	default=EMIF_4G
+MAX_PENDING_JOBS	5
+USER_DEFAULT_POOL	EMIF_4G
+\.
+
+
+--
+-- Data for Name: pool_data; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY pool_data (pool_name, timeout, pool_prefixes, on_demand) FROM stdin;
+EMIF_4G	20000	EMIF_4G_	0
+\.
+
+
+--
+-- Data for Name: site_data; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY site_data (site_name, cluster_pool_map) FROM stdin;
+\.
+
+
+
+--
+-- Name: unique__pool_name; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
+--
+
+ALTER TABLE ONLY pool_data
+    ADD CONSTRAINT unique__pool_name UNIQUE (pool_name);
+
+
+--
+-- Name: unique_login; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
+--
+
+ALTER TABLE ONLY users
+    ADD CONSTRAINT unique_login UNIQUE (login);
+
+
+--
+-- Name: unique_name; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
+--
+
+ALTER TABLE ONLY servants
+    ADD CONSTRAINT unique_name UNIQUE (name);
+
+
+--
+-- Name: unique_node_name; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
+--
+
+ALTER TABLE ONLY node_data
+    ADD CONSTRAINT unique_node_name UNIQUE (node_name);
+
+
+--
+-- Name: unique_option_name; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
+--
+
+ALTER TABLE ONLY options
+    ADD CONSTRAINT unique_option_name UNIQUE (option_name);
+
+
+--
+-- Name: unique_project_folder; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
+--
+
+ALTER TABLE ONLY projects
+    ADD CONSTRAINT unique_project_folder UNIQUE (folder);
+
+
+--
+-- Name: unique_site_name; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
+--
+
+ALTER TABLE ONLY site_data
+    ADD CONSTRAINT unique_site_name UNIQUE (site_name);
+
+
+--
+-- Name: stubs_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
+--
+
+CREATE INDEX stubs_idx ON servants USING btree (stub_hex);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- Name: node_data; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE node_data FROM PUBLIC;
+REVOKE ALL ON TABLE node_data FROM postgres;
+GRANT ALL ON TABLE node_data TO postgres;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE node_data TO {{rcloud_dbuser}};
+
+
+--
+-- Name: options; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE options FROM PUBLIC;
+REVOKE ALL ON TABLE options FROM postgres;
+GRANT ALL ON TABLE options TO postgres;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE options TO {{rcloud_dbuser}};
+
+
+--
+-- Name: pool_data; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE pool_data FROM PUBLIC;
+REVOKE ALL ON TABLE pool_data FROM postgres;
+GRANT ALL ON TABLE pool_data TO postgres;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE pool_data TO {{rcloud_dbuser}};
+
+
+--
+-- Name: projects; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE projects FROM PUBLIC;
+REVOKE ALL ON TABLE projects FROM postgres;
+GRANT ALL ON TABLE projects TO postgres;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE projects TO {{rcloud_dbuser}};
+
+
+--
+-- Name: servants; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE servants FROM PUBLIC;
+REVOKE ALL ON TABLE servants FROM postgres;
+GRANT ALL ON TABLE servants TO postgres;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE servants TO {{rcloud_dbuser}};
+
+
+--
+-- Name: site_data; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE site_data FROM PUBLIC;
+REVOKE ALL ON TABLE site_data FROM postgres;
+GRANT ALL ON TABLE site_data TO postgres;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE site_data TO {{rcloud_dbuser}};
+
+
+--
+-- Name: users; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE users FROM PUBLIC;
+REVOKE ALL ON TABLE users FROM postgres;
+GRANT ALL ON TABLE users TO postgres;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE users TO {{rcloud_dbuser}};
+
+
+--
+-- PostgreSQL database dump complete
+--

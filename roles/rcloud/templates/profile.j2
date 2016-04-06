@@ -1,0 +1,16 @@
+BASE={{mounted_folder_name}}/local
+
+source /etc/profile.d/openlava.sh
+
+export PATH=$PATH:{{mounted_folder_name}}/local/bin:{{mounted_folder_name}}/local/include
+export PATH=/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:$PATH
+
+export R_HOME=${BASE}/lib/R
+export R_LIBS=${BASE}/lib/R/library
+export PATH=${BASE}/bin:$PATH
+export PATH=$R_HOME/bin:$PATH
+
+export LD_LIBRARY_PATH=/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:{{mounted_folder_name}}/local/lib/R/lib:{{mounted_folder_name}}/local/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=${BASE}/lib/R/lib:/lib:${BASE}/lib:${BASE}/lib64:$LD_LIBRARY_PATH
+
+export PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${PKG_CONFIG_PATH}

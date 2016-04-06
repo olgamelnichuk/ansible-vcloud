@@ -1,0 +1,20 @@
+---
+- name: install tomcat
+  apt: pkg=tomcat7 state=latest
+
+- name: make sure the deployment directory exists
+  file: path=/home/ansible/deployment state=directory
+
+- name: download the packaged web module
+  shell: wget -P /home/ansible/deployment/ http://www.ebi.ac.uk/~andrew/rcloud-web.war
+
+- name: copy tomcat config to enable R Cloud webapp
+  copy: src="Tools_rcloud.xml" dest="/var/lib/tomcat7/conf/Catalina/localhost/Tools#rcloud.xml" owner=tomcat7 group=tomcat7 mode=0644
+  sudo: yes
+
+- name: restart tomcat
+  service: name=tomcat7 state=restarted
+
+- name: ensure tomcat7 starts on a fresh reboot
+  service: name=tomcat7 state=started enabled=yes
+

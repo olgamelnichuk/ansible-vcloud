@@ -1,0 +1,19 @@
+---
+rcloud_nodes: false
+rcloud_master: false
+rcloud_nfs_server: false
+rcloud_nfs_client: false
+
+rcloud_master_ip_address: 192.168.1.45
+rcloud_master_hostname: rcloud-test-01
+
+rcloud_user: rcloud_user
+
+
+rcloud_dbname: rcloudtest
+rcloud_dbuser: rcloud_user
+rcloud_dbpassword: rcloud_password
+
+exported_folder_name: /rcloud_test
+mounted_folder_name: /mnt/nfs/rcloud
+

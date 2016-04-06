@@ -1,0 +1,76 @@
+---
+#- name: ensure postgres apt key exists
+#  apt_key: url=http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc
+
+#- name: ensure postgres apt repository exists
+#  apt_repository: repo='deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_lsb.codename }}-pgdg main'
+
+#- name: ensure postgres is installed
+#  apt: pkg=postgresql-9.3 state=latest update_cache=true cache_valid_time={{ apt_cache_valid_time }}
+#  notify:
+#    - restart postgres
+
+#- name: ensure postgres is configured
+#  template: src=postgresql.conf.j2 dest=/etc/postgresql/9.3/main/postgresql.conf
+#  notify:
+#   - restart postgres
+
+
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+  #- postgresql 
+  #- postgresql-contrib
+  - python-apt
+  - python-psycopg2
+  - postgresql-9.3 
+  notify:
+    - restart postgres
+
+- name: ensure postgres' pg_hba is configured
+  template: src=pg_hba.conf.j2 dest=/etc/postgresql/9.3/main/pg_hba.conf
+
+- name: make sure postgres is restarted
+  service: name=postgresql state=restarted
+
+- name: create rcloud database user
+  postgresql_user: name={{ rcloud_dbuser }} password={{ rcloud_dbpassword }} role_attr_flags=CREATEDB,NOSUPERUSER
+  sudo_user: postgres
+
+- name: find postgresql.conf
+  command: find / -name postgresql.conf
+  sudo: true
+  register: find_psql_conf
+
+- debug: var=find_psql_conf
+
+- name: add line to postgresql.conf to accept incomming connections from any addresses
+  lineinfile: 
+    dest: "{{ find_psql_conf.stdout_lines[0] }}" 
+    line: "listen_addresses = '*'"
+    insertbefore: "#listen_addresses = 'localhost'"
+    state: present
+    backup: yes
+
+- name: make sure postgres is restarted
+  service: name=postgresql state=restarted
+
+- name: drop rcoud database in case it's already created
+  postgresql_db: name={{ rcloud_dbname }} state=absent
+  sudo_user: postgres
+
+
+- name: create rcoud database
+  postgresql_db: name={{ rcloud_dbname }} login_host={{ rcloud_master_hostname }} login_user={{ rcloud_dbuser }} login_password={{ rcloud_dbpassword }}
+  sudo_user: postgres
+
+- name: copy database dump file 
+  template: src=rclouddb.dump.j2 dest=/home/ansible/rclouddb.dump
+
+- name: init the database
+  shell: psql -f /home/ansible/rclouddb.dump --set ON_ERROR_STOP=on {{ rcloud_dbname }}
+  sudo_user: postgres
+
+- name: ensure postgres starts on a fresh reboot
+  service: name=postgresql state=started enabled=yes
+

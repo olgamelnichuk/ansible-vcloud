@@ -1,0 +1,114 @@
+#!/bin/bash
+
+#exit
+
+source /etc/profile.d/openlava.sh
+
+export PATH=$PATH:{{mounted_folder_name}}/local/bin:{{mounted_folder_name}}/local/include
+export PATH=/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:$PATH
+
+export R_HOME=${BASE}/lib/R
+export R_LIBS=${BASE}/lib/R/library
+export PATH=${BASE}/bin:$PATH
+export PATH=$R_HOME/bin:$PATH
+
+export LD_LIBRARY_PATH=/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:{{mounted_folder_name}}/local/lib/R/lib:{{mounted_folder_name}}/local/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=${BASE}/lib/R/lib:/lib:${BASE}/lib:${BASE}/lib64:$LD_LIBRARY_PATH
+
+export PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${PKG_CONFIG_PATH}
+
+BASE={{mounted_folder_name}}/service
+CLASSBASE=${BASE}/core
+CLASSBASEDEV=${BASE}/core-dev
+MONHOME=${BASE}/monitor
+MONBASE=${MONHOME}/data
+LOGS=${MONHOME}/logs
+MONITOR=monitor
+
+DBHOST="{{ rcloud_master_hostname }}"
+DBNAME="{{ rcloud_dbname }}"
+DBUSER="{{ rcloud_dbuser }}"
+DBPASSWORD="{{ rcloud_dbpassword }}"
+
+`env > ${LOGS}/monitor.env.log`
+
+if [ -e ${MONBASE}/${MONITOR}.lck ]; then
+
+	MINUTE=`date | awk '{ print $4 }' | cut -f2 -d":"`
+
+    if [ ${MINUTE} -eq "22" ]; then
+    	rm ${MONBASE}/${MONITOR}.lck
+
+		echo "removing the lock" >> ${LOGS}/${MONITOR}.cleanup.log                
+
+		# remove stale RCloudMonitor instances
+		NMONS=`ps -ef | grep RCloudMonitor | wc -l`
+
+		echo "detected ${NMONS} stale RCloudMonitor instances" >> ${LOGS}/${MONITOR}.cleanup.log
+
+		if [ ${NMONS} -gt "10" ]; then
+			`ps -ef | grep RCloudMonitor | awk '{print $2}' | xargs kill -9`
+			`ps -ef | grep RCloudMonitor | awk '{print $2}' | sort | xargs kill -9`
+		fi
+		
+
+        # remove stale CorruptionMonitor instances
+        CMONS=`ps -ef | grep CorruptionMonitor | wc -l`
+
+		echo "detected ${CMONS} stale CorruptionMonitor instances" >> ${LOGS}/${MONITOR}.cleanup.log
+
+        if [ ${CMONS} -gt "10" ]; then
+			`ps -ef | grep CorruptionMonitor | awk '{print $2}' | xargs kill -9`
+                        `ps -ef | grep CorruptionMonitor | awk '{print $2}' | sort | xargs kill -9`
+        fi
+
+		NUMPENDING=`bjobs | grep PEND | wc -l`
+
+		echo "detected ${NUMPENDING} PENDING jobs" >> ${LOGS}/${MONITOR}.cleanup.log
+		`bjobs | grep PEND | awk '{print $1}' | xargs bkill`
+    fi
+
+        echo "monitor locked" >> ${LOGS}/${MONITOR}.log
+else
+        echo "launching monitor" > ${LOGS}/${MONITOR}.log
+
+        touch ${MONBASE}/${MONITOR}.lck
+		bjobs > ${LOGS}/${MONITOR}.bjobs.log
+
+		Z=`bjobs | grep PEND | wc -l`
+		echo "pending jobs = [${Z}]" >> ${LOGS}/${MONITOR}.log
+	
+		if [ ${Z} -lt "100" ]; then
+	        cd ${BASE}
+
+			#DBPARAMS="-Dnaming.mode=db -Ddb.type=oracle -Ddb.name=RCLDPRO -Ddb.host=ora-vm-030.ebi.ac.uk -Ddb.port=1531"
+        	DBPARAMS="-Dnaming.mode=db -Ddb.type=postgresql -Ddb.name=${DBNAME} -Ddb.host=${DBHOST} -Ddb.port=5432 -Ddb.user=${DBUSER} -Ddb.password=${DBPASSWORD}"
+        	MONPARAMS="-Dwant.sql.statements=true -Dmon.message="
+			CLASSPATH2="${CLASSBASE}/rcloud-monitor-1.4.0-rcloud-jar-with-dependencies.jar"
+			CLASSPATH3="${CLASSBASEDEV}/rcloud-monitor-1.4.0-rcloud-jar-with-dependencies.jar"
+			CLASS2="uk.ac.ebi.rcloud.rpf.monitor.RCloudMonitor"
+			CLASS3="uk.ac.ebi.rcloud.rpf.monitor.CorruptionMonitor"
+
+			# pool EMIF_4G
+			NODE=EMIF_4G
+			PROPFILE="-Dmon.properties=${MONBASE}/properties.${NODE}"
+        	echo `date` "starting monitor for ${NODE} " >> ${LOGS}/${MONITOR}.log
+			echo java -Xmx256m -cp ${CLASSPATH2} ${DBPARAMS} -Dmon.node=${NODE} ${MONPARAMS} ${PROPFILE} ${CLASS2} 1> ${LOGS}/monitor.${NODE}.log 2> ${LOGS}/monitor.${NODE}.log.err
+			java -Xmx256m -cp ${CLASSPATH2} ${DBPARAMS} -Dmon.node=${NODE} ${MONPARAMS} ${PROPFILE} ${CLASS2} 1> ${LOGS}/monitor.${NODE}.log 2> ${LOGS}/monitor.${NODE}.log.err
+
+        	# consistency monitor
+        	echo `date` "starting corruption monitor" >> ${LOGS}/${MONITOR}.log
+        	java -Xmx256m -cp ${CLASSPATH2} ${DBPARAMS} ${MONPARAMS} ${CLASS3} >> ${LOGS}/monitor.consistency.log
+
+		else
+			echo "too many pending jobs" >> ${LOGS}/${MONITOR}.log
+
+			echo "cleaning pending jobs" >> ${LOGS}/${MONITOR}.log
+
+			`bjobs | grep PEND | awk '{print $1}' | xargs bkill`
+
+		fi
+
+        rm ${MONBASE}/${MONITOR}.lck
+
+fi

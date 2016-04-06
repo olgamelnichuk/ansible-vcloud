@@ -1,0 +1,36 @@
+---
+
+#- name: create nogroup group
+#  group: name=nogroup state=present system=true
+
+#- name: create nobody user
+#  user: name=nobody state=present group=nogroup shell=/bin/bash system=true
+
+- name: download the packaged server module
+  shell: wget -P {{mounted_folder_name}} http://www.ebi.ac.uk/~andrew/rcloud-server.tar.gz
+  #"Consider using get_url module rather than running wget
+
+- name: unpack the server module
+  shell: cd {{mounted_folder_name}} && tar zxvf rcloud-server.tar.gz
+
+- name: copy server script
+  template: src=startserver.j2 dest={{mounted_folder_name}}/service/startserver
+
+- name: copy server script
+  template: src=rcloud-monitor.j2 dest={{mounted_folder_name}}/service/monitor/rcloud-monitor
+
+- name: copy .profile
+  template: src=profile.j2 dest={{mounted_folder_name}}/service/monitor/.profile
+
+- name: copy test script
+  template: src=test-r-job.j2 dest={{mounted_folder_name}}/service/core/test-rcloud/test-r-job
+
+- name: add cronjob to run the monitor
+  cron: name="run rcloud monitor" job="{{mounted_folder_name}}/service/monitor/rcloud-monitor"
+  sudo_user: rcloud-user
+
+- name: make sure owner is rcloud-user
+  file: path={{mounted_folder_name}} owner=rcloud-user group=rcloud-user recurse=yes
+
+- name: make sure cron is restarted
+  service: name=cron state=restarted

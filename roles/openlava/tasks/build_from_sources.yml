@@ -8,6 +8,9 @@
     - tcl-dev
     - tcl8.6-dev
 
+- name: create openlava group
+  group: name=openlava state=present system=true
+
 - name: create 'openlava' user
   user: name=openlava comment="Openlava User" createhome=no group=openlava state=present
 
@@ -76,7 +79,7 @@
 
 - name: update lsf.cluster.openlava
   lineinfile: 
-    dest: "/opt/openlava-3.0/etc/lsf.cluster.openlava"
+    dest: "{{ openlava_build_dest }}/etc/lsf.cluster.openlava"
     regexp: '^{{ ansible_hostname }}.*'
     insertbefore: "End\\s*Host"
     line: "{{ ansible_hostname  }}      !       !      1      -      - "
