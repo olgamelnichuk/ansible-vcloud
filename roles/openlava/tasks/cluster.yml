@@ -39,7 +39,9 @@
     backup: yes
   with_items: 
     - '{{ groups.docker_openlava_nodes }}'
-  notify: restart openlava
+
+- name: restart openlava
+  service: name=openlava state=restarted
 
 - name: check that openlava lsid works
   shell: . /etc/profile.d/openlava.sh && lsid

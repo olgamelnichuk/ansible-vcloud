@@ -70,12 +70,22 @@
     - "/usr/local/bin/dockercmd"
   tags: update_dockercmd
 
+- set_fact:
+    sudo_commands: "{{ orig_commands | union(more_commands) | join(',') }}"
+  tags: update_dockercmd
+  when: orig_commands != ""
+
+- set_fact:
+    sudo_commands: "{{ union(more_commands) | join(',') }}"
+  tags: update_dockercmd
+  when: orig_commands == ""
+
 - name: allow all users run ngspyeasy_tool
   lineinfile: 
     dest: /etc/sudoers 
     state: present 
     regexp: "^ALL.*" 
-    line: "ALL ALL=NOPASSWD: {{ orig_commands | union(more_commands) | join(',') }}"
+    line: "ALL ALL=NOPASSWD: {{ sudo_commands }}"
   tags: update_dockercmd
 
 - name: restart openlava
