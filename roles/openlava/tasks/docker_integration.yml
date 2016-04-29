@@ -62,23 +62,15 @@
 - name: extract sudoer commands
   shell:  "sudo cat /etc/sudoers | grep 'ALL ALL=NOPASSWD:' | awk '{ print $3 }'"
   register: sudo_cat_out
-  tags: update_dockercmd
 
 - set_fact:
     orig_commands: "{{ sudo_cat_out.stdout.split(',') }}"
     more_commands:
     - "/usr/local/bin/dockercmd"
-  tags: update_dockercmd
 
 - set_fact:
-    sudo_commands: "{{ orig_commands | union(more_commands) | join(',') }}"
+    sudo_commands: "{{ orig_commands | union(more_commands) | join(',')  | regex_replace( '^(,)(.*)$','\\2') }}"
   tags: update_dockercmd
-  when: orig_commands != ""
-
-- set_fact:
-    sudo_commands: "{{ union(more_commands) | join(',') }}"
-  tags: update_dockercmd
-  when: orig_commands == ""
 
 - name: allow all users run ngspyeasy_tool
   lineinfile: 
@@ -86,7 +78,6 @@
     state: present 
     regexp: "^ALL.*" 
     line: "ALL ALL=NOPASSWD: {{ sudo_commands }}"
-  tags: update_dockercmd
 
 - name: restart openlava
   service: name=openlava state=restarted
