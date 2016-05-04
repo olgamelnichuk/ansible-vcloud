@@ -29,19 +29,15 @@
     regexp: '.*\\(cs\\).?$'
     state: absent
 
-- name: update lsf.cluster.openlava config with all cluster nodes
-  lineinfile: 
-    dest: "{{ openlava_dir }}/etc/lsf.cluster.openlava"
-    regexp: '^{{ hostvars[item].ansible_hostname }}.*'
-    insertbefore: "End\\s*Host"
-    line: "{{ hostvars[item].ansible_hostname }}      !       !      1      -      (cs) "
-    state: present
-    backup: yes
-  with_items: 
-    - '{{ groups.docker_openlava_nodes }}'
+- name: change openlava cluster config 
+  template: src=lsf.cluster.openlava dest={{ openlava_dir }}/etc/lsf.cluster.openlava backup=yes
 
 - name: restart openlava
   service: name=openlava state=restarted
+
+- name: waiting 2 minutes for server to come back
+  local_action: wait_for timeout=120
+  sudo: false
 
 - name: check that openlava lsid works
   shell: . /etc/profile.d/openlava.sh && lsid
