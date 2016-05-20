@@ -12,7 +12,7 @@
   tags: cert
 
 - name: Copy docker registry certificate to a vm
-  hosts: [docker_registry_users]
+  hosts: [docker_openlava]
   roles: [docker_registry_client]
   sudo: true
   tags: cert

@@ -12,4 +12,4 @@
     regexp: "^JOB_SPOOL_DIR.*"
     insertbefore: "^End\\sParameters.*"
     line: "JOB_SPOOL_DIR = /tmp"
-  notify: restart openlava
+#  notify: restart openlava

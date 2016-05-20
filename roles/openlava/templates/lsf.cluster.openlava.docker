@@ -16,6 +16,9 @@ HOSTNAME          model          type  server  r1m  RESOURCES
 {% for host in groups['docker_openlava_nodes'] %}
 {{ hostvars[host]['ansible_hostname'] }}      !       !      1      -      (cs docker) 
 {% endfor %}
+{% for host in groups['docker_openlava_nodes_new'] %}
+{{ hostvars[host]['ansible_hostname'] }}      !       !      1      -      (cs docker) 
+{% endfor %}
 End     Host
 
 Begin ResourceMap

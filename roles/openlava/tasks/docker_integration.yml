@@ -44,13 +44,14 @@
     state: absent
 
 - name: update lsf.cluster.openlava config with all cluster nodes
-  lineinfile: 
-    dest: "{{ openlava_dir }}/etc/lsf.cluster.openlava"
-    regexp: '^{{ hostvars[item].ansible_hostname }}.*'
-    insertbefore: "End\\s*Host"
-    line: "{{ hostvars[item].ansible_hostname }}      !       !      1      -      (cs docker) "
-    state: present
-  with_items: groups.docker_openlava_nodes|sort
+  template: src=lsf.cluster.openlava.docker dest={{ openlava_dir }}/etc/lsf.cluster.openlava backup=yes
+#  lineinfile: 
+#    dest: "{{ openlava_dir }}/etc/lsf.cluster.openlava"
+#    regexp: '^{{ hostvars[item].ansible_hostname }}.*'
+#    insertbefore: "End\\s*Host"
+#    line: "{{ hostvars[item].ansible_hostname }}      !       !      1      -      (cs docker) "
+#    state: present
+#  with_items: groups.docker_openlava|sort
 
 - name: copy 'dockercmd' script
   copy: src=dockercmd.py dest=/usr/local/bin/dockercmd mode=0750
@@ -83,4 +84,3 @@
 - name: waiting 2 minutes for server to come back
   local_action: wait_for timeout=120
   sudo: false
-

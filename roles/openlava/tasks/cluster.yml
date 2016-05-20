@@ -21,7 +21,7 @@
     line: '{{ hostvars[item].ansible_default_ipv4.address }} {{ hostvars[item].ansible_hostname }}'
     backup: yes
   with_items: 
-    - '{{ groups.docker_openlava_nodes }}'
+    - '{{ groups.docker_openlava }}'
 
 - name: remove old nodes from lsf.cluster.openlava config
   lineinfile: 
@@ -30,13 +30,14 @@
     state: absent
 
 - name: update lsf.cluster.openlava config with all cluster nodes
-  lineinfile: 
-    dest: "{{ openlava_dir }}/etc/lsf.cluster.openlava"
-    regexp: '^{{ hostvars[item].ansible_hostname }}.*'
-    insertbefore: "End\\s*Host"
-    line: "{{ hostvars[item].ansible_hostname }}      !       !      1      -      (cs) "
-    state: present
-  with_items: groups.docker_openlava_nodes|sort
+  template: src=lsf.cluster.openlava dest={{ openlava_dir }}/etc/lsf.cluster.openlava backup=yes
+#  lineinfile: 
+#    dest: "{{ openlava_dir }}/etc/lsf.cluster.openlava"
+#    regexp: '^{{ hostvars[item].ansible_hostname }}.*'
+#    insertbefore: "End\\s*Host"
+#    line: "{{ hostvars[item].ansible_hostname }}      !       !      1      -      (cs) "
+#    state: present
+#  with_items: groups.docker_openlava|sort
 
 - name: restart openlava
   service: name=openlava state=restarted
@@ -45,11 +46,13 @@
   local_action: wait_for timeout=120
   sudo: false
 
-- name: check that openlava lsid works
-  shell: . /etc/profile.d/openlava.sh && lsid
+#- name: check that openlava lsid works
+#  shell: . /etc/profile.d/openlava.sh && lsid
 
-- name: check openlava bhosts works
-  shell: . /etc/profile.d/openlava.sh && bhosts
+#- name: check openlava bhosts works
+#  shell: . /etc/profile.d/openlava.sh && bhosts
 
-- name: check openlava lshosts works
-  shell: . /etc/profile.d/openlava.sh && lshosts
+#- name: check openlava lshosts works
+#  shell: . /etc/profile.d/openlava.sh && lshosts
+
+
