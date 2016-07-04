@@ -1,0 +1,6 @@
+---
+- name: olkin openlava cluster installation
+  hosts: olkin_openlava_nodes
+  roles: 
+    - { role: olkin_openlava }
+  sudo: true
