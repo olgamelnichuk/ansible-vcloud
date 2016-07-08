@@ -1,0 +1,65 @@
+---
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+    - build-essential
+
+- name: copy docker specific scripts 
+  copy: src={{ item }} dest={{ openlava_home }}/bin owner=openlava group=openlava mode=0751
+  with_items: 
+     - docker_terminate
+     - docker_resume
+     - docker_stop
+
+- name: copy docker_starter.c
+  copy: src=docker_starter.c dest=/tmp
+
+- name: compile docker_starter.c
+  shell: gcc /tmp/docker_starter.c -o {{ openlava_home }}/bin/docker_starter
+
+- name: fix docker_starter permissions
+  file: path={{ openlava_home }}/bin/docker_starter owner=openlava group=openlava mode=0751
+
+- name: add docker queue to lsb.queues
+  template: src=lsb.queues dest={{ openlava_home }}/etc/lsb.queues
+
+- name: add docker resource to lsf.shared
+  lineinfile: 
+    dest: "{{ openlava_home }}/etc/lsf.shared"
+    insertbefore: "End\\s*Resource"
+    line: '   docker         Boolean ()       ()          (docker server)'
+    state: present
+
+- name: add docker resource to the hosts in cluster config
+  replace: 
+    dest: "{{ openlava_home }}/etc/lsf.cluster.openlava"
+    regexp: '^(.+)\(cs\)$' 
+    replace: '\1(cs docker)' 
+    backup: yes
+
+- name: copy 'dockercmd' script
+  copy: src=dockercmd.py dest=/usr/local/bin/dockercmd mode=0750
+  tags: update_dockercmd
+
+- name: extract sudoer commands
+  shell:  "sudo cat /etc/sudoers | grep 'ALL ALL=NOPASSWD:' | awk '{ print $3 }'"
+  register: sudo_cat_out
+
+- set_fact:
+    orig_commands: "{{ sudo_cat_out.stdout.split(',') }}"
+    more_commands:
+    - "/usr/local/bin/dockercmd"
+
+- set_fact:
+    sudo_commands: "{{ orig_commands | union(more_commands) | join(',')  | regex_replace( '^(,)(.*)$','\\2') }}"
+  tags: update_dockercmd
+
+- name: update sudoer commands
+  lineinfile: 
+    dest: /etc/sudoers 
+    state: present 
+    regexp: "^ALL.*" 
+    line: "ALL ALL=NOPASSWD: {{ sudo_commands }}"
+
+- name: reconfig openlava
+  shell: "{{ openlava_home }}/bin/lsadmin reconfig"

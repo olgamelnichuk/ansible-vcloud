@@ -14,6 +14,12 @@
     - tcl-dev
     - tcl8.6-dev
 
+- name: replace loopback for hostname
+  lineinfile: 
+    dest: /etc/hosts
+    regexp: '^127.0.1.1.*{{ ansible_hostname }}'
+    line: '#127.0.1.1 {{ ansible_hostname }}'
+    
 - set_fact: openlava_sources=/tmp/openlava_sources
 
 - name: create openlava 'sources' directory
@@ -50,7 +56,7 @@
   - "make install"
 
 - name: copy openlava config files from sources
-  shell: cp {{ item }}.in {{ openlava_build_dest }}/etc/{{ item }}
+  shell: cp {{ item }} {{ openlava_build_dest }}/etc/{{ item }}
   args:
     chdir: "{{ openlava_sources }}/config"
   with_items:
@@ -79,3 +85,15 @@
 
 - name: ensure openlava build destination is owned by openlava user
   file: path={{ openlava_build_dest }}  state=directory recurse=yes owner=openlava group=openlava
+
+- name: update lsf.cluster.openlava
+  lineinfile: 
+    dest: "{{ openlava_build_dest }}/etc/lsf.cluster.openlava"
+    regexp: '^{{ ansible_hostname }}.*'
+    insertbefore: "End\\s*Host"
+    line: "{{ ansible_hostname  }}                  IntelI5      linux   1      3.5    (cs)"
+    state: present
+    backup: yes
+    
+- name: start openlava service
+  service: name=openlava enabled=true state=started

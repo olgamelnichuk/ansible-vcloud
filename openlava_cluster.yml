@@ -1,4 +1,35 @@
 ---
+- name: Cleanup temporary files
+  hosts: local
+  tasks:
+    - name: Delete openlava_clusters.tmp
+      file: src="{{ playbook_dir }}./tmp/openlava_clusters.tmp" status="absent"
+
+- name: write all clusters in the file
+  hosts: openlava_cluster
+  tasks:
+    - name: Parse lsf.cluster.openlava
+      shell: 
+  
+ 
+
+
+- name: Create cluster config
+  hosts: localhost
+  roles: 
+    - { role: openlava_config, hosts=[] }
+  
+- name: Add node to the cluster
+  hosts: openlava_cluster
+  roles:
+    - { role: openlava_cluster, openlava_with_docker: true, cluster_config: "./tmp/lsf.cluster.openlava" }
+
+#- name: waiting 2 minutes for server to come back
+#  local_action: wait_for timeout=120
+#  sudo: false
+
+
+
 - name: Setup new nodes in OpenLava cluster with docker support
   hosts: docker_openlava
   gather_facts: yes

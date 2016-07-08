@@ -1,2 +1,0 @@
-- name: restart openlava
-  service: name=openlava state=restarted

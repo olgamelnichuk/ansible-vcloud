@@ -1,0 +1,8 @@
+---
+- name: set job_spool_dir to /tmp
+  lineinfile:
+    dest: "{{ openlava_home }}/etc/lsb.params"
+    regexp: "^JOB_SPOOL_DIR.*"
+    insertbefore: "^End\\sParameters.*"
+    line: "JOB_SPOOL_DIR = /tmp"
+  notify: reconfig openlava

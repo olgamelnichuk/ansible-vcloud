@@ -2,5 +2,6 @@
 - name: olkin openlava cluster installation
   hosts: olkin_openlava_nodes
   roles: 
-    - { role: olkin_openlava }
-  sudo: true
+# - { role: olkin_openlava }
+  - { role: nfs_client, nfs_with_ldap: false }
+  become: true

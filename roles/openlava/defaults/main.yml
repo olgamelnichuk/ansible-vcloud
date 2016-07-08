@@ -1,5 +1,0 @@
----
-#openlava_tar_url: http://www.openlava.org/tarball/openlava-3.0.tar.gz
-openlava_tar_url: http://www.openlava.org/tarball/openlava-3.2.tar.gz
-openlava_pkg_install: false
-openlava_with_docker: false
