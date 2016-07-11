@@ -1,0 +1,12 @@
+      
+---
+- debug:
+    msg: '{{ clusters_file }}'
+
+- debug:
+    msg: '{{ hosts_file }}'
+    
+- debug:
+    msg: '{{ phase }}'
+    
+- include: '{{ phase }}.yml'

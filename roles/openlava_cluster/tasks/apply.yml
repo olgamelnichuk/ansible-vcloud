@@ -1,0 +1,13 @@
+---
+- name: get first nodes from clusetrs
+  shell: cat {{ clusters_files }} | awk 'print $1'
+  register: nodes_out
+
+- set_fact:
+    nodes: '{{ nodes_out.stdout_lines }}'
+ 
+- name: run lsadmin -f reconfig
+  shell: "{{ openlava_home }}/bin/lsadmin -f reconfig"
+  become: true
+  become_method: sudo
+  when: '{{ ansible_hostname in nodes}}'

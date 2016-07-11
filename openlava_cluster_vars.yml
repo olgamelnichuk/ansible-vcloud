@@ -1,0 +1,4 @@
+---
+clusters_tmp: "{{ playbook_dir }}/tmp/openlava_clusters.tmp"
+cluster_hosts_tmp: "{{ playbook_dir }}/tmp/openlava_cluster_hosts.tmp"
+openlava_with_docker: true

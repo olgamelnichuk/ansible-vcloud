@@ -1,0 +1,43 @@
+---
+- name: upload new config
+  copy: src='{{ lsf_cluster_openlava_local }}' dest="{{ openlava_home }}/etc/lsf.cluster.openlava"
+  become: true
+  become_method: sudo
+  
+#- name: parse hosts_file
+#  set_fact:
+#     host: "{{ item.split() | list }}"
+#  with_lines: cat {{ hosts_file }}
+#  register: hosts_res
+
+#- name: make a host list
+#  set_fact: 
+#    hosts: "{{ hosts_res.results | map(attribute='ansible_facts.host') | list }}"  
+
+- name: get ips
+  local_action: shell cat {{ hosts_file }} | awk '{ print $1 }'
+  register: ips_out
+
+- name: get names
+  local_action: shell cat {{ hosts_file }} | awk '{ print $2 }'
+  register: names_out
+  
+- debug:
+    msg: '{{ ips_out }}'
+
+- debug:
+    msg: '{{ names_out }}'
+
+- name: update hosts file
+  lineinfile:
+    dest: '/etc/hosts'
+    regexp: '^{{ item.0 }}.+' 
+    line: '{{ item.0 }}  {{ item.1 }}'
+    state: present
+    backup: true
+  with_together: 
+    - '{{ ips_out.stdout_lines }}'    
+    - '{{ names_out.stdout_lines }}'
+  become: true
+  become_method: sudo
+  

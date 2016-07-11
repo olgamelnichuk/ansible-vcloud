@@ -70,4 +70,4 @@
     backup: yes
     
 - name: start openlava service
-  service: name=openlava enabled=true state=started
+  service: name=openlava enabled=true state=restarted
