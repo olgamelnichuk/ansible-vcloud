@@ -3,7 +3,7 @@
   shell: sort -u {{ clusters_tmp }}* > {{ clusters_tmp }}
 
 - name: Sort all cluster hosts
-  shell: sort -u {{ cluster_hosts_tmp }}* > {{ cluster_hosts_tmp }}
+  shell: sort -k 2 -u {{ cluster_hosts_tmp }}* > {{ cluster_hosts_tmp }}
 
 - debug:
     msg: '{{ openlava_with_docker }}'
