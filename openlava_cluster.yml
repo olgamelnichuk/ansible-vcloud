@@ -1,0 +1,43 @@
+---
+
+- name: Cleanup temporary files
+  hosts: local
+  connection: local
+  vars_files:
+    - openlava_cluster_vars.yml
+  tasks:
+    - name: Delete openlava_clusters.tmp*
+      shell: rm -f {{ clusters_tmp }}*
+
+    - name: Delete openlava_cluster_hosts.tmp*
+      shell: rm -f {{ cluster_hosts_tmp }}*
+
+- name: Find out cluster hosts
+  hosts: openlava_cluster
+  vars_files:
+    - openlava_cluster_vars.yml
+  roles:
+    - { role: 'openlava_cluster', clusters_file: '{{ clusters_tmp }}', hosts_file: '{{ cluster_hosts_tmp }}', phase: 'inspect' }
+    
+- name: Prepare cluster configs
+  hosts: local
+  connection: local
+  vars_files:
+    - openlava_cluster_vars.yml
+  roles:
+    - { role: 'openlava_cluster', clusters_file: '{{ clusters_tmp }}', hosts_file: '{{ cluster_hosts_tmp }}', phase: 'prepare' }
+
+- name: Upload new config to the cluster hosts
+  hosts: openlava_cluster
+  vars_files:
+    - openlava_cluster_vars.yml
+  roles:
+    - { role: 'openlava_cluster', clusters_file: '{{ clusters_tmp }}', hosts_file: '{{ cluster_hosts_tmp }}', phase: 'configure' }
+    
+- name: Restart LIM on cluster hosts
+  hosts: openlava_cluster
+  vars_files:
+    - openlava_cluster_vars.yml
+  roles:
+    - { role: 'openlava_cluster', clusters_file: '{{ clusters_tmp }}', hosts_file: '{{ cluster_hosts_tmp }}', phase: 'apply' }
+      

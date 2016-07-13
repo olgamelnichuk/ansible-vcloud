@@ -1,0 +1,73 @@
+---
+- name: install required packages
+  apt: pkg={{ item }} state=latest
+  with_items: 
+    - build-essential
+    - libncurses5-dev
+    - tcl
+    - tcl-dev
+    - tcl8.6-dev
+
+- set_fact: openlava_sources=/tmp/openlava_sources
+
+- name: create openlava sources directory
+  file: path={{ openlava_sources }} state=directory
+
+- name: download openlava tar archive
+  get_url: url={{ openlava_tar_url }} dest=/tmp/openlava_tar
+  
+- name: download and unzip openlava sources tar
+  shell: tar -xzf /tmp/openlava_tar -C {{ openlava_sources }} --strip-components=1
+
+- name: install openlava from sources
+  shell: "{{ item }}"
+  args:
+    chdir: "{{ openlava_sources }}"
+    creates: "{{ openlava_home }}/bin/bsub" 
+  with_items:
+  - "./configure --prefix={{ openlava_home }}"
+  - "make"
+  - "make install"
+
+- name: copy openlava config files from sources
+  shell: cp {{ item }} {{ openlava_home }}/etc/{{ item }}
+  args:
+    chdir: "{{ openlava_sources }}/config"
+  with_items:
+  - lsb.hosts 
+  - lsb.params 
+  - lsb.queues 
+  - lsb.users 
+  - lsf.cluster.openlava 
+  - lsf.conf 
+  - lsf.shared 
+  - lsf.task
+  - openlava.csh
+  - openlava.sh
+
+- name: copy openlava service script to init.d
+  shell: cp {{ openlava_home }}/etc/openlava /etc/init.d
+
+- name: copy openlava profiles
+  shell: cp {{ openlava_home }}/etc/openlava.* /etc/profile.d
+
+- name: create 'openlava' user group
+  group: name=openlava state=present system=true
+
+- name: create 'openlava' user
+  user: name=openlava comment="Openlava User" createhome=no group=openlava state=present
+
+- name: ensure openlava build destination is owned by openlava user
+  file: path={{ openlava_home }}  state=directory recurse=yes owner=openlava group=openlava
+
+- name: update lsf.cluster.openlava
+  lineinfile: 
+    dest: "{{ openlava_home }}/etc/lsf.cluster.openlava"
+    regexp: '^{{ ansible_hostname }}.*'
+    insertbefore: "End\\s*Host"
+    line: "{{ ansible_hostname  }}                  !      !   1      -   (cs)"
+    state: present
+    backup: yes
+    
+- name: start openlava service
+  service: name=openlava enabled=true state=restarted

@@ -1,0 +1,29 @@
+---
+- name: Sort all clusters and remove duplicated ones
+  shell: sort -u {{ clusters_tmp }}* > {{ clusters_tmp }}
+
+- name: Sort all cluster hosts
+  shell: sort -k 2 -u {{ cluster_hosts_tmp }}* > {{ cluster_hosts_tmp }}
+
+- debug:
+    msg: '{{ openlava_with_docker }}'
+
+- set_fact:
+    docker_rs: ''
+
+- set_fact:
+    docker_rs: 'docker'
+  when: openlava_with_docker
+
+- name: extract host list
+  shell: cat {{ hosts_file }} | awk '{print $2}'
+  register: hosts_out
+
+- set_fact:
+    hosts: '{{ hosts_out.stdout_lines }}'
+
+- debug:
+    msg: '{{ hosts }}'
+    
+- name: Create lsf.cluster.openlava
+  template: src='lsf.cluster.openlava.j2' dest='{{ lsf_cluster_openlava_local }}'

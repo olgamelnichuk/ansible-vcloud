@@ -217,10 +217,10 @@ Begin Queue
 QUEUE_NAME   = docker_queue
 PRIORITY     = 60
 NICE         = 20
-JOB_STARTER = {{ openlava_dir }}/bin/docker_starter "%USRCMD"
-JOB_CONTROLS = SUSPEND[{{ openlava_dir }}/bin/docker_stop] \
-RESUME[{{ openlava_dir }}/bin/docker_resume] \
-TERMINATE[{{ openlava_dir }}/bin/docker_terminate]
+JOB_STARTER = {{ openlava_home }}/bin/docker_starter "%USRCMD"
+JOB_CONTROLS = SUSPEND[{{ openlava_home }}/bin/docker_stop] \
+RESUME[{{ openlava_home }}/bin/docker_resume] \
+TERMINATE[{{ openlava_home }}/bin/docker_terminate]
 #QJOB_LIMIT   = 60              # job limit of the queue
 #UJOB_LIMIT   = 5               # job limit per user
 #PJOB_LIMIT   = 2               # job limit per processor

@@ -12,20 +12,13 @@
 - name: replace loopback for hostname
   lineinfile: 
     dest: /etc/hosts
-    regexp: '^127.0.1.1.*{{ ansible_default_ipv4.address }}'
-    line: '#127.0.1.1 {{ ansible_default_ipv4.address }}'
+    regexp: '^127.0.1.1.*{{ ansible_hostname }}'
+    line: '#127.0.1.1 {{ ansible_hostname }}'
 
-- include: package_install.yml
-  when: openlava_pkg_install
-
-- include: build_from_sources.yml
-  when: not openlava_pkg_install
+- include: install_from_tarball.yml
 
 - include: post_install.yml
   tags: post_install
-
-- include: cluster.yml
-  tags: cluster_update
 
 - include: docker_integration.yml
   when: openlava_with_docker

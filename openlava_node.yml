@@ -1,0 +1,10 @@
+---
+- name: Install openlava on a node
+  hosts: openlava_nodes
+  roles: 
+    - { role: ldap_client }
+    - { role: nfs_client, nfs_with_ldap: true }
+    - { role: docker }
+    - { role: openlava_node, openlava_with_docker: true }
+  become_method: sudo    
+  become: true

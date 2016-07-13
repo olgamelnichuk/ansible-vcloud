@@ -1,0 +1,28 @@
+---
+- name: Parse hostnames from lsf.cluster.openlava
+  shell: cat {{ openlava_home }}/etc/lsf.cluster.openlava | awk '/#\s*yourhost.*/{flag=1;next}/End\s+Host/{flag=0}flag' | awk '{print $1}'
+  register: hostnames_out
+    
+- debug:
+    msg: '{{ hostnames_out.stdout_lines }}'
+    
+- set_fact:
+    tmp_clusters_file: '{{ clusters_file }}.{{ ansible_hostname }}'
+    tmp_hosts_file: '{{ hosts_file }}.{{ ansible_hostname }}'
+
+- set_fact:
+    tmp_files: "['{{ tmp_clusters_file }}', '{{ tmp_hosts_file }}']"
+        
+- debug:
+    msg: '{{ tmp_files }}'
+
+- name: Create tmp files for cluster node list
+  local_action: file path='{{ item }}' state='touch'
+  with_items: '{{ tmp_files }}'
+      
+- name: Write cluster file
+  local_action: shell printf "%s" "{{ item }} " >> {{ tmp_clusters_file }}
+  with_items: '{{ hostnames_out.stdout_lines }}'
+    
+- name: Write hosts file
+  local_action: shell echo '{{ ansible_eth0.ipv4.address }}    {{ ansible_hostname }}' >> {{ tmp_hosts_file }}

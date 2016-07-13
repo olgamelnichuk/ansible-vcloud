@@ -14,6 +14,8 @@
     line: DEFAULT_FORWARD_POLICY="ACCEPT"
   notify: reload ufw
 
+- meta: flush_handlers
+
 - name: enable memory limitation in cgroupd
   lineinfile: 
     dest: /etc/default/grub
@@ -25,6 +27,8 @@
   command: update-grub
   when: grub_config | changed
   notify: reboot vm
+
+- meta: flush_handlers
 
 - name: waiting 2 minutes for server to come back
   local_action: wait_for timeout=120

@@ -1,0 +1,3 @@
+---
+openlava_with_docker: false
+openlava_home: /opt/openlava

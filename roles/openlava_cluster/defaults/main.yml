@@ -1,0 +1,2 @@
+---
+lsf_cluster_openlava_local: '{{ playbook_dir }}/tmp/lsf.cluster.openlava.tmp'

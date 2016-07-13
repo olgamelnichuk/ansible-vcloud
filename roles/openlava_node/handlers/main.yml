@@ -1,0 +1,3 @@
+---
+- name: reconfig openlava
+  shell: "{{ openlava_home }}/bin/lsadmin reconfig"
