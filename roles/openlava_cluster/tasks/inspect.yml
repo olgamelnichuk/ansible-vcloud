@@ -21,7 +21,7 @@
   with_items: '{{ tmp_files }}'
       
 - name: Write cluster file
-  local_action: shell echo '{{ item }} ' >> {{ tmp_clusters_file }}
+  local_action: shell printf "%s" "{{ item }} " >> {{ tmp_clusters_file }}
   with_items: '{{ hostnames_out.stdout_lines }}'
     
 - name: Write hosts file
